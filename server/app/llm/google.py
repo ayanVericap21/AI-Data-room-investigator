@@ -56,6 +56,7 @@ class GoogleLLMClient(LLMClient):
         usage = TokenUsage(
             prompt_tokens=meta.get("promptTokenCount", 0),
             completion_tokens=meta.get("candidatesTokenCount", 0),
+            thinking_tokens=meta.get("thoughtsTokenCount", 0),
             total_tokens=meta.get("totalTokenCount", 0),
         )
         return RawResponse(text=text, usage=usage)

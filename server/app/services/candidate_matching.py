@@ -6,15 +6,15 @@ attributes. The output is a *candidate* with a relation hint; whether it is a re
 contradiction, a contextual difference, etc. is decided later by evidence + LLM reasoning.
 
 Design notes:
-- Matching is lexical on normalised subject/metric tokens plus unit/period metadata.
-  Embedding similarity is deliberately not used here: it is not reliable enough to decide
-  relatedness of numeric claims, and it would hide the reason a pair was proposed.
-  (Embeddings are used later for *evidence retrieval*.)
+- Matching is lexical on normalised subject/metric tokens plus unit/period metadata, with an
+  optional embedding route (gated by unit/period) to catch synonyms. Each pair records which
+  route proposed it. Similarity is never used to *decide* a contradiction.
 - A differing unit does not remove a pair (it may be a unit-conversion case); it is
   recorded in ``comparison.unit_match``.
 """
 from __future__ import annotations
 
+import math
 import re
 from collections import defaultdict
 
@@ -129,11 +129,36 @@ def relation_hint(c: AttributeComparison) -> str:
     return "partial"
 
 
+DEFAULT_MIN_EMBEDDING_SIMILARITY = 0.80
+
+
+def topic_text(c: ClaimView) -> str:
+    """Short text describing what a claim is about; embedded to catch synonyms."""
+    parts = [("subject", c.subject), ("metric", c.metric), ("unit", c.unit), ("period", c.period)]
+    return "; ".join(f"{k}: {v}" for k, v in parts if v)
+
+
+def cosine(a: list[float], b: list[float]) -> float:
+    dot = sum(x * y for x, y in zip(a, b))
+    na, nb = math.sqrt(sum(x * x for x in a)), math.sqrt(sum(y * y for y in b))
+    return dot / (na * nb) if na and nb else 0.0
+
+
 def generate_candidate_pairs(claims: list[ClaimView], min_topic_score: float = DEFAULT_MIN_TOPIC_SCORE,
-                             max_partners_per_claim: int = 5, max_pairs: int | None = None) -> list[CandidatePair]:
+                             max_partners_per_claim: int = 5, max_pairs: int | None = None,
+                             vectors: dict[str, list[float]] | None = None,
+                             min_embedding_similarity: float = DEFAULT_MIN_EMBEDDING_SIMILARITY) -> list[CandidatePair]:
     """Propose comparable pairs. Never pairs a claim with itself or with a claim from the
-    same chunk. Uses an inverted index on metric/subject tokens, so unrelated claims are
-    never even scored against each other."""
+    same chunk.
+
+    Two routes, both recorded in ``matched_by``:
+    1. lexical - normalised subject/metric token overlap (an inverted index, so unrelated
+       claims are never scored against each other);
+    2. embedding (only when ``vectors`` is given) - catches synonyms such as "production
+       capacity" vs "delivery volume". Embedding similarity alone is NOT trusted: it only
+       proposes a pair when both units are known and equal and the periods do not conflict,
+       because unrelated metrics also score fairly high (e.g. "lease end year" vs "monthly rent").
+    """
     index: dict[str, set[int]] = defaultdict(set)
     toks = []
     for i, c in enumerate(claims):
@@ -141,6 +166,11 @@ def generate_candidate_pairs(claims: list[ClaimView], min_topic_score: float = D
         toks.append(t)
         for token in t:
             index[token].add(i)
+
+    def make_pair(a: ClaimView, b: ClaimView, score: float, comparison: AttributeComparison, how: str) -> CandidatePair:
+        first, second = (a, b) if a.id <= b.id else (b, a)
+        return CandidatePair(claim_a_id=first.id, claim_b_id=second.id, topic_score=round(score, 4),
+                             relation_hint=relation_hint(comparison), comparison=comparison, matched_by=how)
 
     scored: dict[tuple[str, str], CandidatePair] = {}
     for i, a in enumerate(claims):
@@ -156,11 +186,20 @@ def generate_candidate_pairs(claims: list[ClaimView], min_topic_score: float = D
             score = topic_score(a, b)
             if score < min_topic_score:
                 continue
-            key = tuple(sorted((a.id, b.id)))
-            comparison = compare_attributes(a, b)
-            first, second = (a, b) if a.id == key[0] else (b, a)
-            scored[key] = CandidatePair(claim_a_id=first.id, claim_b_id=second.id, topic_score=round(score, 4),
-                                        relation_hint=relation_hint(comparison), comparison=comparison)
+            scored[tuple(sorted((a.id, b.id)))] = make_pair(a, b, score, compare_attributes(a, b), "lexical")
+
+    if vectors:
+        for i, a in enumerate(claims):
+            for b in claims[i + 1:]:
+                key = tuple(sorted((a.id, b.id)))
+                if key in scored or a.chunk_id == b.chunk_id or a.id not in vectors or b.id not in vectors:
+                    continue
+                comparison = compare_attributes(a, b)
+                if comparison.unit_match is not True or comparison.period_match is False:
+                    continue
+                similarity = cosine(vectors[a.id], vectors[b.id])
+                if similarity >= min_embedding_similarity:
+                    scored[key] = make_pair(a, b, similarity, comparison, "embedding")
 
     # Greedy selection, best pairs first: a pair is kept only while BOTH claims still have
     # room, so no claim ever exceeds max_partners_per_claim (hubs cannot crowd others out).

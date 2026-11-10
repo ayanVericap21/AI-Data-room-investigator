@@ -9,12 +9,13 @@ from app.core.config import Settings, get_settings
 from app.core.database import get_session, get_sessionmaker
 from app.llm.base import LLMClient
 from app.llm.embeddings import EmbeddingProvider
+from app.llm.errors import LLMConfigError
 from app.llm.factory import get_embedding_provider, get_llm_client
 from app.workers.jobs import JobManager, get_job_manager
 
 __all__ = [
     "Settings", "get_settings", "get_session", "get_session_factory", "get_llm", "get_embedder",
-    "get_job_manager", "JobManager", "Session",
+    "get_optional_embedder", "get_job_manager", "JobManager", "Session",
 ]
 
 
@@ -28,3 +29,11 @@ def get_llm(settings: Settings = Depends(get_settings)) -> LLMClient:
 
 def get_embedder(settings: Settings = Depends(get_settings)) -> EmbeddingProvider:
     return get_embedding_provider(settings)
+
+
+def get_optional_embedder(settings: Settings = Depends(get_settings)) -> EmbeddingProvider | None:
+    """Embedder if configured, else None (callers degrade to deterministic-only behaviour)."""
+    try:
+        return get_embedding_provider(settings)
+    except LLMConfigError:
+        return None

@@ -15,11 +15,13 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.llm.base import LLMClient
+from app.llm.embeddings import EmbeddingProvider
 from app.llm.errors import LLMInvalidOutputError, LLMTransientError
 from app.llm.prompts import claim_extraction
-from app.models import Claim, Document, DocumentChunk
+from app.models import Claim, Document, DocumentChunk, Evidence, FindingClaim
 from app.models.base import ProcessingStatus
-from app.schemas.claim import ClaimExtractionResult, ClaimOut, ClaimView, SourceRef
+from app.schemas.claim import CandidatePair, ClaimExtractionResult, ClaimOut, ClaimView, SourceRef
+from app.services.candidate_matching import generate_candidate_pairs, topic_text
 from app.services.numbers import value_supported_by_text
 
 logger = logging.getLogger(__name__)
@@ -38,6 +40,7 @@ class ExtractionSummary:
     stopped: bool = False
     stop_reason: str | None = None
     rejections: list[str] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)
 
 
 def location_label(chunk: DocumentChunk) -> str:
@@ -53,7 +56,7 @@ def location_label(chunk: DocumentChunk) -> str:
 
 
 class ClaimService:
-    def __init__(self, session: Session, llm: LLMClient, max_chars_per_call: int = 8000,
+    def __init__(self, session: Session, llm: LLMClient | None = None, max_chars_per_call: int = 8000,
                  max_llm_calls: int | None = None, on_progress: ProgressFn | None = None,
                  should_stop: Callable[[], bool] | None = None):
         self.session = session
@@ -78,10 +81,25 @@ class ClaimService:
     def _has_claims(self, document_id: str) -> bool:
         return (self.session.scalar(select(func.count()).select_from(Claim).where(Claim.document_id == document_id)) or 0) > 0
 
+    def _claims_referenced(self, document_id: str) -> bool:
+        claim_ids = select(Claim.id).where(Claim.document_id == document_id)
+        in_findings = self.session.scalar(
+            select(func.count()).select_from(FindingClaim).where(FindingClaim.claim_id.in_(claim_ids)))
+        in_evidence = self.session.scalar(
+            select(func.count()).select_from(Evidence).where(Evidence.claim_id.in_(claim_ids)))
+        return bool(in_findings or in_evidence)
+
     def extract_document(self, doc: Document, summary: ExtractionSummary, force: bool = False) -> None:
+        if self.llm is None:
+            raise RuntimeError("ClaimService needs an LLM client for extraction")
         if self._has_claims(doc.id):
             if not force:
                 summary.documents_skipped += 1
+                return
+            if self._claims_referenced(doc.id):
+                # Findings/evidence cite these claims; deleting them would destroy the audit trail.
+                summary.documents_skipped += 1
+                summary.notes.append(f"{doc.filename}: claims are referenced by findings, not re-extracted")
                 return
             self.session.execute(delete(Claim).where(Claim.document_id == doc.id))
             self.session.commit()
@@ -198,3 +216,11 @@ class ClaimService:
         return [ClaimView(id=c.id, document_id=c.document_id, chunk_id=c.chunk_id, subject=c.subject,
                           metric=c.metric, value=c.value, unit=c.unit, period=c.period,
                           conditions=c.conditions, assumptions=c.assumptions or []) for c in self.session.scalars(stmt)]
+
+    def candidate_pairs(self, embedder: EmbeddingProvider | None = None, **options) -> list[CandidatePair]:
+        """Deterministic candidate generation; embeddings (if given) add a synonym route."""
+        views = self.claim_views()
+        vectors = None
+        if embedder is not None and views:
+            vectors = dict(zip((v.id for v in views), embedder.embed([topic_text(v) for v in views], task="document")))
+        return generate_candidate_pairs(views, vectors=vectors, **options)

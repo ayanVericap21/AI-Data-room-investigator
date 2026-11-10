@@ -117,6 +117,7 @@ class CandidatePair(BaseModel):
     topic_score: float
     relation_hint: RelationHint
     comparison: AttributeComparison
+    matched_by: Literal["lexical", "embedding"] = "lexical"
 
 
 class CandidateListOut(BaseModel):

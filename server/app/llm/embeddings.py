@@ -9,7 +9,8 @@ import time
 from abc import ABC, abstractmethod
 from typing import Callable, Literal
 
-from app.llm.errors import LLMTransientError
+from app.llm.errors import LLMError, LLMTransientError
+from app.llm.metrics import CallMetric, LatencySummary, summarize
 
 logger = logging.getLogger(__name__)
 Task = Literal["document", "query"]
@@ -29,6 +30,10 @@ class EmbeddingProvider(ABC):
         self.max_attempts = max_attempts
         self.base_delay = base_delay
         self._sleep = sleep
+        self.call_metrics: list[CallMetric] = []  # one entry per provider attempt
+
+    def latency_summary(self) -> LatencySummary:
+        return summarize(self.call_metrics)
 
     @abstractmethod
     def _embed_batch(self, texts: list[str], task: Task) -> list[list[float]]: ...
@@ -39,16 +44,27 @@ class EmbeddingProvider(ABC):
         for start in range(0, len(texts), self.MAX_BATCH):
             batch = texts[start:start + self.MAX_BATCH]
             for attempt in range(1, self.max_attempts + 1):
+                started = time.perf_counter()
                 try:
                     vectors.extend(self._embed_batch(batch, task))
+                    self._record(started, None)
                     break
                 except LLMTransientError as exc:
+                    self._record(started, exc)
                     if attempt == self.max_attempts:
                         raise
                     delay = exc.retry_after if exc.retry_after is not None else self.base_delay * (2 ** (attempt - 1))
                     logger.warning("Transient embedding error, retrying", extra={"attempt": attempt, "delay": delay})
                     self._sleep(min(delay, 60))
+                except LLMError as exc:
+                    self._record(started, exc)
+                    raise
         return vectors
+
+    def _record(self, started: float, error: Exception | None) -> None:
+        self.call_metrics.append(CallMetric(
+            kind="embedding", latency_ms=round((time.perf_counter() - started) * 1000), ok=error is None,
+            error=str(error)[:200] if error else None))
 
 
 class MockEmbeddingProvider(EmbeddingProvider):

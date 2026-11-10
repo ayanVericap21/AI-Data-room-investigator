@@ -1,3 +1,4 @@
+import time
 from dataclasses import asdict
 
 from fastapi import APIRouter, Depends
@@ -42,9 +43,12 @@ def process_documents(
     """Extract, chunk and embed every pending document in the background."""
 
     def run(progress):
+        started = time.perf_counter()
         with factory() as session:
             results = ProcessingService(session, DocumentService(session, settings), embedder, progress).process_pending()
-            return {"results": [asdict(r) for r in results]}
+            return {"results": [asdict(r) for r in results],
+                    "embedding_latency": embedder.latency_summary().model_dump(),
+                    "duration_ms": round((time.perf_counter() - started) * 1000)}
 
     return JobOut.model_validate(jobs.start(PROCESS_JOB, run), from_attributes=True)
 

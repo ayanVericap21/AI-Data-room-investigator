@@ -14,7 +14,8 @@ from typing import Callable, TypeVar
 
 from pydantic import BaseModel, ValidationError
 
-from app.llm.errors import LLMInvalidOutputError, LLMTransientError
+from app.llm.errors import LLMError, LLMInvalidOutputError, LLMTransientError
+from app.llm.metrics import CallMetric, LatencySummary, summarize
 
 logger = logging.getLogger(__name__)
 T = TypeVar("T", bound=BaseModel)
@@ -23,12 +24,14 @@ T = TypeVar("T", bound=BaseModel)
 class TokenUsage(BaseModel):
     prompt_tokens: int = 0
     completion_tokens: int = 0
+    thinking_tokens: int = 0  # hidden reasoning tokens (billed, and a main source of latency)
     total_tokens: int = 0
     calls: int = 0
 
     def add(self, other: "TokenUsage") -> None:
         self.prompt_tokens += other.prompt_tokens
         self.completion_tokens += other.completion_tokens
+        self.thinking_tokens += other.thinking_tokens
         self.total_tokens += other.total_tokens
         self.calls += other.calls
 
@@ -54,6 +57,7 @@ class LLMClient(ABC):
         self._sleep = sleep
         self._usage = TokenUsage()
         self.retry_count = 0  # total retries performed (for run metadata)
+        self.call_metrics: list[CallMetric] = []  # one entry per provider attempt
 
     # -- provider hooks ------------------------------------------------------
     @abstractmethod
@@ -63,6 +67,9 @@ class LLMClient(ABC):
     # -- public API ----------------------------------------------------------
     def get_token_usage(self) -> TokenUsage:
         return self._usage.model_copy()
+
+    def latency_summary(self) -> LatencySummary:
+        return summarize(self.call_metrics)
 
     def generate_text(self, prompt: str, system: str | None = None) -> str:
         return self._call(prompt, system, json_mode=False).text
@@ -93,9 +100,11 @@ class LLMClient(ABC):
     def _call(self, prompt: str, system: str | None, json_mode: bool) -> RawResponse:
         """Provider call with bounded exponential backoff for transient errors only."""
         for attempt in range(1, self.max_attempts + 1):
+            started = time.perf_counter()
             try:
                 response = self._raw_generate(prompt, system, json_mode)
             except LLMTransientError as exc:
+                self._record(started, None, exc)
                 if attempt == self.max_attempts:
                     raise
                 self.retry_count += 1
@@ -103,8 +112,20 @@ class LLMClient(ABC):
                 logger.warning("Transient LLM error, retrying", extra={"attempt": attempt, "delay": delay, "error": str(exc)})
                 self._sleep(min(delay, 60))
                 continue
+            except LLMError as exc:  # permanent: record the attempt, then let it propagate
+                self._record(started, None, exc)
+                raise
+            self._record(started, response.usage, None)
             usage = response.usage.model_copy()
             usage.calls = 1
             self._usage.add(usage)
             return response
         raise AssertionError("unreachable")
+
+    def _record(self, started: float, usage: TokenUsage | None, error: Exception | None) -> None:
+        self.call_metrics.append(CallMetric(
+            kind="llm", latency_ms=round((time.perf_counter() - started) * 1000), ok=error is None,
+            error=str(error)[:200] if error else None,
+            prompt_tokens=usage.prompt_tokens if usage else 0, completion_tokens=usage.completion_tokens if usage else 0,
+            thinking_tokens=usage.thinking_tokens if usage else 0, total_tokens=usage.total_tokens if usage else 0,
+        ))
