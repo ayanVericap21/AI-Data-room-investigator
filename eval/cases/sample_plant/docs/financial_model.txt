@@ -1,0 +1,13 @@
+GREENFIELD AMMONIA PLANT - FINANCIAL MODEL SUMMARY
+
+Key assumptions
+Annual production is assumed to be 30,000 tonnes from the first full year of operation. Revenue is calculated from this production volume at a price of USD 700 per tonne.
+
+Capital expenditure
+Total capex is USD 48 million, funded 60% by debt and 40% by equity.
+
+Revenue profile
+Year-1 revenue is USD 10.5 million. This reflects a partial operating year following Q3 commissioning. Full-year revenue from year 2 onward is USD 21.0 million.
+
+Debt service
+The debt service coverage ratio is tested annually from year 2 and must remain above 1.25.

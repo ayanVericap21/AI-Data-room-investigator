@@ -1,0 +1,93 @@
+{
+  "case": "sample_plant",
+  "note": "Development case written by the engineers. Not the withheld evaluation set; do not tune prompts to it.",
+  "items": [
+    {
+      "id": "G1",
+      "classification": "contradiction",
+      "docs": [
+        "supplier_quotation.txt",
+        "financial_model.txt"
+      ],
+      "keywords": [
+        "25,000",
+        "tonnes"
+      ],
+      "description": "Supplier guarantees 25,000 t/yr but the financial model assumes 30,000 t/yr.",
+      "alt_docs": [
+        [
+          "supplier_quotation.txt",
+          "feasibility_study.txt"
+        ]
+      ]
+    },
+    {
+      "id": "G2",
+      "classification": "contradiction",
+      "docs": [
+        "feasibility_study.txt",
+        "engineering_report.txt"
+      ],
+      "keywords": [
+        "commissioning",
+        "completion",
+        "2026",
+        "2027"
+      ],
+      "description": "Feasibility plans Q3 2026 commissioning; engineering says not before Q1/Q2 2027."
+    },
+    {
+      "id": "G3",
+      "classification": "contextual_difference",
+      "docs": [
+        "feasibility_study.txt",
+        "engineering_report.txt"
+      ],
+      "keywords": [
+        "availability",
+        "92%",
+        "27,500"
+      ],
+      "description": "30,000 t is achievable only at >=92% availability; 27,500 t at typical availability."
+    },
+    {
+      "id": "G4",
+      "classification": "contextual_difference",
+      "docs": [
+        "financial_model.txt",
+        "investor_memo.txt"
+      ],
+      "keywords": [
+        "revenue",
+        "10.5",
+        "21.0"
+      ],
+      "description": "Year-1 revenue USD 10.5m (partial year) vs USD 21.0m run-rate: different periods."
+    },
+    {
+      "id": "G5",
+      "classification": "consistent",
+      "docs": [
+        "feasibility_study.txt",
+        "financial_model.txt"
+      ],
+      "keywords": [
+        "capex",
+        "capital",
+        "48 million"
+      ],
+      "description": "Both state USD 48 million capex."
+    },
+    {
+      "id": "G6",
+      "classification": "insufficient_evidence",
+      "docs": [
+        "feasibility_study.txt"
+      ],
+      "keywords": [
+        "permit"
+      ],
+      "description": "Claims all permits secured, but no permit documentation exists in the data room."
+    }
+  ]
+}

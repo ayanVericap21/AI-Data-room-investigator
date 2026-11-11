@@ -1,0 +1,24 @@
+# Postgres for the Data Room Investigator.
+#   cp .env.example .env     # then set POSTGRES_PASSWORD
+#   docker compose up -d db
+# The API and MCP server connect with DRI_DATABASE_URL (see .env.example).
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dri}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}  # no default on purpose: never commit a password
+      POSTGRES_DB: ${POSTGRES_DB:-dri}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"   # local only; set POSTGRES_PORT if 5432 is taken/reserved on your host
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-dri} -d $${POSTGRES_DB:-dri}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
