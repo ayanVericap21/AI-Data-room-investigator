@@ -1,0 +1,880 @@
+TEST RUN  20261111-121447  ledger-same-brochure-175-vs-185-g31lite
+==============================================================================
+
+HOW THIS RUN WAS ACHIEVED
+1. Reading: every chunk of every processed document except Biochar Summary - HyveGeo Project Assessment.pdf, CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf, CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf, Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf, Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf, Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx, Hyve geo assest bulk_.xlsx, Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm, InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf, KSA Egypt Growth v2.pdf, Research Report - HyveGeo.pdf (database 'dataroom_run_20261111_ledger_same_doc') was sent to the LLM in batches of up to 8,000 characters; each batch returns claims, kept only if their value appears in the cited chunk (existing claim extractor, no chunk or call limits).
+2. Ledger: accepted claims are stored in the claims table; claims are matched across and within documents by wording and by local embeddings (sentence-transformers/all-MiniLM-L6-v2), without a fixed number of documents or claims assumed.
+3. Judging: pairs that agree exactly count as corroboration; every other pair (conflicting, partial, contextual) goes to the LLM in batches of up to 12,000 characters with both source excerpts.
+4. Findings: a discrepancy is saved only if its two quotes are exact substrings of their chunks (checked in code); per-document verdicts were skipped by request.
+5. Model: gemini-3.1-flash-lite, temperature 0, up to 5 attempts per call honouring Google's retry delay; no step, tool-call or finding limits.
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+Run started   : 2026-11-11 12:14:47 (local)   finished: 12:15:38   wall time: 51.6s
+Config        : ledger-same-brochure-175-vs-185-g31lite
+Database      : dataroom_run_20261111_ledger_same_doc (documents were already processed; reused)
+Code version  : git a8c19bb + uncommitted changes   python 3.14.5
+Excluded      : Biochar Summary - HyveGeo Project Assessment.pdf, CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf, CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf, Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf, Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf, Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx, Hyve geo assest bulk_.xlsx, Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm, InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf, KSA Egypt Growth v2.pdf, Research Report - HyveGeo.pdf (by request: not read, not compared)
+Documents     : 2; fully read 2, incomplete 0
+Chunks        : 36 total; sent to the LLM 36 (headings are skipped by the extractor: 0)
+Claims        : 64 recorded, 6 rejected (value not found in cited chunk or unknown chunk id)
+Pairs         : 142 candidates; 55 agreed exactly (not sent to the LLM); 87 judged; verdicts {'contradiction': 1, 'consistent': 44, 'insufficient_evidence': 1, 'contextual_difference': 41}
+Findings      : 26 saved with verified quotes; 16 rejected (quotes missing or not exact)
+LLM calls     : 16 provider attempts (1 failed, 1 retries incl. invalid-output retries), 49.0s total, avg 3032ms
+Tokens        : prompt 71,264  completion 13,224  thinking 0  cached 0  total 84,488   (cost not computed: no price per token configured)
+Context/call  : prompt tokens min 2,680  avg 4,751  max 6,760
+
+==============================================================================
+NEW OR CHANGED FILES AND CLAIM RESET
+==============================================================================
+claims deleted at the start of this run: 66 (all claims in this run are newly extracted)
+scan: discovered 14, new 0, updated 1, unchanged 12, missing 0
+      duplicates skipped (same content): ['Main Picth Deck HyveGeo .pdf']
+
+  new or changed file                                                     status     chunks  extract s  chunk ms  save ms  embed s  note
+  ----------------------------------------------------------------------  ---------  ------  ---------  --------  -------  -------  ----
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - O  processed  18      0.0        0         0        0.0
+
+==============================================================================
+CONTRADICTIONS ONLY (classification = contradiction)
+==============================================================================
+1 contradiction(s). Full evidence for each is in the findings report below (search for the finding id).
+
+- [fnd_b5097ef646614dab] severity informational, confidence 0.5: contradiction: Power supply
+    contradiction: Power supply
+
+==============================================================================
+FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)
+==============================================================================
+Fields follow the Finding schema: title, description, classification, severity, confidence, evidence_status, verification_status, materiality_reasoning, business_impact, unresolved_questions; evidence rows follow the Evidence schema.
+Findings: 26   by classification: {'contradiction': 1, 'contextual_difference': 25}   by severity: {'informational': 26}
+
+--- FINDING 1 of 26  [fnd_b5097ef646614dab] ------------------------------
+title                 : contradiction: Power supply
+classification        : contradiction
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : contradiction: Power supply
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "175W/m² power supply"
+      relevance: 175W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 175W/m² power supply | subject=Standard Warehouses; metric=Power supply; value=175; unit=W/m²
+  [2] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_a8a90eef8fce4316   (chunk_index 10)
+      location : page 11
+      quote    : "185W/m² power supply"
+      relevance: 185W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 185W/m² power supply | subject=Standard Warehouses; metric=Power supply; value=185; unit=W/m²
+
+--- FINDING 2 of 26  [fnd_f61f90c2d53f46d2] ------------------------------
+title                 : contextual difference: Floor loading capacity
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The floor loading capacities differ because they refer to different types of units: Light Industrial Units (30kN/m²) and Flex Units (50kN/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "30kN/m² floor loading capacity/FM4 floor"
+      relevance: 30kN/m² floor loading capacity/FM4 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 30kN/m² floor loading capacity/FM4 floor | subject=Light Industrial Units; metric=Floor loading capacity; value=30; unit=kN/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_50f3211b82fe4c66   (chunk_index 6)
+      location : page 7
+      quote    : "50kN/m² floor loading capacity/FM2 floor"
+      relevance: 50kN/m² floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 50kN/m² floor loading capacity/FM2 floor | subject=Flex Units; metric=Floor loading capacity; value=50; unit=kN/m²
+
+--- FINDING 3 of 26  [fnd_839b19abeee54028] ------------------------------
+title                 : contextual difference: Floor loading capacity
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The floor loading capacities differ because they refer to different types of units: Light Industrial Units (30kN/m²) and Flex Units (50kN/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "30kN/m² floor loading capacity/FM4 floor"
+      relevance: 30kN/m² floor loading capacity/FM4 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 30kN/m² floor loading capacity/FM4 floor | subject=Light Industrial Units; metric=Floor loading capacity; value=30; unit=kN/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_e7622c75649b41b9   (chunk_index 6)
+      location : page 7
+      quote    : "50kN/m² floor loading capacity/FM2 floor"
+      relevance: 50kN/m² floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 50kN/m² floor loading capacity/FM2 floor | subject=Flex Units; metric=Floor loading capacity; value=50; unit=kN/m²
+
+--- FINDING 4 of 26  [fnd_5688e1e439f54a4f] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The clear height values differ because they refer to different unit types: Light Industrial Units (10.5m) and Flex Units (10m).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_4541e392a2814840   (chunk_index 14)
+      location : page 15
+      quote    : "10.5m clear height"
+      relevance: 10.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 10.5m clear height | subject=Light Industrial Units; metric=Clear height; value=10.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_e7622c75649b41b9   (chunk_index 6)
+      location : page 7
+      quote    : "10m clear height"
+      relevance: 10m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 10m clear height | subject=Flex Units; metric=Clear height; value=10; unit=m
+
+--- FINDING 5 of 26  [fnd_b761d777633d4072] ------------------------------
+title                 : contextual difference: Floor loading capacity
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The floor loading capacity differs because the units are different types: Flex Units (50kN/m²) versus Light Industrial Units (30kN/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_50f3211b82fe4c66   (chunk_index 6)
+      location : page 7
+      quote    : "50kN/m² floor loading capacity/FM2 floor"
+      relevance: 50kN/m² floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 50kN/m² floor loading capacity/FM2 floor | subject=Flex Units; metric=Floor loading capacity; value=50; unit=kN/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_4541e392a2814840   (chunk_index 14)
+      location : page 15
+      quote    : "30kN/m² floor loading capacity/FM4 floor"
+      relevance: 30kN/m² floor loading capacity/FM4 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 30kN/m² floor loading capacity/FM4 floor | subject=Light Industrial Units; metric=Floor loading capacity; value=30; unit=kN/m²
+
+--- FINDING 6 of 26  [fnd_60cadc9795b246f1] ------------------------------
+title                 : contextual difference: Floor loading capacity
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The floor loading capacity differs because the units being described are different: Flex Units (50kN/m²) versus Light Industrial Units (30kN/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_e7622c75649b41b9   (chunk_index 6)
+      location : page 7
+      quote    : "50kN/m² floor loading capacity/FM2 floor"
+      relevance: 50kN/m² floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 50kN/m² floor loading capacity/FM2 floor | subject=Flex Units; metric=Floor loading capacity; value=50; unit=kN/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_4541e392a2814840   (chunk_index 14)
+      location : page 15
+      quote    : "30kN/m² floor loading capacity/FM4 floor"
+      relevance: 30kN/m² floor loading capacity/FM4 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 30kN/m² floor loading capacity/FM4 floor | subject=Light Industrial Units; metric=Floor loading capacity; value=30; unit=kN/m²
+
+--- FINDING 7 of 26  [fnd_67bd83d029b0458a] ------------------------------
+title                 : contextual difference: Floor loading capacity
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The floor loading capacity differs because the units being described are different: Standard Warehouses (50kN/m²) versus Light Industrial Units (30kN/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_a8a90eef8fce4316   (chunk_index 10)
+      location : page 11
+      quote    : "50kN/m² floor loading capacity/FM2 floor"
+      relevance: 50kN/m² floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 50kN/m² floor loading capacity/FM2 floor | subject=Standard Warehouses; metric=Floor loading capacity; value=50; unit=kN/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "30kN/m² floor loading capacity/FM4 floor"
+      relevance: 30kN/m² floor loading capacity/FM4 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 30kN/m² floor loading capacity/FM4 floor | subject=Light Industrial Units; metric=Floor loading capacity; value=30; unit=kN/m²
+
+--- FINDING 8 of 26  [fnd_8d92cba17b2f4036] ------------------------------
+title                 : contextual difference: Floor loading capacity
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The floor loading capacity differs because the units being described are different: Standard Warehouses (50kN/m²) versus Light Industrial Units (30kN/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_a8a90eef8fce4316   (chunk_index 10)
+      location : page 11
+      quote    : "50kN/m² floor loading capacity/FM2 floor"
+      relevance: 50kN/m² floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 50kN/m² floor loading capacity/FM2 floor | subject=Standard Warehouses; metric=Floor loading capacity; value=50; unit=kN/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_4541e392a2814840   (chunk_index 14)
+      location : page 15
+      quote    : "30kN/m² floor loading capacity/FM4 floor"
+      relevance: 30kN/m² floor loading capacity/FM4 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 30kN/m² floor loading capacity/FM4 floor | subject=Light Industrial Units; metric=Floor loading capacity; value=30; unit=kN/m²
+
+--- FINDING 9 of 26  [fnd_751e3689809f4601] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The clear height values differ because they refer to different types of units: Flex Units (10m) and Standard Warehouses (8.5m).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_50f3211b82fe4c66   (chunk_index 6)
+      location : page 7
+      quote    : "10m clear height"
+      relevance: 10m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 10m clear height | subject=Flex Units; metric=Clear height; value=10; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "8.5m clear height"
+      relevance: 8.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 8.5m clear height | subject=Standard Warehouses; metric=Clear height; value=8.5; unit=m
+
+--- FINDING 10 of 26  [fnd_7f3c915617094545] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The clear height values differ because they refer to different types of units: Light Industrial Units (10.5m) and Standard Warehouses (8.5m).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "10.5m clear height"
+      relevance: 10.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 10.5m clear height | subject=Light Industrial Units; metric=Clear height; value=10.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "8.5m clear height"
+      relevance: 8.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 8.5m clear height | subject=Standard Warehouses; metric=Clear height; value=8.5; unit=m
+
+--- FINDING 11 of 26  [fnd_8a2fae8332c14500] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The clear height values differ because they refer to different types of units: Light Industrial Units (10.5m) and Standard Warehouses (8.5m).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "10.5m clear height"
+      relevance: 10.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 10.5m clear height | subject=Light Industrial Units; metric=Clear height; value=10.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_a8a90eef8fce4316   (chunk_index 10)
+      location : page 11
+      quote    : "8.5m clear height"
+      relevance: 8.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 8.5m clear height | subject=Standard Warehouses; metric=Clear height; value=8.5; unit=m
+
+--- FINDING 12 of 26  [fnd_f6278ef02d7a42cc] ------------------------------
+title                 : contextual difference: Floor loading capacity
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The floor loading capacity values differ because they refer to different types of units: Light Industrial Units (30kN/m²) and Standard Warehouses (50kN/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "30kN/m² floor loading capacity/FM4 floor"
+      relevance: 30kN/m² floor loading capacity/FM4 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 30kN/m² floor loading capacity/FM4 floor | subject=Light Industrial Units; metric=Floor loading capacity; value=30; unit=kN/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "50kN/m² floor loading capacity/FM2 floor"
+      relevance: 50kN/m² floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 50kN/m² floor loading capacity/FM2 floor | subject=Standard Warehouses; metric=Floor loading capacity; value=50; unit=kN/m²
+
+--- FINDING 13 of 26  [fnd_6f90e900079e4119] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The clear height values differ because they refer to different types of units: Light Industrial Units (10.5m) and Standard Warehouses (8.5m).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_4541e392a2814840   (chunk_index 14)
+      location : page 15
+      quote    : "10.5m clear height"
+      relevance: 10.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 10.5m clear height | subject=Light Industrial Units; metric=Clear height; value=10.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "8.5m clear height"
+      relevance: 8.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 8.5m clear height | subject=Standard Warehouses; metric=Clear height; value=8.5; unit=m
+
+--- FINDING 14 of 26  [fnd_cf6377553a7a4ce9] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The clear height values differ because they refer to different types of units: Light Industrial Units (10.5m) and Standard Warehouses (8.5m).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_4541e392a2814840   (chunk_index 14)
+      location : page 15
+      quote    : "10.5m clear height"
+      relevance: 10.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 10.5m clear height | subject=Light Industrial Units; metric=Clear height; value=10.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_a8a90eef8fce4316   (chunk_index 10)
+      location : page 11
+      quote    : "8.5m clear height"
+      relevance: 8.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 8.5m clear height | subject=Standard Warehouses; metric=Clear height; value=8.5; unit=m
+
+--- FINDING 15 of 26  [fnd_f2b2e50824794770] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The power supply values differ because they refer to different types of units: Flex Units (300W/m²) and Standard Warehouses (175W/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_50f3211b82fe4c66   (chunk_index 6)
+      location : page 7
+      quote    : "300W/m² power supply"
+      relevance: 300W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 300W/m² power supply | subject=Flex Units; metric=Power supply; value=300; unit=W/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "175W/m² power supply"
+      relevance: 175W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 175W/m² power supply | subject=Standard Warehouses; metric=Power supply; value=175; unit=W/m²
+
+--- FINDING 16 of 26  [fnd_26628010a71f4434] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The power supply values differ because they refer to different types of units: Flex Units (300W/m²) and Standard Warehouses (185W/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_50f3211b82fe4c66   (chunk_index 6)
+      location : page 7
+      quote    : "300W/m² power supply"
+      relevance: 300W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 300W/m² power supply | subject=Flex Units; metric=Power supply; value=300; unit=W/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_a8a90eef8fce4316   (chunk_index 10)
+      location : page 11
+      quote    : "185W/m² power supply"
+      relevance: 185W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 185W/m² power supply | subject=Standard Warehouses; metric=Power supply; value=185; unit=W/m²
+
+--- FINDING 17 of 26  [fnd_537968f23e1c4f84] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The power supply values differ because they refer to different types of units: Flex Units (300W/m²) and Standard Warehouses (175W/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_e7622c75649b41b9   (chunk_index 6)
+      location : page 7
+      quote    : "300W/m² power supply"
+      relevance: 300W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 300W/m² power supply | subject=Flex Units; metric=Power supply; value=300; unit=W/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "175W/m² power supply"
+      relevance: 175W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 175W/m² power supply | subject=Standard Warehouses; metric=Power supply; value=175; unit=W/m²
+
+--- FINDING 18 of 26  [fnd_dd9eaf21220448ed] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The power supply values differ because they refer to different types of units: Flex Units (300W/m²) and Standard Warehouses (185W/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_e7622c75649b41b9   (chunk_index 6)
+      location : page 7
+      quote    : "300W/m² power supply"
+      relevance: 300W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 300W/m² power supply | subject=Flex Units; metric=Power supply; value=300; unit=W/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_a8a90eef8fce4316   (chunk_index 10)
+      location : page 11
+      quote    : "185W/m² power supply"
+      relevance: 185W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 185W/m² power supply | subject=Standard Warehouses; metric=Power supply; value=185; unit=W/m²
+
+--- FINDING 19 of 26  [fnd_1be1a62ec5de4794] ------------------------------
+title                 : contextual difference: Distance from KEZAD Logistics Park Phase 4
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The claims refer to different subjects: Jebel Ali Port and Abu Dhabi Airport.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_7cc652c8ec794175   (chunk_index 3)
+      location : page 4
+      quote    : "24 MIN/45 KM JEBEL ALI PORT"
+      relevance: 24 MIN/45 KM JEBEL ALI PORT
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 24 MIN/45 KM JEBEL ALI PORT | subject=Jebel Ali Port; metric=Distance from KEZAD Logistics Park Phase 4; value=45; unit=KM
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_cce064cc49cc482f   (chunk_index 3)
+      location : page 4
+      quote    : "20 MIN/35 KM ABU DHABI AIRPORT"
+      relevance: 20 MIN/35 KM ABU DHABI AIRPORT
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 20 MIN/35 KM ABU DHABI AIRPORT | subject=Abu Dhabi Airport; metric=Distance from KEZAD Logistics Park Phase 4; value=35; unit=KM
+
+--- FINDING 20 of 26  [fnd_6fdeb447285640f2] ------------------------------
+title                 : contextual difference: Travel time from KEZAD Logistics Park Phase 4
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The claims refer to different subjects: Jebel Ali Port and Al Ain Airport.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_7cc652c8ec794175   (chunk_index 3)
+      location : page 4
+      quote    : "24 MIN/45 KM JEBEL ALI PORT"
+      relevance: 24 MIN/45 KM JEBEL ALI PORT
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 24 MIN/45 KM JEBEL ALI PORT | subject=Jebel Ali Port; metric=Travel time from KEZAD Logistics Park Phase 4; value=24; unit=MIN
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_cce064cc49cc482f   (chunk_index 3)
+      location : page 4
+      quote    : "90 MIN/140KM AL AIN AIRPORT"
+      relevance: 90 MIN/140KM AL AIN AIRPORT
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 90 MIN/140KM AL AIN AIRPORT | subject=Al Ain Airport; metric=Travel time from KEZAD Logistics Park Phase 4; value=90; unit=MIN
+
+--- FINDING 21 of 26  [fnd_223cb7f10b0541b1] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The power supply values differ because they refer to different types of units: Standard Warehouses (175W/m²) and Light Industrial Units (300W/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "175W/m² power supply"
+      relevance: 175W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 175W/m² power supply | subject=Standard Warehouses; metric=Power supply; value=175; unit=W/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_4541e392a2814840   (chunk_index 14)
+      location : page 15
+      quote    : "300W/m² power supply"
+      relevance: 300W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 300W/m² power supply | subject=Light Industrial Units; metric=Power supply; value=300; unit=W/m²
+
+--- FINDING 22 of 26  [fnd_f2ea443b7cf54ac6] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The power supply values differ because they refer to different types of units: Standard Warehouses (175W/m²) and Light Industrial Units (300W/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "175W/m² power supply"
+      relevance: 175W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 175W/m² power supply | subject=Standard Warehouses; metric=Power supply; value=175; unit=W/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "300W/m² power supply"
+      relevance: 300W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 300W/m² power supply | subject=Light Industrial Units; metric=Power supply; value=300; unit=W/m²
+
+--- FINDING 23 of 26  [fnd_11056252d0544349] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The power supply values differ because they refer to different types of units: Light Industrial Units (300W/m²) and Standard Warehouses (185W/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_4541e392a2814840   (chunk_index 14)
+      location : page 15
+      quote    : "300W/m² power supply"
+      relevance: 300W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 300W/m² power supply | subject=Light Industrial Units; metric=Power supply; value=300; unit=W/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_a8a90eef8fce4316   (chunk_index 10)
+      location : page 11
+      quote    : "185W/m² power supply"
+      relevance: 185W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 185W/m² power supply | subject=Standard Warehouses; metric=Power supply; value=185; unit=W/m²
+
+--- FINDING 24 of 26  [fnd_7dece119476d41f6] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The clear height values differ because they refer to different types of units: Standard Warehouses (8.5m) and Flex Units (10m).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_a8a90eef8fce4316   (chunk_index 10)
+      location : page 11
+      quote    : "8.5m clear height"
+      relevance: 8.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 8.5m clear height | subject=Standard Warehouses; metric=Clear height; value=8.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_e7622c75649b41b9   (chunk_index 6)
+      location : page 7
+      quote    : "10m clear height"
+      relevance: 10m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 10m clear height | subject=Flex Units; metric=Clear height; value=10; unit=m
+
+--- FINDING 25 of 26  [fnd_0209870f590d42e5] ------------------------------
+title                 : contextual difference: Floor loading capacity
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The floor loading capacity differs because the excerpts refer to different types of units: Standard Warehouses (50kN/m²) and Light Industrial Units (30kN/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "50kN/m² floor loading capacity/FM2 floor"
+      relevance: 50kN/m² floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 50kN/m² floor loading capacity/FM2 floor | subject=Standard Warehouses; metric=Floor loading capacity; value=50; unit=kN/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_4541e392a2814840   (chunk_index 14)
+      location : page 15
+      quote    : "30kN/m² floor loading capacity/FM4 floor"
+      relevance: 30kN/m² floor loading capacity/FM4 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 30kN/m² floor loading capacity/FM4 floor | subject=Light Industrial Units; metric=Floor loading capacity; value=30; unit=kN/m²
+
+--- FINDING 26 of 26  [fnd_18c7312288e34f1a] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The power supply differs because the excerpts refer to different types of units: Standard Warehouses (185W/m²) and Light Industrial Units (300W/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_a8a90eef8fce4316   (chunk_index 10)
+      location : page 11
+      quote    : "185W/m² power supply"
+      relevance: 185W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 185W/m² power supply | subject=Standard Warehouses; metric=Power supply; value=185; unit=W/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "300W/m² power supply"
+      relevance: 300W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 300W/m² power supply | subject=Light Industrial Units; metric=Power supply; value=300; unit=W/m²
+
+
+==============================================================================
+COVERAGE AND PER-DOCUMENT VERDICTS
+==============================================================================
+Coverage: 'read' = chunks the LLM was shown. A document counts as fully read only if every batch succeeded (all-or-nothing per document).
+
+  document                                                    chunks  read  fully read  claims  LLM calls  tokens  extract s  verdict  reason
+  ----------------------------------------------------------  ------  ----  ----------  ------  ---------  ------  ---------  -------  ---------------------------------------------
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  18      18    yes         32      1          8,230   8.5        skipped  verdicts skipped by request (--skip-verdicts)
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  18      18    yes         32      1          8,394   8.0        skipped  verdicts skipped by request (--skip-verdicts)
+
+==============================================================================
+CLAIM LEDGER
+==============================================================================
+claims recorded 64, rejected 6
+
+Per document (paired = has a comparable claim elsewhere; corroborated = same value stated elsewhere; unpaired = nothing comparable found):
+  document                                                    claims  paired  corroborated  unpaired  pairs judged  findings
+  ----------------------------------------------------------  ------  ------  ------------  --------  ------------  --------
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  32      32      31            0         77            20
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  32      32      31            0         77            19
+
+Rejected claims by reason (first 15):
+  - value '607 to 5,939' not found in cited chunk
+  - value '395 to 7,916' not found in cited chunk
+  - value '647 to 5,479' not found in cited chunk
+  - value '607-5,939' not found in cited chunk
+  - value '395-7,916' not found in cited chunk
+  - value '647-5,479' not found in cited chunk
+
+==============================================================================
+PAIR MATCHING AND JUDGING
+==============================================================================
+candidate pairs: 142
+  by relation hint : {'exact': 55, 'conflicting': 75, 'partial': 12}
+  by match route   : {'lexical': 138, 'embedding': 4}
+  across documents : 110   inside one document: 32
+exact agreements (corroboration, no LLM): 55
+judged by the LLM: 87 in 13 calls (0 batches failed)
+LLM verdicts: {'contradiction': 1, 'consistent': 44, 'insufficient_evidence': 1, 'contextual_difference': 41}
+findings saved 26; rejected 16
+
+Rejected findings (first 15):
+  - contextual_difference 'contextual difference: Total Area': invalid_arguments: evidence.0.quoted_text: String should have at least 8 characters; evidence.1.quoted_text: String should have at least 8 characters
+  - contextual_difference 'contextual difference: Total Area': invalid_arguments: evidence.0.quoted_text: String should have at least 8 characters; evidence.1.quoted_text: String should have at least 8 characters
+  - contextual_difference 'contextual difference: Total Area': invalid_arguments: evidence.0.quoted_text: String should have at least 8 characters; evidence.1.quoted_text: String should have at least 8 characters
+  - contextual_difference 'contextual difference: Total Area': invalid_arguments: evidence.0.quoted_text: String should have at least 8 characters; evidence.1.quoted_text: String should have at least 8 characters
+  - contextual_difference 'contextual difference: Total Area': invalid_arguments: evidence.0.quoted_text: String should have at least 8 characters; evidence.1.quoted_text: String should have at least 8 characters
+  - contextual_difference 'contextual difference: Total Area': invalid_arguments: evidence.0.quoted_text: String should have at least 8 characters; evidence.1.quoted_text: String should have at least 8 characters
+  - contextual_difference 'contextual difference: Total Area': invalid_arguments: evidence.0.quoted_text: String should have at least 8 characters; evidence.1.quoted_text: String should have at least 8 characters
+  - contextual_difference 'contextual difference: Total Area': invalid_arguments: evidence.0.quoted_text: String should have at least 8 characters; evidence.1.quoted_text: String should have at least 8 characters
+  - contextual_difference 'contextual difference: Distance from KEZAD Logistics Park Ph': invalid_arguments: evidence.0.quoted_text: String should have at least 8 characters; evidence.1.quoted_text: String should have at least 8 characters
+  - contextual_difference 'contextual difference: Total Area': invalid_arguments: evidence.0.quoted_text: String should have at least 8 characters; evidence.1.quoted_text: String should have at least 8 characters
+  - contextual_difference 'contextual difference: Total Area': invalid_arguments: evidence.0.quoted_text: String should have at least 8 characters; evidence.1.quoted_text: String should have at least 8 characters
+  - contextual_difference 'contextual difference: Total Area': invalid_arguments: evidence.0.quoted_text: String should have at least 8 characters; evidence.1.quoted_text: String should have at least 8 characters
+  - contextual_difference 'contextual difference: Total Area': invalid_arguments: evidence.0.quoted_text: String should have at least 8 characters; evidence.1.quoted_text: String should have at least 8 characters
+  - contextual_difference 'contextual difference: Clear height': invalid_arguments: evidence.0.quoted_text: String should have at least 8 characters; evidence.1.quoted_text: String should have at least 8 characters
+  - contextual_difference 'contextual difference: Clear height': invalid_arguments: evidence.0.quoted_text: String should have at least 8 characters; evidence.1.quoted_text: String should have at least 8 characters
+
+==============================================================================
+LLM CALLS: tokens, context size, latency, failures
+==============================================================================
+Per phase:
+  phase           attempts  failed  prompt tok  completion tok  thinking tok  avg ctx tok  max ctx tok  avg ms  p95 ms  total s
+  --------------  --------  ------  ----------  --------------  ------------  -----------  -----------  ------  ------  -------
+  extract claims  2         0       8,589       8,035           0             4,294        4,371        8176    8457    16.4
+  judge pairs     14        1       62,675      5,189           0             4,821        6,760        2241    4048    32.6
+
+Every provider attempt (context = what was sent; tokens as counted by the API):
+  #   phase           at s  result  ctx chars  ctx tokens  cached  completion  thinking  total tok  latency ms  resp chars  error
+  --  --------------  ----  ------  ---------  ----------  ------  ----------  --------  ---------  ----------  ----------  ------------------------------------------------------------
+  1   extract claims  0.2   ok      13,484     4,218       0       4012        0         8,230      8457        10,765
+  2   extract claims  8.7   ok      14,157     4,371       0       4023        0         8,394      7894        10,749
+  3   judge pairs     17.6  ok      15,462     4,442       0       195         0         4,637      1614        545
+  4   judge pairs     19.2  ok      16,706     5,331       0       244         0         5,575      1675        708
+  5   judge pairs     20.9  ok      16,688     5,317       0       296         0         5,613      3348        838
+  6   judge pairs     24.3  ok      16,569     6,760       0       716         0         7,476      2381        2,686
+  7   judge pairs     26.7  ok      17,121     5,409       0       341         0         5,750      4048        1,262
+  8   judge pairs     30.7  FAIL    15,165     0           0       0           0         0          3490        0           Google API 503: { "error": { "code": 503, "message": "Thi...
+  9   judge pairs     35.2  ok      15,165     4,553       0       443         0         4,996      2493        1,597
+  10  judge pairs     37.7  ok      16,815     5,238       0       252         0         5,490      1592        772
+  11  judge pairs     39.3  ok      16,861     5,243       0       268         0         5,511      1867        826
+  12  judge pairs     41.2  ok      15,278     4,509       0       424         0         4,933      1974        1,387
+  13  judge pairs     43.2  ok      15,247     4,248       0       618         0         4,866      2230        2,028
+  14  judge pairs     45.5  ok      15,379     4,516       0       623         0         5,139      2168        1,886
+  15  judge pairs     47.8  ok      15,144     4,429       0       479         0         4,908      2151        1,490
+  16  judge pairs     49.9  ok      9,394      2,680       0       290         0         2,970      1595        969
+
+==============================================================================
+EMBEDDING CALLS
+==============================================================================
+calls 1, failed 0, texts 64 (claim topic texts embedded locally for matching)
+
+  #  texts  chars  latency ms  result  error
+  -  -----  -----  ----------  ------  -----
+  1  64     4,788  842         ok
+
+==============================================================================
+FAILURES
+==============================================================================
+LLM attempt failures:
+  judge pairs: 3490ms Google API 503: { "error": { "code": 503, "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try ag...
+Documents not fully read:
+  none
+Pair-judging problems:
+  none
+
+==============================================================================
+TIMING
+==============================================================================
+  stage                                         duration  share of wall time
+  --------------------------------------------  --------  ------------------
+  0. scan files, process new or changed ones    0.2s      0%
+  1. read every chunk, extract claims           16.5s     32%
+  2. match claims (local embeddings)            0.9s      2%
+  3. judge pairs, verify quotes, save findings  34.0s     66%
+  4. per-document verdicts                      0.0s      0%
+
+==============================================================================
+KNOWN LIMITS OF THIS RUN
+==============================================================================
+- Reading is all-or-nothing per document: if one batch fails after all retries, that document's claims are discarded and it counts as not read.
+- Candidate matching keeps at most 5 partners per claim (an existing default), so some comparable pairs are never judged.
+- The claim-extraction prompt lists business categories (capacity, supply, pricing, ...) and is not yet domain-agnostic.
+- Claims inside one document are also paired and judged; matching quality depends on how the model labels subject/metric/unit/period.
+- Exact agreements are trusted as corroboration without an LLM check.

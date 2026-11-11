@@ -65,6 +65,20 @@ def count_pages(path: Path) -> int | None:
         return None
 
 
+def _table_rows(page: "fitz.Page", table) -> list[list[str | None]]:
+    """Cell text read with the page's own text extraction clipped to each cell. PyMuPDF's ``table.extract()`` can join the
+    words of a cell without spaces and move a decimal point into the next line ("92.4%" -> "924%" and "."), which would
+    corrupt every number in the table. Falls back to ``extract()`` if the cells cannot be read."""
+    try:
+        rows = [[" ".join(page.get_text("text", clip=fitz.Rect(cell)).split()) if cell else "" for cell in row.cells]
+                for row in table.rows]
+        if any(any(c for c in row) for row in rows):
+            return rows
+    except Exception:  # best effort: keep the extractor's own result
+        pass
+    return table.extract()
+
+
 def _rows_to_text(rows: list[list[str | None]]) -> str:
     return "\n".join(" | ".join((c or "").strip() for c in row) for row in rows)
 
@@ -106,7 +120,7 @@ def extract_pdf(path: Path, document_id: str, filename: str, report: ExtractionR
                     tables = []
             lap(report, "tables", t)
             for t_idx, table in enumerate(tables, start=1):
-                rows = table.extract()
+                rows = _table_rows(page, table)
                 text = _rows_to_text(rows)
                 if not text.strip():
                     continue

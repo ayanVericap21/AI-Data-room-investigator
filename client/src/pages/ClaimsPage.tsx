@@ -4,17 +4,11 @@ import {
   TableContainer, TableHead, TableRow, Tabs, Typography,
 } from "@mui/material";
 import { errorMessage } from "../api/client";
+import DiscrepanciesPanel from "../components/common/DiscrepanciesPanel";
 import PipelineJobs from "../components/common/PipelineJobs";
 import { useCandidates, useChunk, useClaims } from "../hooks/useClaims";
-import type { Claim, RelationHint, SourceRef } from "../types/claim";
-
-export function locationLabel(s: SourceRef): string {
-  if (s.sheet_name) return `${s.sheet_name}!${s.cell_reference ?? ""}`;
-  const parts: string[] = [];
-  if (s.page_number) parts.push(`p. ${s.page_number}`);
-  if (s.heading) parts.push(s.heading);
-  return parts.join(" · ") || (s.content_type ?? "");
-}
+import type { Claim, RelationHint } from "../types/claim";
+import { locationLabel } from "../utils/location";
 
 const HINT_COLOR: Record<RelationHint, "default" | "success" | "warning" | "info"> = {
   exact: "success", conflicting: "warning", contextual: "info", partial: "default",
@@ -54,6 +48,7 @@ export default function ClaimsPage() {
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 1 }}>
         <Tab label={`Claims (${claims.data?.total ?? 0})`} />
         <Tab label={`Candidate pairs (${candidates.data?.total ?? 0})`} />
+        <Tab label="Main discrepancies" />
       </Tabs>
 
       {tab === 0 && (
@@ -129,6 +124,7 @@ export default function ClaimsPage() {
           </Table>
         </TableContainer>
       )}
+      {tab === 2 && <DiscrepanciesPanel onOpenSource={setChunkId} />}
       <SourceDialog chunkId={chunkId} onClose={() => setChunkId(null)} />
     </Box>
   );

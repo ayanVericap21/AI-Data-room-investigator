@@ -1,0 +1,306 @@
+TEST RUN  20261111-234301  ui-run
+==============================================================================
+
+HOW THIS RUN WAS ACHIEVED
+1. Reading: the documents selected for this run were uploaded to LlamaExtract (LlamaIndex Cloud, cost_effective tier), which returns claims with the page and text they came from; each claim is tied to a stored chunk and kept only if its value appears in that chunk text.
+2. Ledger: accepted claims are stored in the claims table; the claims are sorted by label and sent to the LLM in batches of up to 60,000 characters, which groups the ones that state the same attribute of the same subject (no code pairing, no fixed number of documents or claims assumed).
+3. Judging: pairs that agree exactly count as corroboration; every other pair (conflicting, partial, contextual) goes to the LLM in batches of up to 12,000 characters with both source excerpts.
+4. Findings: a discrepancy is saved only if its two quotes are exact substrings of their chunks (checked in code); per-document verdicts were skipped by request.
+5. Model: cost_effective, through LlamaExtract, up to 5 attempts per call honouring the provider's retry delay; no step, tool-call or finding limits.
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+Run started   : 2026-11-11 23:43:01 (local)   finished: 23:44:45   wall time: 104.4s
+Config        : ui-run
+Database      : data_room (documents were already processed; reused)
+Code version  : git a8c19bb + uncommitted changes   python 3.14.5
+Excluded      : 02_Manufacturing_Operations_Report.pdf, 03_Quality_and_Compliance_Report.pdf, 05_Customer_Supply_Agreement.docx, 06_Facility_and_Utilities_Plan.docx, 07_Equipment_Register.xlsx (by request: not read, not compared)
+Documents     : 3; fully read 3, incomplete 0
+Chunks        : 11 total; sent to the LLM 11 (headings are skipped by the extractor: 0)
+Claims        : 71 recorded, 0 rejected (value not found in cited chunk or unknown chunk id)
+Extraction    : up to any number of chunks per call (and 8,000 characters); running vocabulary off; coverage check off
+Extractor     : LlamaExtract (cost_effective tier) instead of the LLM: 3 documents uploaded to LlamaIndex Cloud, 34 credits used, 0 documents failed (the batch and coverage settings above do not apply)
+Pairs         : 11 candidates; 3 agreed exactly (not sent to the LLM); 8 judged; verdicts {'not_comparable': 5, 'contradiction': 1, 'consistent': 2}
+Findings      : 5 saved with verified quotes; 1 rejected (quotes missing or not exact)
+LLM calls     : 2 provider attempts (0 failed, 0 retries incl. invalid-output retries), 95.5s total, avg 47739ms
+Tokens        : prompt 0  completion 0  thinking 0  cached 0  total 0   (cost not computed: no price per token configured)
+Context/call  : prompt tokens min 0  avg 0  max 0
+
+==============================================================================
+NEW OR CHANGED FILES AND CLAIM RESET
+==============================================================================
+claims deleted at the start of this run: 0 (all claims in this run are newly extracted)
+scan: discovered 8, new 0, updated 0, unchanged 8, missing 0
+      duplicates skipped (same content): none
+
+  new or changed file                     status     chunks  extract s  chunk ms  save ms  embed s  note
+  --------------------------------------  ---------  ------  ---------  --------  -------  -------  ----
+  01_Corporate_Overview.pdf               processed  2       0.9        0         11       0.6
+  02_Manufacturing_Operations_Report.pdf  processed  2       0.3        0         8        0.1
+  03_Quality_and_Compliance_Report.pdf    processed  2       0.3        0         8        0.1
+  04_Investor_Presentation.docx           processed  5       0.0        0         8        0.1
+  05_Customer_Supply_Agreement.docx       processed  5       0.0        0         8        0.1
+  06_Facility_and_Utilities_Plan.docx     processed  5       0.0        0         9        0.1
+  07_Equipment_Register.xlsx              processed  4       0.0        0         68       0.2
+  08_Financial_and_Capacity_Model.xlsx    processed  4       0.0        0         64       0.2
+
+==============================================================================
+CONTRADICTIONS ONLY (classification = contradiction)
+==============================================================================
+1 contradiction(s). Each lists its evidence (document, location, exact quote); the full detail is in the findings report below (search for the finding id).
+Locations: 'page N' is the PDF page number (the first page of the file is 1), which can differ from a page number printed on the page itself.
+
+- [fnd_dbc545fa0753466e] severity medium, confidence 0.98: Designed nameplate capacity: 20,000 vs. 24000 WSPM
+    01_Corporate_Overview.pdf, page 1, states designed nameplate capacity of 20,000 wafer starts per month (WSPM). 08_Financial_and_Capacity_Model.xlsx, Capacity_Assumptions, states designed nameplate capacity of 24000 WS...
+    evidence: 01_Corporate_Overview.pdf | page 1 | chunk chk_cfbce9bf850f4f82 | "Designed nameplate capacity | 20,000 wafer starts per month (WSPM)"
+    evidence: 08_Financial_and_Capacity_Model.xlsx | sheet Capacity_Assumptions, cell A1:D6 | chunk chk_b515bf4dc50b4194 | "Assumption: Designed nameplate capacity; Model_Value: 24000; Unit: WSPM; Model_Note: Full build-out capacity"
+
+==============================================================================
+FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)
+==============================================================================
+Fields follow the Finding schema: title, description, classification, severity, confidence, evidence_status, verification_status, materiality_reasoning, business_impact, unresolved_questions; evidence rows follow the Evidence schema.
+Findings: 5   by classification: {'consistent': 4, 'contradiction': 1}   by severity: {'informational': 4, 'medium': 1}
+
+--- FINDING 1 of 5  [fnd_3a300163b8944b1b] ------------------------------
+title                 : Consistent: semiconductor manufacturing platform wafer size
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 04_Investor_Presentation.docx (section Investment highlights) and 01_Corporate_Overview.pdf (page 1) state the same value for semiconductor manufacturing platform wafer size: 300 mm mm.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 01_Corporate_Overview.pdf
+      chunk    : chk_c8ed89a628c94a9a   (chunk_index 1)
+      location : page 1
+      quote    : "SiliconForge is a fictional Indian semiconductor manufacturer developing a 300 mm wafer fabrication facility in Nanjangud Industrial Area, Mysuru district, Karnataka."
+      relevance: SiliconForge is a fictional Indian semiconductor manufacturer developing a 300 mm wafer fabrication facility in Nanjangud Industrial Area, Mysuru district, Karnataka.
+      assessment: 01_Corporate_Overview.pdf states: SiliconForge is a fictional Indian semiconductor manufacturer developing a 300 mm wafer fabrication facility in Nanjangud Industrial Area, Mysuru district, Karnataka. | subject=SiliconForge; metric=wafer fabrication facility size; value=300 mm
+  [2] role=supporting
+      document : 04_Investor_Presentation.docx
+      chunk    : chk_4828952a6f2e4987   (chunk_index 1)
+      location : heading Investment highlights
+      quote    : "SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets."
+      relevance: SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets.
+      assessment: 04_Investor_Presentation.docx states: SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets. | subject=SiliconForge; metric=semiconductor manufacturing platform wafer size; value=300 mm; unit=mm; conditions=in Karnataka for industrial, automotive-support and power-management markets
+
+--- FINDING 2 of 5  [fnd_e82e91a13d234b72] ------------------------------
+title                 : Consistent: Initial process platform
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 01_Corporate_Overview.pdf (page 1) and 04_Investor_Presentation.docx (section Investment highlights) state the same value for Initial process platform: 65 nm.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 01_Corporate_Overview.pdf
+      chunk    : chk_c8ed89a628c94a9a   (chunk_index 1)
+      location : page 1
+      quote    : "Business focus: mature-node logic and mixed-signal components for industrial, automotive-support and power-management applications. Initial process platform: 65 nm."
+      relevance: Business focus: mature-node logic and mixed-signal components for industrial, automotive-support and power-management applications. Initial process platform: 65 nm.
+      assessment: 01_Corporate_Overview.pdf states: Business focus: mature-node logic and mixed-signal components for industrial, automotive-support and power-management applications. Initial process platform: 65 nm. | subject=SiliconForge; metric=Initial process platform; value=65 nm
+  [2] role=supporting
+      document : 04_Investor_Presentation.docx
+      chunk    : chk_4828952a6f2e4987   (chunk_index 1)
+      location : heading Investment highlights
+      quote    : "SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets."
+      relevance: SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets.
+      assessment: 04_Investor_Presentation.docx states: SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets. | subject=SiliconForge; metric=semiconductor manufacturing platform process node; value=65 nm; unit=nm; conditions=in Karnataka for industrial, automotive-support and power-management markets
+
+--- FINDING 3 of 5  [fnd_0d84d16dbd1f42b7] ------------------------------
+title                 : Consistent: Model_Value
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 08_Financial_and_Capacity_Model.xlsx (sheet Capacity_Assumptions, A1:D6) and 04_Investor_Presentation.docx (section Operating performance) state the same value for Model_Value: 96.8 %.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 04_Investor_Presentation.docx
+      chunk    : chk_60861b5bbeb24d94   (chunk_index 2)
+      location : heading Operating performance
+      quote    : "Current production yield: 96.8% on SF-65-A during Q3 2026."
+      relevance: Current production yield: 96.8% on SF-65-A during Q3 2026.
+      assessment: 04_Investor_Presentation.docx states: Current production yield: 96.8% on SF-65-A during Q3 2026. | subject=Current production yield; metric=yield; value=96.8%; unit=%; period=Q3 2026; conditions=on SF-65-A
+  [2] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_b515bf4dc50b4194   (chunk_index 0)
+      location : sheet Capacity_Assumptions, cell A1:D6
+      quote    : "[Capacity_Assumptions!A5:D5] Assumption: Q3 2026 production yield; Model_Value: 96.8; Unit: %; Model_Note: SF-65-A"
+      relevance: | Q3 2026 production yield            | 96.8        | %            | SF-65-A                 |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | Q3 2026 production yield            | 96.8        | %            | SF-65-A                 | | subject=Q3 2026 production yield; metric=Model_Value; value=96.8; unit=%; period=Q3 2026; conditions=SF-65-A
+
+--- FINDING 4 of 5  [fnd_dbc545fa0753466e] ------------------------------
+title                 : Designed nameplate capacity: 20,000 vs. 24000 WSPM
+classification        : contradiction
+severity              : medium
+confidence            : 0.98
+evidence_status       : adequate
+verification_status   : verified
+description           : 01_Corporate_Overview.pdf, page 1, states designed nameplate capacity of 20,000 wafer starts per month (WSPM). 08_Financial_and_Capacity_Model.xlsx, Capacity_Assumptions, states designed nameplate capacity of 24000 WSPM and notes full build-out capacity. The excerpts give different values for the same capacity attribute, and the stated full build-out note does not establish a different designed-capacity definition.
+materiality_reasoning : Different stated nameplate capacity values could materially affect a reader’s understanding of the facility’s production scale.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : 01_Corporate_Overview.pdf
+      chunk    : chk_cfbce9bf850f4f82   (chunk_index 0)
+      location : page 1
+      quote    : "Designed nameplate capacity | 20,000 wafer starts per month (WSPM)"
+      relevance: Designed nameplate capacity | 20,000 wafer starts per month (WSPM)
+      assessment: 01_Corporate_Overview.pdf states: Designed nameplate capacity | 20,000 wafer starts per month (WSPM) | subject=Designed nameplate capacity; metric=Management-reported position; value=20,000 wafer starts per month (WSPM); unit=wafer starts per month (WSPM)
+  [2] role=contradicting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_b515bf4dc50b4194   (chunk_index 0)
+      location : sheet Capacity_Assumptions, cell A1:D6
+      quote    : "Assumption: Designed nameplate capacity; Model_Value: 24000; Unit: WSPM; Model_Note: Full build-out capacity"
+      relevance: | Designed nameplate capacity         | 24000       | WSPM         | Full build-out capacity |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | Designed nameplate capacity         | 24000       | WSPM         | Full build-out capacity | | subject=Designed nameplate capacity; metric=Model_Value; value=24000; unit=WSPM; conditions=Full build-out capacity
+
+--- FINDING 5 of 5  [fnd_57374d39a80f4433] ------------------------------
+title                 : Target monthly shipments by Q2 2027: 10,000 wafers versus 10000 Wafers/month
+classification        : consistent
+severity              : informational
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : The investor presentation states “10,000 wafers” by Q2 2027; the capacity model states “10000” Wafers/month by Q2 2027, with the model note identifying it as a management target. The excerpts agree on the target quantity and period.
+materiality_reasoning : The two excerpts state the same shipment target for the same period, so there is no material difference.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 04_Investor_Presentation.docx
+      chunk    : chk_60861b5bbeb24d94   (chunk_index 2)
+      location : heading Operating performance
+      quote    : "10,000 wafers by Q2 2027"
+      relevance: Management expects monthly shipments to reach 10,000 wafers by Q2 2027.
+      assessment: 04_Investor_Presentation.docx states: Management expects monthly shipments to reach 10,000 wafers by Q2 2027. | subject=Management; metric=expected monthly shipments; value=10,000 wafers; unit=wafers; period=by Q2 2027
+  [2] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_b515bf4dc50b4194   (chunk_index 0)
+      location : sheet Capacity_Assumptions, cell A1:D6
+      quote    : "10000; Unit: Wafers/month"
+      relevance: | Target monthly shipments by Q2 2027 | 10000       | Wafers/month | Management target       |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | Target monthly shipments by Q2 2027 | 10000       | Wafers/month | Management target       | | subject=Target monthly shipments by Q2 2027; metric=Model_Value; value=10000; unit=Wafers/month; period=by Q2 2027; conditions=Management target
+
+
+==============================================================================
+COVERAGE AND PER-DOCUMENT VERDICTS
+==============================================================================
+Coverage: 'read' = chunks the LLM was shown. A document counts as fully read only if every batch succeeded (all-or-nothing per document).
+
+  document                              chunks  read  fully read  claims  LLM calls  tokens  extract s  verdict  reason
+  ------------------------------------  ------  ----  ----------  ------  ---------  ------  ---------  -------  ---------------------------------------------
+  01_Corporate_Overview.pdf             2       2     yes         15      0          0       2.3        skipped  verdicts skipped by request (--skip-verdicts)
+  04_Investor_Presentation.docx         5       5     yes         12      0          0       1.3        skipped  verdicts skipped by request (--skip-verdicts)
+  08_Financial_and_Capacity_Model.xlsx  4       4     yes         44      0          0       1.1        skipped  verdicts skipped by request (--skip-verdicts)
+
+==============================================================================
+CLAIM LEDGER
+==============================================================================
+claims recorded 71, rejected 0
+
+Per document (paired = has a comparable claim elsewhere; corroborated = same value stated elsewhere; unpaired = nothing comparable found):
+  document                              claims  paired  corroborated  unpaired  pairs judged  findings
+  ------------------------------------  ------  ------  ------------  --------  ------------  --------
+  01_Corporate_Overview.pdf             15      5       2             10        6             3
+  04_Investor_Presentation.docx         12      5       3             7         6             4
+  08_Financial_and_Capacity_Model.xlsx  44      4       1             40        4             3
+
+Rejected claims by reason (first 15):
+  none
+
+==============================================================================
+PAIR MATCHING AND JUDGING
+==============================================================================
+pairing mode: LLM grouping of sorted claims: 71 claims in 1 batch(es), 1 call(s) (0 failed), 6 groups covering 13 claims (largest 3), 11 pairs (3 added from nearest neighbours in other documents), 0 unknown refs ignored
+  pairing every claim with every other in its group would have made 8 pairs; claims stating the same value are linked as agreement, and one claim per distinct value (12 values) is compared
+  note: claims in different batches are never grouped together (one batch: no such gap in this run)
+candidate pairs: 11
+  by relation hint : {'partial': 1, 'contextual': 7, 'exact': 3}
+  by match route   : {'llm': 8, 'embedding': 3}
+  across documents : 11   inside one document: 0
+exact agreements (corroboration, no LLM): 3
+judged by the LLM: 8 in 1 calls (0 batches failed)
+LLM verdicts: {'not_comparable': 5, 'contradiction': 1, 'consistent': 2}
+findings saved 5; rejected 1
+
+Rejected findings (first 15):
+  - consistent 'Current qualified capacity agrees at 12000 WSPM': validation_failed: Finding not saved. evidence 2: the quote is not in chunk 'chk_cfbce9bf850f4f82' (01_Corporate_Overview.pdf, page 1). Copy the text exactly from that chunk's con
+
+==============================================================================
+LLM CALLS: tokens, context size, latency, failures
+==============================================================================
+Per phase:
+  phase               attempts  failed  prompt tok  completion tok  thinking tok  avg ctx tok  max ctx tok  avg ms  p95 ms  total s
+  ------------------  --------  ------  ----------  --------------  ------------  -----------  -----------  ------  ------  -------
+  group claims (LLM)  1         0       0           0               0             0            0            80674   80674   80.7
+  judge pairs         1         0       0           0               0             0            0            14804   14804   14.8
+
+Every provider attempt (context = what was sent; tokens as counted by the API):
+  #  phase               at s  result  ctx chars  ctx tokens  cached  completion  thinking  total tok  latency ms  resp chars  error
+  -  ------------------  ----  ------  ---------  ----------  ------  ----------  --------  ---------  ----------  ----------  -----
+  1  group claims (LLM)  8.4   ok      18,788     0           0       0           0         0          80674       373
+  2  judge pairs         89.5  ok      19,217     0           0       0           0         0          14804       5,713
+
+==============================================================================
+EMBEDDING CALLS
+==============================================================================
+calls 10, failed 0, texts 100 (claim topic texts embedded locally for matching)
+
+  #   texts  chars  latency ms  result  error
+  --  -----  -----  ----------  ------  -----
+  1   2      1,296  566         ok
+  2   2      1,234  48          ok
+  3   2      1,214  47          ok
+  4   5      1,175  75          ok
+  5   5      1,601  64          ok
+  6   5      1,429  50          ok
+  7   4      2,989  181         ok
+  8   4      2,921  167         ok
+  9   64     7,689  304         ok
+  10  7      885    32          ok
+
+==============================================================================
+FAILURES
+==============================================================================
+LLM attempt failures:
+  none
+Documents not fully read:
+  none
+Pair-judging problems:
+  none
+
+==============================================================================
+TIMING
+==============================================================================
+  stage                                            duration  share of wall time
+  -----------------------------------------------  --------  ------------------
+  0. scan files, process new or changed ones       3.5s      3%
+  1. read every chunk, extract claims              4.6s      4%
+  2. match claims (LLM grouping of sorted claims)  81.1s     78%
+  3. judge pairs, verify quotes, save findings     14.9s     14%
+  4. per-document verdicts                         0.0s      0%
+
+==============================================================================
+KNOWN LIMITS OF THIS RUN
+==============================================================================
+- Reading is all-or-nothing per document: if one batch fails after all retries, that document's claims are discarded and it counts as not read.
+- Candidate matching keeps at most 5 partners per claim (an existing default), so some comparable pairs are never judged.
+- The claim-extraction prompt lists business categories (capacity, supply, pricing, ...) and is not yet domain-agnostic.
+- Claims inside one document are also paired and judged; matching quality depends on how the model labels subject/metric/unit/period.
+- Exact agreements are trusted as corroboration without an LLM check.

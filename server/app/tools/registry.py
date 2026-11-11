@@ -65,7 +65,7 @@ TOOLS: list[ToolSpec] = [
         "submit_finding",
         "Save a finding. Every evidence quote is verified against the stored text and the finding is rejected "
         "if any quote is not found exactly. Comparing classifications (contradiction, contextual_difference, "
-        "consistent) need evidence from at least two chunks. For missing_information or insufficient_evidence, "
+        "consistent) need at least two different quoted passages. For missing_information or insufficient_evidence, "
         "cite what exists and describe in the description which searches found nothing.",
         SubmitFindingInput, submit_finding, lambda o: f"saved {o.finding_id} with {len(o.evidence)} verified quotes",
     ),

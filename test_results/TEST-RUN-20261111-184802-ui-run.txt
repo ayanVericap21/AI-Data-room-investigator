@@ -1,0 +1,171 @@
+TEST RUN  20261111-184802  ui-run
+==============================================================================
+
+HOW THIS RUN WAS ACHIEVED
+1. Reading: the documents selected for this run were uploaded to LlamaExtract (LlamaIndex Cloud, cost_effective tier), which returns claims with the page and text they came from; each claim is tied to a stored chunk and kept only if its value appears in that chunk text.
+2. Ledger: accepted claims are stored in the claims table; the claims are sorted by label and sent to the LLM in batches of up to 12,000 characters, which groups the ones that state the same attribute of the same subject (no code pairing, no fixed number of documents or claims assumed).
+3. Judging: pairs that agree exactly count as corroboration; every other pair (conflicting, partial, contextual) goes to the LLM in batches of up to 12,000 characters with both source excerpts.
+4. Findings: a discrepancy is saved only if its two quotes are exact substrings of their chunks (checked in code); per-document verdicts were skipped by request.
+5. Model: cost_effective, through LlamaExtract, up to 5 attempts per call honouring the provider's retry delay; no step, tool-call or finding limits.
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+Run started   : 2026-11-11 18:48:02 (local)   finished: 18:49:00   wall time: 57.5s
+Config        : ui-run
+Database      : data_room (documents were already processed; reused)
+Code version  : git a8c19bb + uncommitted changes   python 3.14.5
+Documents     : 8; fully read 8, incomplete 0
+Chunks        : 29 total; sent to the LLM 29 (headings are skipped by the extractor: 0)
+Claims        : 174 recorded, 13 rejected (value not found in cited chunk or unknown chunk id)
+Extraction    : up to any number of chunks per call (and 8,000 characters); running vocabulary off; coverage check off
+Extractor     : LlamaExtract (cost_effective tier) instead of the LLM: 8 documents uploaded to LlamaIndex Cloud, 78 credits used, 0 documents failed (the batch and coverage settings above do not apply)
+Pairs         : 54 candidates; 38 agreed exactly (not sent to the LLM); 16 judged; verdicts {'consistent': 2, 'contextual_difference': 1, 'not_comparable': 11, 'missing_information': 1, 'insufficient_evidence': 1}
+Findings      : 0 saved with verified quotes; 2 rejected (quotes missing or not exact)
+LLM calls     : 7 provider attempts (0 failed, 0 retries incl. invalid-output retries), 47.2s total, avg 6737ms
+Tokens        : prompt 0  completion 0  thinking 0  cached 0  total 0   (cost not computed: no price per token configured)
+Context/call  : prompt tokens min 0  avg 0  max 0
+
+==============================================================================
+NEW OR CHANGED FILES AND CLAIM RESET
+==============================================================================
+claims deleted at the start of this run: 174 (all claims in this run are newly extracted)
+scan: discovered 8, new 0, updated 0, unchanged 8, missing 0
+      duplicates skipped (same content): none
+
+no new or changed files had to be processed
+
+==============================================================================
+CONTRADICTIONS ONLY (classification = contradiction)
+==============================================================================
+No finding was classified as a contradiction in this run.
+
+==============================================================================
+FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)
+==============================================================================
+[section failed: AttributeError: 'types.SimpleNamespace' object has no attribute 'termination']
+
+==============================================================================
+COVERAGE AND PER-DOCUMENT VERDICTS
+==============================================================================
+Coverage: 'read' = chunks the LLM was shown. A document counts as fully read only if every batch succeeded (all-or-nothing per document).
+
+  document                                chunks  read  fully read  claims  LLM calls  tokens  extract s  verdict  reason
+  --------------------------------------  ------  ----  ----------  ------  ---------  ------  ---------  -------  ---------------------------------------------
+  01_Corporate_Overview.pdf               2       2     yes         9       0          0       1.7        skipped  verdicts skipped by request (--skip-verdicts)
+  02_Manufacturing_Operations_Report.pdf  2       2     yes         15      0          0       1.0        skipped  verdicts skipped by request (--skip-verdicts)
+  03_Quality_and_Compliance_Report.pdf    2       2     yes         11      0          0       1.0        skipped  verdicts skipped by request (--skip-verdicts)
+  04_Investor_Presentation.docx           5       5     yes         13      0          0       1.1        skipped  verdicts skipped by request (--skip-verdicts)
+  05_Customer_Supply_Agreement.docx       5       5     yes         21      0          0       2.4        skipped  verdicts skipped by request (--skip-verdicts)
+  06_Facility_and_Utilities_Plan.docx     5       5     yes         15      0          0       1.0        skipped  verdicts skipped by request (--skip-verdicts)
+  07_Equipment_Register.xlsx              4       4     yes         72      0          0       1.0        skipped  verdicts skipped by request (--skip-verdicts)
+  08_Financial_and_Capacity_Model.xlsx    4       4     yes         18      0          0       0.9        skipped  verdicts skipped by request (--skip-verdicts)
+
+==============================================================================
+CLAIM LEDGER
+==============================================================================
+claims recorded 174, rejected 13
+
+Per document (paired = has a comparable claim elsewhere; corroborated = same value stated elsewhere; unpaired = nothing comparable found):
+  document                                claims  paired  corroborated  unpaired  pairs judged  findings
+  --------------------------------------  ------  ------  ------------  --------  ------------  --------
+  01_Corporate_Overview.pdf               9       3       2             6         3             0
+  02_Manufacturing_Operations_Report.pdf  15      6       4             9         2             0
+  03_Quality_and_Compliance_Report.pdf    11      3       0             8         5             0
+  04_Investor_Presentation.docx           13      4       2             9         4             0
+  05_Customer_Supply_Agreement.docx       21      5       4             16        1             0
+  06_Facility_and_Utilities_Plan.docx     15      6       2             9         5             0
+  07_Equipment_Register.xlsx              72      52      48            20        4             0
+  08_Financial_and_Capacity_Model.xlsx    18      3       0             15        3             0
+
+Rejected claims by reason (first 15):
+  - value 'Pilot production; commercial ramp in progress' not found in any chunk of 01_Corporate_Overview.pdf
+  - value '18,500 m²' not found in any chunk of 01_Corporate_Overview.pdf
+  - value '20,000 wafer starts per month (WSPM)' not found in any chunk of 01_Corporate_Overview.pdf
+  - value '12,000 WSPM' not found in any chunk of 01_Corporate_Overview.pdf
+  - value '300 mm wafers' not found in any chunk of 01_Corporate_Overview.pdf
+  - value '27,600 wafers' not found in any chunk of 02_Manufacturing_Operations_Report.pdf
+  - value '25,510 wafers' not found in any chunk of 02_Manufacturing_Operations_Report.pdf
+  - value '92.4%' not found in any chunk of 02_Manufacturing_Operations_Report.pdf
+  - value '65 nm' not found in any chunk of 02_Manufacturing_Operations_Report.pdf
+  - value '0 reported' not found in any chunk of 03_Quality_and_Compliance_Report.pdf
+  - value '4 minor actions' not found in any chunk of 03_Quality_and_Compliance_Report.pdf
+  - value '92.4%' not found in any chunk of 03_Quality_and_Compliance_Report.pdf
+  - value 'Lot-level traceability maintained in MES, per management' not found in any chunk of 03_Quality_and_Compliance_Report.pdf
+
+==============================================================================
+PAIR MATCHING AND JUDGING
+==============================================================================
+pairing mode: LLM grouping of sorted claims: 174 claims in 4 batch(es), 4 call(s) (0 failed), 32 groups covering 82 claims (largest 12), 54 pairs, 0 unknown refs ignored
+  pairing every claim with every other in its group would have made 116 pairs; claims stating the same value are linked as agreement, and one claim per distinct value (60 values) is compared
+  note: claims in different batches are never grouped together (more than one batch in this run)
+candidate pairs: 54
+  by relation hint : {'contextual': 6, 'exact': 38, 'conflicting': 10}
+  by match route   : {'llm': 54}
+  across documents : 17   inside one document: 37
+exact agreements (corroboration, no LLM): 38
+judged by the LLM: 16 in 3 calls (0 batches failed)
+LLM verdicts: {'consistent': 2, 'contextual_difference': 1, 'not_comparable': 11, 'missing_information': 1, 'insufficient_evidence': 1}
+findings saved 0; rejected 2
+
+Rejected findings (first 15):
+  - contextual_difference pair 2: the quotes do not show the claims' values ('24,000 WSPM' and '24000')
+  - missing_information pair 5: the quotes do not show the claims' values ('28 October 2026' and '5 November 2026')
+
+==============================================================================
+LLM CALLS: tokens, context size, latency, failures
+==============================================================================
+Per phase:
+  phase               attempts  failed  prompt tok  completion tok  thinking tok  avg ctx tok  max ctx tok  avg ms  p95 ms  total s
+  ------------------  --------  ------  ----------  --------------  ------------  -----------  -----------  ------  ------  -------
+  group claims (LLM)  4         0       0           0               0             0            0            5211    7548    20.8
+  judge pairs         3         0       0           0               0             0            0            8773    11218   26.3
+
+Every provider attempt (context = what was sent; tokens as counted by the API):
+  #  phase               at s  result  ctx chars  ctx tokens  cached  completion  thinking  total tok  latency ms  resp chars  error
+  -  ------------------  ----  ------  ---------  ----------  ------  ----------  --------  ---------  ----------  ----------  -----
+  1  group claims (LLM)  10.3  ok      13,472     0           0       0           0         0          4729        328
+  2  group claims (LLM)  15.0  ok      13,569     0           0       0           0         0          7548        1,108
+  3  group claims (LLM)  22.6  ok      13,509     0           0       0           0         0          4254        565
+  4  group claims (LLM)  26.8  ok      9,433      0           0       0           0         0          4312        185
+  5  judge pairs         31.2  ok      17,719     0           0       0           0         0          10816       3,013
+  6  judge pairs         42.0  ok      16,766     0           0       0           0         0          11218       3,379
+  7  judge pairs         53.2  ok      6,860      0           0       0           0         0          4285        244
+
+==============================================================================
+EMBEDDING CALLS
+==============================================================================
+calls 0, failed 0, texts 0 (claim topic texts embedded locally for matching)
+
+  #  texts  chars  latency ms  result  error
+  -  -----  -----  ----------  ------  -----
+
+==============================================================================
+FAILURES
+==============================================================================
+LLM attempt failures:
+  none
+Documents not fully read:
+  none
+Pair-judging problems:
+  none
+
+==============================================================================
+TIMING
+==============================================================================
+  stage                                            duration  share of wall time
+  -----------------------------------------------  --------  ------------------
+  0. scan files, process new or changed ones       0.0s      0%
+  1. read every chunk, extract claims              10.0s     17%
+  2. match claims (LLM grouping of sorted claims)  20.9s     36%
+  3. judge pairs, verify quotes, save findings     26.3s     46%
+  4. per-document verdicts                         0.0s      0%
+
+==============================================================================
+KNOWN LIMITS OF THIS RUN
+==============================================================================
+- Reading is all-or-nothing per document: if one batch fails after all retries, that document's claims are discarded and it counts as not read.
+- Candidate matching keeps at most 5 partners per claim (an existing default), so some comparable pairs are never judged.
+- The claim-extraction prompt lists business categories (capacity, supply, pricing, ...) and is not yet domain-agnostic.
+- Claims inside one document are also paired and judged; matching quality depends on how the model labels subject/metric/unit/period.
+- Exact agreements are trusted as corroboration without an LLM check.

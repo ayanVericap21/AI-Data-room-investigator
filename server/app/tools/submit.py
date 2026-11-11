@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 import re
+import unicodedata
 
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
@@ -20,8 +21,8 @@ from app.tools.schemas import StoredEvidence, SubmitFindingInput, SubmitFindingO
 
 logger = logging.getLogger(__name__)
 
-# Classifications that compare two statements need passages from at least two chunks.
-NEEDS_TWO_CHUNKS = {Classification.contradiction, Classification.contextual_difference, Classification.consistent}
+# Classifications that compare two statements need at least two different quoted passages (from the same chunk or not).
+NEEDS_TWO_PASSAGES = {Classification.contradiction, Classification.contextual_difference, Classification.consistent}
 
 
 def find_source_span(content: str, quote: str) -> tuple[str, bool] | None:
@@ -29,7 +30,9 @@ def find_source_span(content: str, quote: str) -> tuple[str, bool] | None:
 
     An exact substring match is preferred. Otherwise runs of whitespace are treated as
     equivalent (PDF and table text often differs from what a model reproduces only by line
-    breaks), and the verbatim source span is returned. Any other difference fails."""
+    breaks), then so are the differences that parsing and copying introduce without changing the words: Unicode
+    forms (ligatures, non-breaking spaces), curly vs straight quotes, dash variants, zero-width characters and a
+    word hyphenated across a line break. The verbatim source span is returned. Any other difference fails."""
     quote = quote.strip()
     if not quote:
         return None
@@ -37,7 +40,54 @@ def find_source_span(content: str, quote: str) -> tuple[str, bool] | None:
         return quote, False
     words = quote.split()
     match = re.search(r"\s+".join(re.escape(w) for w in words), content)
-    return (match.group(0), True) if match else None
+    if match:
+        return match.group(0), True
+    folded_content, positions = _fold(content)
+    folded_quote, _ = _fold(quote)
+    folded_quote = folded_quote.strip()
+    if not folded_quote:
+        return None
+    at = folded_content.find(folded_quote)
+    if at < 0:
+        return None
+    start, end = positions[at], positions[at + len(folded_quote) - 1] + 1
+    return content[start:end], True
+
+
+_QUOTE_AND_DASH_VARIANTS = str.maketrans({"‘": "'", "’": "'", "‚": "'", "‛": "'", "“": '"', "”": '"',
+                                          "„": '"', "‟": '"', "‐": "-", "‑": "-", "‒": "-", "–": "-",
+                                          "—": "-", "―": "-", "−": "-"})
+_INVISIBLE = {"­", "​", "‌", "‍", "⁠", "﻿"}
+
+
+def _fold(text: str) -> tuple[str, list[int]]:
+    """``text`` with Unicode forms, quote and dash variants, zero-width characters and line-break hyphenation normalised and
+    whitespace collapsed, plus, for each character of the result, the index of the original character it came from."""
+    out: list[str] = []
+    positions: list[int] = []
+    i, n = 0, len(text)
+    while i < n:
+        ch = text[i]
+        if ch in _INVISIBLE:
+            i += 1
+            continue
+        if ch in "-‐‑" and i + 1 < n and text[i + 1] in "\r\n" and out and out[-1].isalpha():  # "wa-\nfer" -> "wafer"
+            j = i + 1
+            while j < n and text[j].isspace():
+                j += 1
+            if j < n and text[j].isalpha():
+                i = j
+                continue
+        for piece in unicodedata.normalize("NFKC", ch).translate(_QUOTE_AND_DASH_VARIANTS):
+            if piece.isspace():
+                if out and out[-1] != " ":
+                    out.append(" ")
+                    positions.append(i)
+            else:
+                out.append(piece)
+                positions.append(i)
+        i += 1
+    return "".join(out), positions
 
 
 def submit_finding(ctx: ToolContext, inp: SubmitFindingInput) -> SubmitFindingOutput:
@@ -68,9 +118,10 @@ def submit_finding(ctx: ToolContext, inp: SubmitFindingInput) -> SubmitFindingOu
                             "Copy the text exactly from that chunk's content.")
             continue
         verified.append((i, chunk, filename, span[0], span[1]))
-    if len(chunk_ids) < 2 and inp.classification in NEEDS_TWO_CHUNKS:
-        problems.append(f"a {inp.classification.value} compares statements, so evidence from at least two different "
-                        "chunks is required")
+    distinct = {(e.chunk_id, " ".join(e.quoted_text.split())) for e in inp.evidence}
+    if len(distinct) < 2 and inp.classification in NEEDS_TWO_PASSAGES:
+        problems.append(f"a {inp.classification.value} compares statements, so at least two different quoted passages "
+                        "are required")
     if problems:
         raise ToolError("validation_failed", "Finding not saved. " + "; ".join(problems))
 

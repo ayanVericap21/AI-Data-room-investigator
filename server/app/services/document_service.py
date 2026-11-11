@@ -62,11 +62,15 @@ class DocumentService:
         return sorted(p for p in self.root.rglob("*") if p.is_file() and not p.name.startswith((".", "~$")))
 
     # -- scanning ------------------------------------------------------------
-    def scan(self) -> ScanResult:
+    def scan(self, only: set[str] | None = None) -> ScanResult:
+        """``only`` (relative paths) limits the scan to those files: any other file is not read, hashed or changed,
+        and no other document is marked missing."""
         result = ScanResult()
         seen_hashes: set[str] = set()
         for path in self._iter_files():
             rel = path.relative_to(self.root).as_posix()
+            if only is not None and rel not in only:
+                continue
             file_type = file_type_for(path)
             if file_type is None:
                 if path.name != ".gitkeep":
@@ -113,6 +117,8 @@ class DocumentService:
 
         # Rows whose content is no longer present in the data room.
         for doc in self.repo.list_all():
+            if only is not None and doc.filename not in only:
+                continue
             if doc.file_hash not in seen_hashes and doc.processing_status != ProcessingStatus.missing.value:
                 doc.processing_status = ProcessingStatus.missing.value
                 result.missing += 1

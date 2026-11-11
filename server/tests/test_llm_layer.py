@@ -56,17 +56,17 @@ def test_permanent_error_not_retried():
 
 def test_missing_api_key_is_config_error_not_fallback():
     with pytest.raises(LLMConfigError, match="LLM_API_KEY"):
-        get_llm_client(Settings(llm_provider="google", llm_model="m", llm_api_key=""))
+        get_llm_client(Settings(llm_provider="google", llm_model="m", llm_api_key="", allow_third_party_apis=True))
     with pytest.raises(LLMConfigError, match="LLM_MODEL"):
-        get_llm_client(Settings(llm_provider="google", llm_model="", llm_api_key="k"))
+        get_llm_client(Settings(llm_provider="google", llm_model="", llm_api_key="k", allow_third_party_apis=True))
     with pytest.raises(LLMConfigError, match="Unsupported"):
         get_llm_client(Settings(llm_provider="nope"))
     with pytest.raises(LLMConfigError, match="EMBEDDING_MODEL"):
-        get_embedding_provider(Settings(llm_provider="google", llm_api_key="k", embedding_model=""))
+        get_embedding_provider(Settings(llm_provider="google", embedding_provider="google", llm_api_key="k", embedding_model="", allow_third_party_apis=True))
 
 
 def test_embedding_provider_defaults_to_llm_provider_and_dimensions():
-    emb = get_embedding_provider(Settings(llm_provider="mock", embedding_dimensions=64))
+    emb = get_embedding_provider(Settings(llm_provider="mock", embedding_provider="", embedding_dimensions=64))
     assert len(emb.embed(["hello"])[0]) == 64
 
 
@@ -107,3 +107,17 @@ def test_google_429_wait_time_is_read_from_the_json_body_or_header():
     with pytest.raises(LLMTransientError) as info:
         _check(httpx.Response(429, json=body))
     assert info.value.retry_after == 27.0
+
+
+def test_third_party_apis_can_be_switched_off_and_the_local_provider_needs_a_model():
+    assert Settings().allow_third_party_apis is True and Settings().llm_provider == "llamaextract"  # hosted APIs are allowed by default
+    with pytest.raises(LLMConfigError, match="Third-party APIs are disabled"):
+        get_llm_client(Settings(llm_provider="google", llm_model="m", llm_api_key="k", allow_third_party_apis=False))
+    with pytest.raises(LLMConfigError, match="Third-party APIs are disabled"):
+        get_embedding_provider(Settings(llm_provider="google", embedding_provider="google", llm_api_key="k", embedding_model="e", allow_third_party_apis=False))
+    with pytest.raises(LLMConfigError, match="LLM_MODEL"):
+        get_llm_client(Settings(llm_provider="ollama", llm_model=""))
+    from app.llm.ollama import OllamaLLMClient
+
+    client = get_llm_client(Settings(llm_provider="ollama", llm_model="qwen3.5:0.8b"))
+    assert isinstance(client, OllamaLLMClient) and client.base_url == "http://localhost:11434" and client.context_tokens == 16384

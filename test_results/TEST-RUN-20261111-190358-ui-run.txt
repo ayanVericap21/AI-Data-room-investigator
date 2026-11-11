@@ -1,0 +1,521 @@
+TEST RUN  20261111-190358  ui-run
+==============================================================================
+
+HOW THIS RUN WAS ACHIEVED
+1. Reading: the documents selected for this run were uploaded to LlamaExtract (LlamaIndex Cloud, cost_effective tier), which returns claims with the page and text they came from; each claim is tied to a stored chunk and kept only if its value appears in that chunk text.
+2. Ledger: accepted claims are stored in the claims table; the claims are sorted by label and sent to the LLM in batches of up to 12,000 characters, which groups the ones that state the same attribute of the same subject (no code pairing, no fixed number of documents or claims assumed).
+3. Judging: pairs that agree exactly count as corroboration; every other pair (conflicting, partial, contextual) goes to the LLM in batches of up to 12,000 characters with both source excerpts.
+4. Findings: a discrepancy is saved only if its two quotes are exact substrings of their chunks (checked in code); per-document verdicts were skipped by request.
+5. Model: cost_effective, through LlamaExtract, up to 5 attempts per call honouring the provider's retry delay; no step, tool-call or finding limits.
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+Run started   : 2026-11-11 19:03:58 (local)   finished: 19:07:33   wall time: 215.2s
+Config        : ui-run
+Database      : data_room (documents were already processed; reused)
+Code version  : git a8c19bb + uncommitted changes   python 3.14.5
+Documents     : 8; fully read 8, incomplete 0
+Chunks        : 29 total; sent to the LLM 29 (headings are skipped by the extractor: 0)
+Claims        : 207 recorded, 5 rejected (value not found in cited chunk or unknown chunk id)
+Extraction    : up to any number of chunks per call (and 8,000 characters); running vocabulary off; coverage check off
+Extractor     : LlamaExtract (cost_effective tier) instead of the LLM: 8 documents uploaded to LlamaIndex Cloud, 78 credits used, 0 documents failed (the batch and coverage settings above do not apply)
+Pairs         : 20 candidates; 15 agreed exactly (not sent to the LLM); 5 judged; verdicts {'consistent': 3, 'not_comparable': 1, 'contradiction': 1}
+Findings      : 13 saved with verified quotes; 1 rejected (quotes missing or not exact)
+LLM calls     : 10 provider attempts (0 failed, 5 retries incl. invalid-output retries), 39.8s total, avg 3976ms
+Tokens        : prompt 0  completion 0  thinking 0  cached 0  total 0   (cost not computed: no price per token configured)
+Context/call  : prompt tokens min 0  avg 0  max 0
+
+==============================================================================
+NEW OR CHANGED FILES AND CLAIM RESET
+==============================================================================
+claims deleted at the start of this run: 12 (all claims in this run are newly extracted)
+scan: discovered 8, new 0, updated 0, unchanged 8, missing 0
+      duplicates skipped (same content): none
+
+no new or changed files had to be processed
+
+==============================================================================
+CONTRADICTIONS ONLY (classification = contradiction)
+==============================================================================
+No finding was classified as a contradiction in this run.
+
+==============================================================================
+FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)
+==============================================================================
+Fields follow the Finding schema: title, description, classification, severity, confidence, evidence_status, verification_status, materiality_reasoning, business_impact, unresolved_questions; evidence rows follow the Evidence schema.
+Findings: 13   by classification: {'consistent': 13}   by severity: {'informational': 13}
+
+--- FINDING 1 of 13  [fnd_a07dff27e05a43ef] ------------------------------
+title                 : Consistent: Tool_Category
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 07_Equipment_Register.xlsx (sheet Installed_Tools, A1:F5) and 08_Financial_and_Capacity_Model.xlsx (sheet Tool_Capex_Summary, A1:D7) state the same value for Tool_Category: Metrology.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 07_Equipment_Register.xlsx
+      chunk    : chk_d3c5174163434419   (chunk_index 0)
+      location : sheet Installed_Tools, cell A1:F5
+      quote    : "[Installed_Tools!A5:F5] Tool_ID: MET-003; Tool_Category: Metrology; Process_Area: Metrology; Status: Installed; Installed_Cost_INR_Crore: 28; Commissioning_Date: 2026-05-09"
+      relevance: | MET-003   | Metrology        | Metrology        | Installed | 28                       | 2026-05-09         |
+      assessment: 07_Equipment_Register.xlsx states: | MET-003   | Metrology        | Metrology        | Installed | 28                       | 2026-05-09         | | subject=MET-003; metric=Tool_Category; value=Metrology
+  [2] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_657ba53a11464852   (chunk_index 1)
+      location : sheet Tool_Capex_Summary, cell A1:D7
+      quote    : "[Tool_Capex_Summary!A5:D5] Tool_ID: MET-003; Tool_Category: Metrology; Budgeted_Cost_INR_Crore: 28; Procurement_Status: Installed"
+      relevance: | MET-003   | Metrology        | 28                      | Installed          |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | MET-003   | Metrology        | 28                      | Installed          | | subject=MET-003; metric=Tool_Category; value=Metrology
+
+--- FINDING 2 of 13  [fnd_b3747c50f53e4c91] ------------------------------
+title                 : Consistent: Tool_Category
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 08_Financial_and_Capacity_Model.xlsx (sheet Tool_Capex_Summary, A1:D7) and 07_Equipment_Register.xlsx (sheet Installed_Tools, A6:F10) state the same value for Tool_Category: CMP.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_657ba53a11464852   (chunk_index 1)
+      location : sheet Tool_Capex_Summary, cell A1:D7
+      quote    : "[Tool_Capex_Summary!A6:D6] Tool_ID: CMP-006; Tool_Category: CMP; Budgeted_Cost_INR_Crore: 31; Procurement_Status: Installed"
+      relevance: | CMP-006   | CMP              | 31                      | Installed          |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | CMP-006   | CMP              | 31                      | Installed          | | subject=CMP-006; metric=Tool_Category; value=CMP
+  [2] role=supporting
+      document : 07_Equipment_Register.xlsx
+      chunk    : chk_4dbf1947b38e410f   (chunk_index 1)
+      location : sheet Installed_Tools, cell A6:F10
+      quote    : "[Installed_Tools!A6:F6] Tool_ID: CMP-006; Tool_Category: CMP; Process_Area: Planarization; Status: Installed; Installed_Cost_INR_Crore: 31; Commissioning_Date: 2026-06-11"
+      relevance: | CMP-006   | CMP              | Planarization    | Installed | 31                       | 2026-06-11         |
+      assessment: 07_Equipment_Register.xlsx states: | CMP-006   | CMP              | Planarization    | Installed | 31                       | 2026-06-11         | | subject=CMP-006; metric=Tool_Category; value=CMP
+
+--- FINDING 3 of 13  [fnd_ef40719e68bd4e66] ------------------------------
+title                 : Consistent: Tool_Category
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 07_Equipment_Register.xlsx (sheet Installed_Tools, A1:F5) and 08_Financial_and_Capacity_Model.xlsx (sheet Tool_Capex_Summary, A1:D7) state the same value for Tool_Category: CVD deposition.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 07_Equipment_Register.xlsx
+      chunk    : chk_d3c5174163434419   (chunk_index 0)
+      location : sheet Installed_Tools, cell A1:F5
+      quote    : "[Installed_Tools!A4:F4] Tool_ID: DEP-008; Tool_Category: CVD deposition; Process_Area: Deposition; Status: Installed; Installed_Cost_INR_Crore: 36; Commissioning_Date: 2026-04-18"
+      relevance: | DEP-008   | CVD deposition   | Deposition       | Installed | 36                       | 2026-04-18         |
+      assessment: 07_Equipment_Register.xlsx states: | DEP-008   | CVD deposition   | Deposition       | Installed | 36                       | 2026-04-18         | | subject=DEP-008; metric=Tool_Category; value=CVD deposition
+  [2] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_657ba53a11464852   (chunk_index 1)
+      location : sheet Tool_Capex_Summary, cell A1:D7
+      quote    : "[Tool_Capex_Summary!A4:D4] Tool_ID: DEP-008; Tool_Category: CVD deposition; Budgeted_Cost_INR_Crore: 36; Procurement_Status: Installed"
+      relevance: | DEP-008   | CVD deposition   | 36                      | Installed          |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | DEP-008   | CVD deposition   | 36                      | Installed          | | subject=DEP-008; metric=Tool_Category; value=CVD deposition
+
+--- FINDING 4 of 13  [fnd_a9b4ce9fc2ca461b] ------------------------------
+title                 : Consistent: Tool_Category
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 07_Equipment_Register.xlsx (sheet Installed_Tools, A6:F10) and 08_Financial_and_Capacity_Model.xlsx (sheet Tool_Capex_Summary, A8:D13) state the same value for Tool_Category: Wet clean.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 07_Equipment_Register.xlsx
+      chunk    : chk_4dbf1947b38e410f   (chunk_index 1)
+      location : sheet Installed_Tools, cell A6:F10
+      quote    : "[Installed_Tools!A8:F8] Tool_ID: CLEAN-011; Tool_Category: Wet clean; Process_Area: Wet processing; Status: Installed; Installed_Cost_INR_Crore: 19; Commissioning_Date: 2026-07-22"
+      relevance: | CLEAN-011 | Wet clean        | Wet processing   | Installed | 19                       | 2026-07-22         |
+      assessment: 07_Equipment_Register.xlsx states: | CLEAN-011 | Wet clean        | Wet processing   | Installed | 19                       | 2026-07-22         | | subject=CLEAN-011; metric=Tool_Category; value=Wet clean
+  [2] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_e9e6cecad9b04671   (chunk_index 2)
+      location : sheet Tool_Capex_Summary, cell A8:D13
+      quote    : "[Tool_Capex_Summary!A8:D8] Tool_ID: CLEAN-011; Tool_Category: Wet clean; Budgeted_Cost_INR_Crore: 19; Procurement_Status: Installed"
+      relevance: | CLEAN-011 | Wet clean        | 19                      | Installed          |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | CLEAN-011 | Wet clean        | 19                      | Installed          | | subject=CLEAN-011; metric=Tool_Category; value=Wet clean
+
+--- FINDING 5 of 13  [fnd_d7b33cffb5a842f0] ------------------------------
+title                 : Consistent: Tool_Category
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 08_Financial_and_Capacity_Model.xlsx (sheet Tool_Capex_Summary, A1:D7) and 07_Equipment_Register.xlsx (sheet Installed_Tools, A1:F5) state the same value for Tool_Category: Dry etch.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_657ba53a11464852   (chunk_index 1)
+      location : sheet Tool_Capex_Summary, cell A1:D7
+      quote    : "[Tool_Capex_Summary!A3:D3] Tool_ID: ETCH-014; Tool_Category: Dry etch; Budgeted_Cost_INR_Crore: 42; Procurement_Status: Installed"
+      relevance: | ETCH-014  | Dry etch         | 42                      | Installed          |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | ETCH-014  | Dry etch         | 42                      | Installed          | | subject=ETCH-014; metric=Tool_Category; value=Dry etch
+  [2] role=supporting
+      document : 07_Equipment_Register.xlsx
+      chunk    : chk_d3c5174163434419   (chunk_index 0)
+      location : sheet Installed_Tools, cell A1:F5
+      quote    : "[Installed_Tools!A3:F3] Tool_ID: ETCH-014; Tool_Category: Dry etch; Process_Area: Etch; Status: Installed; Installed_Cost_INR_Crore: 42; Commissioning_Date: 2026-04-02"
+      relevance: | ETCH-014  | Dry etch         | Etch             | Installed | 42                       | 2026-04-02         |
+      assessment: 07_Equipment_Register.xlsx states: | ETCH-014  | Dry etch         | Etch             | Installed | 42                       | 2026-04-02         | | subject=ETCH-014; metric=Tool_Category; value=Dry etch
+
+--- FINDING 6 of 13  [fnd_72d680d425c54ce6] ------------------------------
+title                 : Consistent: Tool_Category
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 07_Equipment_Register.xlsx (sheet Installed_Tools, A6:F10) and 08_Financial_and_Capacity_Model.xlsx (sheet Tool_Capex_Summary, A8:D13) state the same value for Tool_Category: Wafer test.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 07_Equipment_Register.xlsx
+      chunk    : chk_4dbf1947b38e410f   (chunk_index 1)
+      location : sheet Installed_Tools, cell A6:F10
+      quote    : "[Installed_Tools!A9:F9] Tool_ID: TEST-021; Tool_Category: Wafer test; Process_Area: Electrical test; Status: Installed; Installed_Cost_INR_Crore: 24; Commissioning_Date: 2026-08-16"
+      relevance: | TEST-021  | Wafer test       | Electrical test  | Installed | 24                       | 2026-08-16         |
+      assessment: 07_Equipment_Register.xlsx states: | TEST-021  | Wafer test       | Electrical test  | Installed | 24                       | 2026-08-16         | | subject=TEST-021; metric=Tool_Category; value=Wafer test
+  [2] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_e9e6cecad9b04671   (chunk_index 2)
+      location : sheet Tool_Capex_Summary, cell A8:D13
+      quote    : "[Tool_Capex_Summary!A9:D9] Tool_ID: TEST-021; Tool_Category: Wafer test; Budgeted_Cost_INR_Crore: 24; Procurement_Status: Installed"
+      relevance: | TEST-021  | Wafer test       | 24                      | Installed          |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | TEST-021  | Wafer test       | 24                      | Installed          | | subject=TEST-021; metric=Tool_Category; value=Wafer test
+
+--- FINDING 7 of 13  [fnd_697a641f6a62422c] ------------------------------
+title                 : Consistent: wafer manufacturing size
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 06_Facility_and_Utilities_Plan.docx (section Facility design basis) and 04_Investor_Presentation.docx (section Investment highlights) state the same value for wafer manufacturing size: 300 mm mm.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 06_Facility_and_Utilities_Plan.docx
+      chunk    : chk_f74e2ee123864003   (chunk_index 1)
+      location : heading Facility design basis
+      quote    : "Facility designed for 300 mm wafer manufacturing using a 65 nm process platform; cleanroom and support areas are being commissioned in phases."
+      relevance: Facility designed for 300 mm wafer manufacturing using a 65 nm process platform; cleanroom and support areas are being commissioned in phases.
+      assessment: 06_Facility_and_Utilities_Plan.docx states: Facility designed for 300 mm wafer manufacturing using a 65 nm process platform; cleanroom and support areas are being commissioned in phases. | subject=Facility; metric=wafer manufacturing size; value=300 mm; unit=mm
+  [2] role=supporting
+      document : 04_Investor_Presentation.docx
+      chunk    : chk_8ec8b97dc4484fed   (chunk_index 1)
+      location : heading Investment highlights
+      quote    : "SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets."
+      relevance: SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets.
+      assessment: 04_Investor_Presentation.docx states: SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets. | subject=SiliconForge; metric=wafer diameter; value=300 mm; unit=mm
+
+--- FINDING 8 of 13  [fnd_e07a10a2bd334e87] ------------------------------
+title                 : Consistent: wafer fabrication facility size
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 01_Corporate_Overview.pdf (page 1) and 04_Investor_Presentation.docx (section Investment highlights) state the same value for wafer fabrication facility size: 300 mm.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 01_Corporate_Overview.pdf
+      chunk    : chk_7f941e7be7704ecb   (chunk_index 1)
+      location : page 1
+      quote    : "SiliconForge is a fictional Indian semiconductor manufacturer developing a 300 mm wafer fabrication facility in Nanjangud Industrial Area, Mysuru district, Karnataka."
+      relevance: SiliconForge is a fictional Indian semiconductor manufacturer developing a 300 mm wafer fabrication facility in Nanjangud Industrial Area, Mysuru district, Karnataka.
+      assessment: 01_Corporate_Overview.pdf states: SiliconForge is a fictional Indian semiconductor manufacturer developing a 300 mm wafer fabrication facility in Nanjangud Industrial Area, Mysuru district, Karnataka. | subject=SiliconForge; metric=wafer fabrication facility size; value=300 mm
+  [2] role=supporting
+      document : 04_Investor_Presentation.docx
+      chunk    : chk_8ec8b97dc4484fed   (chunk_index 1)
+      location : heading Investment highlights
+      quote    : "SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets."
+      relevance: SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets.
+      assessment: 04_Investor_Presentation.docx states: SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets. | subject=SiliconForge; metric=wafer diameter; value=300 mm; unit=mm
+
+--- FINDING 9 of 13  [fnd_857d4c72519745e8] ------------------------------
+title                 : Consistent: load
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 03_Quality_and_Compliance_Report.pdf (page 1) and 06_Facility_and_Utilities_Plan.docx (section Electrical demand) state the same value for load: 22 MW MW.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 03_Quality_and_Compliance_Report.pdf
+      chunk    : chk_c0881784d84b4f3c   (chunk_index 1)
+      location : page 1
+      quote    : "No final Consent for Establishment amendment covering the proposed 22 MW connected load was present in records reviewed."
+      relevance: No final Consent for Establishment amendment covering the proposed 22 MW connected load was present in records reviewed.
+      assessment: 03_Quality_and_Compliance_Report.pdf states: No final Consent for Establishment amendment covering the proposed 22 MW connected load was present in records reviewed. | subject=proposed connected load; metric=load; value=22 MW; unit=MW
+  [2] role=supporting
+      document : 06_Facility_and_Utilities_Plan.docx
+      chunk    : chk_0c06f30ef345465c   (chunk_index 2)
+      location : heading Electrical demand
+      quote    : "Design connected electrical load: 22 MW at full planned equipment installation."
+      relevance: Design connected electrical load: 22 MW at full planned equipment installation.
+      assessment: 06_Facility_and_Utilities_Plan.docx states: Design connected electrical load: 22 MW at full planned equipment installation. | subject=Design connected electrical load; metric=electrical load; value=22 MW; unit=MW; conditions=at full planned equipment installation
+
+--- FINDING 10 of 13  [fnd_76134b2bfeea4e5a] ------------------------------
+title                 : Consistent: production yield
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 04_Investor_Presentation.docx (section Operating performance) and 08_Financial_and_Capacity_Model.xlsx (sheet Capacity_Assumptions, A1:D6) state the same value for production yield: 96.8% %.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 04_Investor_Presentation.docx
+      chunk    : chk_96070feabd7f4239   (chunk_index 2)
+      location : heading Operating performance
+      quote    : "Current production yield: 96.8% on SF-65-A during Q3 2026."
+      relevance: Current production yield: 96.8% on SF-65-A during Q3 2026.
+      assessment: 04_Investor_Presentation.docx states: Current production yield: 96.8% on SF-65-A during Q3 2026. | subject=SF-65-A; metric=production yield; value=96.8%; unit=%; period=Q3 2026; conditions=Current production yield
+  [2] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_984c2a5664f4434d   (chunk_index 0)
+      location : sheet Capacity_Assumptions, cell A1:D6
+      quote    : "[Capacity_Assumptions!A5:D5] Assumption: Q3 2026 production yield; Model_Value: 96.8; Unit: %; Model_Note: SF-65-A"
+      relevance: | Q3 2026 production yield            | 96.8        | %            | SF-65-A                 |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | Q3 2026 production yield            | 96.8        | %            | SF-65-A                 | | subject=Q3 2026 production yield; metric=Model_Value; value=96.8; unit=%; period=Q3 2026; conditions=SF-65-A
+
+--- FINDING 11 of 13  [fnd_c59e97f7372845b5] ------------------------------
+title                 : Production format: 300 mm wafers vs 300 mm
+classification        : consistent
+severity              : informational
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : The corporate overview states “300mmwafers” for Production format (page 1); the investor presentation states “300 mm” for its manufacturing platform (Investment highlights). The values agree.
+materiality_reasoning : The same wafer diameter is stated in both excerpts, so the difference does not change a reader’s understanding.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 01_Corporate_Overview.pdf
+      chunk    : chk_b6cc205dabd34bbb   (chunk_index 0)
+      location : page 1
+      quote    : "Productionformat | 300mmwafers"
+      relevance: Production format | 300 mm wafers
+      assessment: 01_Corporate_Overview.pdf states: Production format | 300 mm wafers | subject=Production format; metric=Management-reported position; value=300 mm wafers
+  [2] role=supporting
+      document : 04_Investor_Presentation.docx
+      chunk    : chk_8ec8b97dc4484fed   (chunk_index 1)
+      location : heading Investment highlights
+      quote    : "building a 300 mm, 65 nm semiconductor manufacturing platform"
+      relevance: SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets.
+      assessment: 04_Investor_Presentation.docx states: SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets. | subject=SiliconForge; metric=wafer diameter; value=300 mm; unit=mm
+
+--- FINDING 12 of 13  [fnd_38ef4b96b3eb4f82] ------------------------------
+title                 : Wafer size: 300 mm vs 300 mm
+classification        : consistent
+severity              : informational
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : The corporate overview describes a “300 mm wafer fabrication facility” (page 1); the same corporate overview reports “300mmwafers” as the production format (page 1). Both state a 300 mm wafer size.
+materiality_reasoning : Both excerpts report the same wafer size, so there is no discrepancy affecting a reader’s understanding.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 01_Corporate_Overview.pdf
+      chunk    : chk_b6cc205dabd34bbb   (chunk_index 0)
+      location : page 1
+      quote    : "Productionformat | 300mmwafers"
+      relevance: Production format | 300 mm wafers
+      assessment: 01_Corporate_Overview.pdf states: Production format | 300 mm wafers | subject=Production format; metric=Management-reported position; value=300 mm wafers
+  [2] role=supporting
+      document : 01_Corporate_Overview.pdf
+      chunk    : chk_7f941e7be7704ecb   (chunk_index 1)
+      location : page 1
+      quote    : "developing a 300 mm wafer fabrication facility"
+      relevance: SiliconForge is a fictional Indian semiconductor manufacturer developing a 300 mm wafer fabrication facility in Nanjangud Industrial Area, Mysuru district, Karnataka.
+      assessment: 01_Corporate_Overview.pdf states: SiliconForge is a fictional Indian semiconductor manufacturer developing a 300 mm wafer fabrication facility in Nanjangud Industrial Area, Mysuru district, Karnataka. | subject=SiliconForge; metric=wafer fabrication facility size; value=300 mm
+
+--- FINDING 13 of 13  [fnd_e7e86175685c433a] ------------------------------
+title                 : Target monthly shipments by Q2 2027: 10000 vs 10,000 wafers
+classification        : consistent
+severity              : informational
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : The capacity model states a target of 10000 Wafers/month by Q2 2027; the investor presentation says management expects shipments to reach 10,000 wafers by Q2 2027. The claims agree on the target and period.
+materiality_reasoning : The same target and period are stated in both excerpts, so the difference in number formatting does not change a reader’s understanding.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_984c2a5664f4434d   (chunk_index 0)
+      location : sheet Capacity_Assumptions, cell A1:D6
+      quote    : "Target monthly shipments by Q2 2027; Model_Value: 10000; Unit: Wafers/month"
+      relevance: | Target monthly shipments by Q2 2027 | 10000       | Wafers/month | Management target       |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | Target monthly shipments by Q2 2027 | 10000       | Wafers/month | Management target       | | subject=Target monthly shipments by Q2 2027; metric=Model_Value; value=10000; unit=Wafers/month; period=by Q2 2027
+  [2] role=supporting
+      document : 04_Investor_Presentation.docx
+      chunk    : chk_96070feabd7f4239   (chunk_index 2)
+      location : heading Operating performance
+      quote    : "10,000 wafers by Q2 2027"
+      relevance: Management expects monthly shipments to reach 10,000 wafers by Q2 2027.
+      assessment: 04_Investor_Presentation.docx states: Management expects monthly shipments to reach 10,000 wafers by Q2 2027. | subject=Management; metric=expected monthly shipments; value=10,000 wafers; unit=wafers; period=by Q2 2027; conditions=expects monthly shipments to reach
+
+
+==============================================================================
+COVERAGE AND PER-DOCUMENT VERDICTS
+==============================================================================
+Coverage: 'read' = chunks the LLM was shown. A document counts as fully read only if every batch succeeded (all-or-nothing per document).
+
+  document                                chunks  read  fully read  claims  LLM calls  tokens  extract s  verdict  reason
+  --------------------------------------  ------  ----  ----------  ------  ---------  ------  ---------  -------  ---------------------------------------------
+  01_Corporate_Overview.pdf               2       2     yes         12      0          0       2.7        skipped  verdicts skipped by request (--skip-verdicts)
+  02_Manufacturing_Operations_Report.pdf  2       2     yes         15      0          0       27.6       skipped  verdicts skipped by request (--skip-verdicts)
+  03_Quality_and_Compliance_Report.pdf    2       2     yes         14      0          0       17.8       skipped  verdicts skipped by request (--skip-verdicts)
+  04_Investor_Presentation.docx           5       5     yes         16      0          0       17.9       skipped  verdicts skipped by request (--skip-verdicts)
+  05_Customer_Supply_Agreement.docx       5       5     yes         14      0          0       21.0       skipped  verdicts skipped by request (--skip-verdicts)
+  06_Facility_and_Utilities_Plan.docx     5       5     yes         15      0          0       27.6       skipped  verdicts skipped by request (--skip-verdicts)
+  07_Equipment_Register.xlsx              4       4     yes         72      0          0       35.6       skipped  verdicts skipped by request (--skip-verdicts)
+  08_Financial_and_Capacity_Model.xlsx    4       4     yes         49      0          0       24.7       skipped  verdicts skipped by request (--skip-verdicts)
+
+==============================================================================
+CLAIM LEDGER
+==============================================================================
+claims recorded 207, rejected 5
+
+Per document (paired = has a comparable claim elsewhere; corroborated = same value stated elsewhere; unpaired = nothing comparable found):
+  document                                claims  paired  corroborated  unpaired  pairs judged  findings
+  --------------------------------------  ------  ------  ------------  --------  ------------  --------
+  01_Corporate_Overview.pdf               12      4       1             8         4             3
+  02_Manufacturing_Operations_Report.pdf  15      2       2             13        0             0
+  03_Quality_and_Compliance_Report.pdf    14      1       1             13        0             1
+  04_Investor_Presentation.docx           16      5       3             11        3             5
+  05_Customer_Supply_Agreement.docx       14      0       0             14        0             0
+  06_Facility_and_Utilities_Plan.docx     15      3       3             12        0             2
+  07_Equipment_Register.xlsx              72      9       9             63        0             6
+  08_Financial_and_Capacity_Model.xlsx    49      12      10            37        2             8
+
+Rejected claims by reason (first 15):
+  - value 'Pilot production; commercial ramp in progress' not found in any chunk of 01_Corporate_Overview.pdf
+  - value '12,000 WSPM as of 30 September 2026' not found in any chunk of 01_Corporate_Overview.pdf
+  - value '92.4%' not found in any chunk of 02_Manufacturing_Operations_Report.pdf
+  - value '92.4% for Q3 2026; see Operations Report' not found in any chunk of 03_Quality_and_Compliance_Report.pdf
+  - value 'Lot-level traceability maintained in MES, per management' not found in any chunk of 03_Quality_and_Compliance_Report.pdf
+
+==============================================================================
+PAIR MATCHING AND JUDGING
+==============================================================================
+pairing mode: LLM grouping of sorted claims: 207 claims in 5 batch(es), 5 call(s) (1 failed), 26 groups covering 54 claims (largest 4), 20 pairs, 0 unknown refs ignored
+  pairing every claim with every other in its group would have made 31 pairs; claims stating the same value are linked as agreement, and one claim per distinct value (40 values) is compared
+  note: claims in different batches are never grouped together (more than one batch in this run)
+  pairing problem: Model output did not match ClaimGroups after 5 attempts: 3 validation errors for ClaimGroups
+groups.1.refs
+  List should have at least 2 items after validation, not 1 [type=too_short, input_value=['c3
+candidate pairs: 20
+  by relation hint : {'exact': 15, 'conflicting': 4, 'contextual': 1}
+  by match route   : {'llm': 20}
+  across documents : 18   inside one document: 2
+exact agreements (corroboration, no LLM): 15
+judged by the LLM: 5 in 1 calls (0 batches failed)
+LLM verdicts: {'consistent': 3, 'not_comparable': 1, 'contradiction': 1}
+findings saved 13; rejected 1
+
+Rejected findings (first 15):
+  - contradiction pair 3: the quotes do not show the claims' values ('20,000 wafer starts per month (WSPM)' and 'Full build-out capacity')
+
+==============================================================================
+LLM CALLS: tokens, context size, latency, failures
+==============================================================================
+Per phase:
+  phase               attempts  failed  prompt tok  completion tok  thinking tok  avg ctx tok  max ctx tok  avg ms  p95 ms  total s
+  ------------------  --------  ------  ----------  --------------  ------------  -----------  -----------  ------  ------  -------
+  group claims (LLM)  9         0       0           0               0             0            0            3215    7552    28.9
+  judge pairs         1         0       0           0               0             0            0            10819   10819   10.8
+
+Every provider attempt (context = what was sent; tokens as counted by the API):
+  #   phase               at s   result  ctx chars  ctx tokens  cached  completion  thinking  total tok  latency ms  resp chars  error
+  --  ------------------  -----  ------  ---------  ----------  ------  ----------  --------  ---------  ----------  ----------  -----
+  1   group claims (LLM)  175.3  ok      13,497     0           0       0           0         0          4761        72
+  2   group claims (LLM)  180.0  ok      13,520     0           0       0           0         0          7552        965
+  3   group claims (LLM)  187.6  ok      13,425     0           0       0           0         0          4210        261
+  4   group claims (LLM)  191.8  ok      13,477     0           0       0           0         0          4304        198
+  5   group claims (LLM)  196.1  ok      4,822      0           0       0           0         0          4229        132
+  6   group claims (LLM)  200.4  ok      5,183      0           0       0           0         0          967         132
+  7   group claims (LLM)  201.3  ok      5,544      0           0       0           0         0          931         132
+  8   group claims (LLM)  202.3  ok      5,905      0           0       0           0         0          1117        132
+  9   group claims (LLM)  203.4  ok      6,266      0           0       0           0         0          866         132
+  10  judge pairs         204.4  ok      12,900     0           0       0           0         0          10819       3,671
+
+==============================================================================
+EMBEDDING CALLS
+==============================================================================
+calls 0, failed 0, texts 0 (claim topic texts embedded locally for matching)
+
+  #  texts  chars  latency ms  result  error
+  -  -----  -----  ----------  ------  -----
+
+==============================================================================
+FAILURES
+==============================================================================
+LLM attempt failures:
+  none
+Documents not fully read:
+  none
+Pair-judging problems:
+  none
+
+==============================================================================
+TIMING
+==============================================================================
+  stage                                            duration  share of wall time
+  -----------------------------------------------  --------  ------------------
+  0. scan files, process new or changed ones       0.0s      0%
+  1. read every chunk, extract claims              175.0s    81%
+  2. match claims (LLM grouping of sorted claims)  29.0s     13%
+  3. judge pairs, verify quotes, save findings     11.0s     5%
+  4. per-document verdicts                         0.0s      0%
+
+==============================================================================
+KNOWN LIMITS OF THIS RUN
+==============================================================================
+- Reading is all-or-nothing per document: if one batch fails after all retries, that document's claims are discarded and it counts as not read.
+- Candidate matching keeps at most 5 partners per claim (an existing default), so some comparable pairs are never judged.
+- The claim-extraction prompt lists business categories (capacity, supply, pricing, ...) and is not yet domain-agnostic.
+- Claims inside one document are also paired and judged; matching quality depends on how the model labels subject/metric/unit/period.
+- Exact agreements are trusted as corroboration without an LLM check.

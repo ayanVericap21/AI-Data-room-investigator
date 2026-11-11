@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import os
 import re
 import statistics
 import sys
@@ -37,8 +38,15 @@ from app.core.config import get_settings  # noqa: E402
 from app.llm.factory import get_embedding_provider, get_llm_client  # noqa: E402
 from app.llm.errors import LLMError  # noqa: E402
 from app.llm.local import DEFAULT_LOCAL_MODEL  # noqa: E402
-from app.models import Claim, Document, DocumentChunk, Finding, Investigation  # noqa: E402
+from app.models import Claim, Document, DocumentChunk, Evidence, Finding, Investigation  # noqa: E402
+from app.tools.reading import locator_text  # noqa: E402
+from app.schemas.run_metrics import LLMTotals, PhaseMetrics, RunCounts, RunMetrics, RunSettings, StageTiming  # noqa: E402
+from app.services.run_metrics import write_metrics  # noqa: E402
 from app.models.base import InvestigationStatus, ProcessingStatus, utcnow  # noqa: E402
+from app.services.llm_pairing import LLMPairer  # noqa: E402
+from app.services.llama_claims import LlamaClaimExtractor  # noqa: E402
+from app.services.missing_items import MissingItemChecker  # noqa: E402
+from app.llm.llama_extract import LlamaExtractClient  # noqa: E402
 from app.services.claim_service import EXCERPT_TYPES_SKIPPED, ClaimService, ExtractionSummary  # noqa: E402
 from app.services.document_service import DocumentService  # noqa: E402
 from app.services.processing_service import ProcessingService  # noqa: E402
@@ -60,9 +68,9 @@ Use only the statistics and finding titles given. verdict is one of: consistent 
 def phase_rows(R):
     """(phase, attempt) for every LLM provider attempt, in order."""
     bounds = R.llm_bounds
-    names = ["extract claims", "judge pairs", "document verdicts"]
+    names = ["extract claims", "group claims (LLM)", "judge pairs", "document verdicts"]
     for i, m in enumerate(R.llm.call_metrics):
-        phase = names[0 if i < bounds[0] else 1 if i < bounds[1] else 2]
+        phase = names[0 if i < bounds[0] else 1 if i < bounds[1] else 2 if i < bounds[2] else 3]
         yield phase, m
 
 
@@ -70,12 +78,16 @@ def phase_rows(R):
 def sec_how(R):
     a, s = R.args, R.settings
     return [
-        f"1. Reading: every chunk of every processed document{' except ' + ', '.join(R.excluded) if R.excluded else ''} (database '{R.db_name}') was sent to the LLM in batches of up to {a.batch_chars:,} characters; each batch returns claims, kept only if their value appears in the cited chunk (existing claim extractor, no chunk or call limits).",
-        f"2. Ledger: accepted claims are stored in the claims table; claims are matched across and within documents by wording and by local embeddings ({s.embedding_model}), without a fixed number of documents or claims assumed.",
+        ("1. Reading: the documents selected for this run were uploaded to LlamaExtract (LlamaIndex Cloud, cost_effective tier), which returns claims with the page and text they came from; "
+         "each claim is tied to a stored chunk and kept only if its value appears in that chunk text." if a.extractor == "llamaextract" else
+         f"1. Reading: every chunk of every processed document{' except ' + ', '.join(R.excluded) if R.excluded else ''} (database '{R.db_name}') was sent to the LLM in batches of up to {a.batch_chars:,} characters; each batch returns claims, kept only if their value appears in the cited chunk (existing claim extractor, no chunk or call limits)."),
+        (f"2. Ledger: accepted claims are stored in the claims table; the claims are sorted by label and sent to the LLM in batches of up to {a.pairing_batch_chars:,} characters, which groups the ones that state the same attribute of the same subject (no code pairing, no fixed number of documents or claims assumed)."
+         if a.pairing == "llm" else
+         f"2. Ledger: accepted claims are stored in the claims table; claims are matched across and within documents by wording and by local embeddings ({s.embedding_model}), without a fixed number of documents or claims assumed."),
         f"3. Judging: pairs that agree exactly count as corroboration; every other pair (conflicting, partial, contextual) goes to the LLM in batches of up to {a.judge_batch_chars:,} characters with both source excerpts.",
         "4. Findings: a discrepancy is saved only if its two quotes are exact substrings of their chunks (checked in code)"
         + ("; per-document verdicts were skipped by request." if a.skip_verdicts else "; then each document gets a verdict built from its counts."),
-        f"5. Model: {s.llm_model}, temperature 0, up to {a.llm_attempts} attempts per call honouring Google's retry delay; no step, tool-call or finding limits.",
+        f"5. Model: {s.llm_model}, {'through LlamaExtract' if s.llm_provider == 'llamaextract' else 'temperature 0'}, up to {a.llm_attempts} attempts per call honouring the provider's retry delay; no step, tool-call or finding limits.",
     ]
 
 
@@ -83,7 +95,8 @@ def sec_glance(R):
     ex, js, res = R.extraction, R.judge, R
     t = R.llm.get_token_usage()
     ok = [m for m in R.llm.call_metrics if m.ok]
-    out = [f"Run started   : {R.started:%Y-%m-%d %H:%M:%S} (local)   finished: {R.finished:%H:%M:%S}   wall time: {R.wall_s:.1f}s",
+    out = ([">>> THIS RUN WAS STOPPED BEFORE IT FINISHED: everything below covers only the part that ran. <<<"] if R.stopped else [])
+    out += [f"Run started   : {R.started:%Y-%m-%d %H:%M:%S} (local)   finished: {R.finished:%H:%M:%S}   wall time: {R.wall_s:.1f}s",
            f"Config        : {R.config}", f"Database      : {R.db_name} (documents were already processed; reused)",
            f"Code version  : git {base.git_info()}   python {sys.version.split()[0]}"]
     if R.error:
@@ -94,7 +107,15 @@ def sec_glance(R):
     out += [f"Documents     : {len(docs)}; fully read {sum(d['ok'] for d in docs)}, incomplete {sum(not d['ok'] for d in docs)}",
             f"Chunks        : {sum(d['chunks'] for d in docs)} total; sent to the LLM {sum(d['readable'] for d in docs if d['ok'])} "
             f"(headings are skipped by the extractor: {sum(d['chunks'] - d['readable'] for d in docs)})",
-            f"Claims        : {ex.claims_created} recorded, {ex.claims_rejected} rejected (value not found in cited chunk or unknown chunk id)"]
+            f"Claims        : {ex.claims_created} recorded, {ex.claims_rejected} rejected (value not found in cited chunk or unknown chunk id), "
+            f"{ex.claims_skipped_as_labels} skipped because the value was only the label of its own row",
+            f"Extraction    : up to {R.args.batch_chunks or 'any number of'} chunks per call (and {R.args.batch_chars:,} characters); running vocabulary {R.args.vocabulary}; "
+            f"coverage check {R.args.coverage_check}"
+            + (f": {ex.coverage_chunks_checked} chunks had {ex.coverage_numbers} numbers without a claim, {ex.coverage_calls} follow-up calls "
+               f"({ex.coverage_calls_failed} failed), {ex.coverage_claims_added} claims added" if R.args.coverage_check == "on" else "")]
+    if R.args.extractor == "llamaextract":
+        out.append(f"Extractor     : LlamaExtract (cost_effective tier) instead of the LLM: {ex.external_calls} documents uploaded to LlamaIndex Cloud, "
+                   f"{ex.external_credits:g} credits used, {ex.documents_failed} documents failed (the batch and coverage settings above do not apply)")
     if R.pairs is not None:
         out.append(f"Pairs         : {len(R.pairs)} candidates; {js.pairs_exact} agreed exactly (not sent to the LLM); {js.pairs_judged} judged; "
                    f"verdicts {dict(js.verdict_counts)}")
@@ -125,10 +146,15 @@ def sec_contradictions(R):
     rows = list(s.scalars(select(Finding).where(Finding.investigation_id == R.result.investigation_id, Finding.classification == "contradiction")))
     if not rows:
         return ["No finding was classified as a contradiction in this run."]
-    out = [f"{len(rows)} contradiction(s). Full evidence for each is in the findings report below (search for the finding id).", ""]
+    out = [f"{len(rows)} contradiction(s). Each lists its evidence (document, location, exact quote); the full detail is in the findings report below (search for the finding id).",
+           "Locations: 'page N' is the PDF page number (the first page of the file is 1), which can differ from a page number printed on the page itself.", ""]
     for f in rows:
         out.append(f"- [{f.id}] severity {f.severity}, confidence {f.confidence}: {f.title}")
         out.append(f"    {clip(f.description, 220)}")
+        evidence = s.execute(select(Evidence, DocumentChunk, Document.filename).join(DocumentChunk, DocumentChunk.id == Evidence.chunk_id)
+                             .join(Document, Document.id == DocumentChunk.document_id).where(Evidence.finding_id == f.id)).all()
+        for ev, chunk, filename in evidence:
+            out.append(f"    evidence: {filename} | {locator_text(chunk)} | chunk {chunk.id} | \"{clip(ev.quoted_text, 120)}\"")
     return out
 
 
@@ -156,12 +182,51 @@ def sec_ledger(R):
 
 def sec_pairs(R):
     js = R.judge
-    out = [f"candidate pairs: {len(R.pairs)}", f"  by relation hint : {dict(Counter(p.relation_hint for p in R.pairs))}",
+    out = []
+    if R.pairing_stats:
+        ps = R.pairing_stats
+        out += [f"pairing mode: LLM grouping of sorted claims: {ps.claims} claims in {ps.batches} batch(es), {ps.llm_calls} call(s) ({ps.batches_failed} failed), "
+                f"{ps.groups} groups covering {ps.claims_grouped} claims (largest {ps.largest_group}), {ps.pairs} pairs ({ps.neighbor_pairs} added from nearest neighbours in other documents), {ps.unknown_refs} unknown refs ignored",
+                f"  pairing every claim with every other in its group would have made {ps.pairs_all_combinations} pairs; "
+                f"claims stating the same value are linked as agreement, and one claim per distinct value ({ps.distinct_values} values) is compared",
+                "  note: claims in different batches are never grouped together" + (" (more than one batch in this run)" if ps.batches > 1 else " (one batch: no such gap in this run)")]
+        out += [f"  pairing problem: {e}" for e in ps.errors]
+    else:
+        out.append("pairing mode: code (word overlap and local embeddings)")
+    out += [f"candidate pairs: {len(R.pairs)}", f"  by relation hint : {dict(Counter(p.relation_hint for p in R.pairs))}",
            f"  by match route   : {dict(Counter(p.matched_by for p in R.pairs))}",
            f"  across documents : {R.pairs_cross}   inside one document: {len(R.pairs) - R.pairs_cross}",
            f"exact agreements (corroboration, no LLM): {js.pairs_exact}", f"judged by the LLM: {js.pairs_judged} in {js.llm_calls} calls ({js.batches_failed} batches failed)",
-           f"LLM verdicts: {dict(js.verdict_counts)}", f"findings saved {js.findings_saved}; rejected {js.findings_rejected}", "", "Rejected findings (first 15):"]
+           f"LLM verdicts: {dict(js.verdict_counts)}", f"findings saved {js.findings_saved}; rejected {js.findings_rejected}",
+           f"single-pair retries {js.retries}; verdicts that did not match their pair (echoed values) {js.misaligned}; verdicts without echoed values {js.echo_missing}; "
+           f"quotes supplied by code for verdicts that gave none {js.quotes_from_code}",
+           f"findings merged because they describe the same discrepancy {js.merged}; insufficient-evidence findings absorbed {js.absorbed}; "
+           f"consistent findings grouped {js.grouped}", *[f"  - {m}" for m in js.merge_log[:30]],
+           "", "Verdicts that did not match their pair (first 20):"]
+    out += [f"  - {e}" for e in js.echo_log[:20]] or ["  none"]
+    out += ["", "Rejected findings (first 15):"]
     out += [f"  - {r}" for r in js.rejections[:15]] or ["  none"]
+    return out
+
+
+def sec_pair_log(R):
+    """Every candidate pair, with both claims (file | subject | metric | value) and what happened to it, so a missed discrepancy can be traced."""
+    records = list(R.judge.records.values())
+    outcomes = Counter(r.outcome.split(":")[0].split(",")[0] for r in records)
+    rows = [[i, clip(r.claim_a, 70), clip(r.claim_b, 70), r.hint, r.route, clip(r.outcome, 160)] for i, r in enumerate(records, 1)]
+    return [f"{len(records)} candidate pairs. Outcomes: {dict(outcomes)}", ""] + table(["#", "claim A", "claim B", "hint", "route", "what happened"], rows)
+
+
+def sec_missing(R):
+    m = getattr(R, "missing", None)
+    if m is None:
+        return ["not run (needs the LlamaExtract extractor, which returns the references)"]
+    out = [f"references returned with the claims: {m.references}; found in the data room: {m.present}; "
+           f"saved as missing information: {m.saved}; rejected by the quote check: {m.rejected}; repeats skipped: {m.duplicates}"]
+    if m.skipped_reason:
+        out.append(f"check skipped: {m.skipped_reason}")
+    out += [f"  missing: {x}" for x in m.missing_items[:20]]
+    out += [f"  rejected: {x}" for x in m.rejections[:10]]
     return out
 
 
@@ -220,15 +285,84 @@ def sec_limits(R):
 
 
 # ---- run ------------------------------------------------------------------------
+def build_metrics(R, results_path) -> RunMetrics:
+    """The run's numbers in the same terms as the results file, for the UI."""
+    llm_calls = R.llm.call_metrics
+    ok = [m for m in llm_calls if m.ok]
+    lat = R.llm.latency_summary()
+    tokens = R.llm.get_token_usage()
+    pt = [m.prompt_tokens for m in ok]
+    per_phase: dict[str, list] = {}
+    for phase, m in phase_rows(R):
+        per_phase.setdefault(phase, []).append(m)
+    phases = []
+    for phase, items in per_phase.items():
+        good = [m for m in items if m.ok]
+        latencies = sorted(m.latency_ms for m in good)
+        phases.append(PhaseMetrics(
+            phase=phase, attempts=len(items), failed=len(items) - len(good), prompt_tokens=sum(m.prompt_tokens for m in good),
+            completion_tokens=sum(m.completion_tokens for m in good), thinking_tokens=sum(m.thinking_tokens for m in good),
+            avg_context_tokens=round(statistics.mean(m.prompt_tokens for m in good)) if good else 0,
+            max_context_tokens=max((m.prompt_tokens for m in good), default=0),
+            avg_ms=round(statistics.mean(latencies)) if latencies else 0,
+            p95_ms=latencies[min(len(latencies) - 1, int(.95 * len(latencies)))] if latencies else 0,
+            total_s=round(sum(m.latency_ms for m in items) / 1000, 1)))
+    docs = list(R.doc_stats.values())
+    ex, js, emb = R.extraction, R.judge, R.embedder.call_metrics
+    counts = RunCounts(
+        documents=len(docs), documents_fully_read=sum(d["ok"] for d in docs), chunks=sum(d["chunks"] for d in docs),
+        claims_recorded=ex.claims_created, claims_rejected=ex.claims_rejected, candidate_pairs=len(R.pairs or []),
+        pairs_exact=js.pairs_exact, pairs_judged=js.pairs_judged, verdicts=dict(js.verdict_counts),
+        findings_saved=js.findings_saved + (R.missing.saved if getattr(R, "missing", None) else 0),
+        findings_rejected=js.findings_rejected + (R.missing.rejected if getattr(R, "missing", None) else 0), embedding_calls=len(emb),
+        embedding_texts=sum(m.items for m in emb), extractor_credits=ex.external_credits, pairs_without_clustering=getattr(getattr(R, 'pairing_stats', None), 'pairs_all_combinations', 0),
+        coverage_calls=ex.coverage_calls, coverage_claims_added=ex.coverage_claims_added)
+    a, s = R.args, R.settings
+    return RunMetrics(
+        investigation_id=getattr(R.result, "investigation_id", None), config_name=R.config,
+        state="failed" if R.error else "stopped" if R.stopped else "completed",
+        started_at=R.started.isoformat(timespec="seconds"), finished_at=R.finished.isoformat(timespec="seconds"),
+        wall_s=round(R.wall_s, 1), results_file=str(results_path),
+        settings=RunSettings(extractor=a.extractor, pairing=a.pairing, vocabulary=a.vocabulary, coverage_check=a.coverage_check,
+                             batch_chunks=a.batch_chunks or None, batch_chars=a.batch_chars, llm_model=s.llm_model,
+                             embedding_model=s.embedding_model),
+        counts=counts,
+        llm=LLMTotals(
+            attempts=len(llm_calls), failed=sum(not m.ok for m in llm_calls), retries=R.llm.retry_count,
+            total_s=round(sum(m.latency_ms for m in llm_calls) / 1000, 1), avg_ms=lat.avg_ms, p95_ms=lat.p95_ms, max_ms=lat.max_ms,
+            prompt_tokens=tokens.prompt_tokens, completion_tokens=tokens.completion_tokens, thinking_tokens=tokens.thinking_tokens,
+            cached_tokens=tokens.cached_tokens, total_tokens=tokens.total_tokens, credits=round(getattr(R.llm, 'credits', 0.0), 1),
+            min_context_tokens=min(pt, default=0),
+            avg_context_tokens=round(statistics.mean(pt)) if pt else 0, max_context_tokens=max(pt, default=0)),
+        phases=phases,
+        stages=[StageTiming(stage=k, seconds=round(v / 1000, 1), percent=round(100 * v / (R.wall_s * 1000), 1) if R.wall_s else 0.0)
+                for k, v in R.stage.items()])
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--db-name", required=True, help="database with processed documents (e.g. from full_run.py)")
+    ap.add_argument("--db-name", default=None, help="database to run in (default: the database the app is configured for)")
     ap.add_argument("--config", default=None)
     ap.add_argument("--llm-model", default=None)
     ap.add_argument("--embedding", choices=["local", "google"], default="local")
     ap.add_argument("--batch-chars", type=int, default=8000, help="characters of chunks per extraction call")
     ap.add_argument("--judge-batch-chars", type=int, default=12000, help="characters of excerpts per pair-judging call")
+    ap.add_argument("--judge-workers", type=int, default=1,
+                    help="pair-judging calls made at the same time (1 = one after another, the default); the answers are still handled in order")
+    ap.add_argument("--pairing", choices=["code", "llm"], default="llm",
+                    help="llm = the LLM groups the sorted claims (default); code = candidate pairs from word overlap and embeddings")
+    ap.add_argument("--pairing-batch-chars", type=int, default=60000, help="characters of claims per grouping call (--pairing llm)")
+    ap.add_argument("--extractor", choices=["llm", "llamaextract"], default="llamaextract",
+                    help="llamaextract = each selected document is uploaded to LlamaExtract (LlamaIndex Cloud; default); llm = the LLM reads the chunks")
+    ap.add_argument("--batch-chunks", type=int, default=0, help="at most this many chunks per extraction call (default 0 = cut by characters only)")
+    ap.add_argument("--vocabulary", choices=["on", "off"], default="off", help="show earlier subject/metric labels to each extraction call")
+    ap.add_argument("--coverage-check", choices=["on", "off"], default="off",
+                    help="one follow-up call per chunk that states numbers no claim accounts for")
     ap.add_argument("--llm-attempts", type=int, default=5)
+    ap.add_argument("--only", action="append", default=None,
+                    help="read only this document (path relative to the data room); repeatable. Without --only every document is read")
+    ap.add_argument("--stop-file", default=None, help="when this file exists the run stops at the next safe point and still writes its results file")
+    ap.add_argument("--verdicts", action="store_true", help="also write a verdict per document (one extra LLM call per document)")
     ap.add_argument("--exclude", action="append", default=[],
                     help="skip documents whose file name matches this glob (case-insensitive), e.g. '*.xlsm'; repeatable")
     ap.add_argument("--skip-verdicts", action="store_true",
@@ -238,6 +372,7 @@ def main():
     ap.add_argument("--copy-db-as", default=None,
                     help="first copy --db-name to this new database, clear its claims, and run there (the source stays intact)")
     args = ap.parse_args()
+    args.skip_verdicts = args.skip_verdicts or not args.verdicts  # verdicts are opt-in (--verdicts)
 
     overrides = {}
     if args.embedding == "local":
@@ -245,6 +380,7 @@ def main():
     if args.llm_model:
         overrides["llm_model"] = args.llm_model
     settings = get_settings().model_copy(update=overrides)
+    args.db_name = args.db_name or make_url(settings.database_url).database
     started = datetime.now()
     stamp = started.strftime("%Y%m%d-%H%M%S")
     config = re.sub(r"[^A-Za-z0-9._-]+", "-", args.config or f"fact-ledger-fullread-{settings.llm_model}-embed-{args.embedding}")
@@ -270,9 +406,12 @@ def main():
         R_cleared = session.execute(delete(Claim)).rowcount or 0  # every run rebuilds its claims from scratch
         session.commit()
         print(f"[run] deleted {R_cleared} existing claims; they will be rebuilt", flush=True)
+    def stopped() -> bool:
+        return bool(args.stop_file) and os.path.exists(args.stop_file)
+
     R = SimpleNamespace(args=args, settings=settings, started=started, config=config, db_name=args.db_name, llm=llm, embedder=embedder,
-                        error=None, doc_stats={}, excluded=[], claims_cleared=0, scan=None, processed=[], extraction=ExtractionSummary(), pairs=None, pairs_cross=0, judge=None,
-                        stage={}, llm_bounds=[0, 0], start_wall=time.time(), session=session)
+                        error=None, stopped=False, doc_stats={}, excluded=[], claims_cleared=0, scan=None, processed=[], extraction=ExtractionSummary(), pairs=None, pairs_cross=0, judge=None,
+                        stage={}, llm_bounds=[0, 0, 0], pairing_stats=None, start_wall=time.time(), session=session)
     from app.services.pair_judge import JudgeStats
     R.judge = JudgeStats()
     t_run = time.perf_counter()
@@ -282,34 +421,56 @@ def main():
                                   execution_config={"approach": "fact_ledger_fullread", "batch_chars": args.batch_chars,
                                                     "judge_batch_chars": args.judge_batch_chars, "llm_model": settings.llm_model})
     R.claims_cleared = R_cleared
+
+    class RunStopped(Exception):
+        pass
+
+    def check_stop():
+        if stopped():
+            raise RunStopped()
+
     try:
         session.add(investigation)
         session.commit()
         # ---- stage 0: register and process any new or changed files (local parsing + local embeddings)
         t = time.perf_counter()
         doc_service = DocumentService(session, settings)
-        R.scan = doc_service.scan()
-        R.processed = ProcessingService(session, doc_service, embedder, on_progress=lambda m, d: print(f"[process] {m}", flush=True)).process_pending()
+        selected = None if args.only is None else {x.replace(chr(92), '/') for x in args.only}  # unselected files are not touched at all
+        R.scan = doc_service.scan(only=selected)
+        R.processed = ProcessingService(session, doc_service, embedder, on_progress=lambda m, d: print(f"[process] {m}", flush=True)).process_pending(only=selected)
         R.stage["0. scan files, process new or changed ones"] = round((time.perf_counter() - t) * 1000)
         print(f"[run] scan: {R.scan.added} new, {R.scan.updated} updated, {R.scan.unchanged} unchanged, {len(R.scan.skipped_duplicates)} duplicates", flush=True)
-        service = ClaimService(session, llm, max_chars_per_call=args.batch_chars, on_progress=lambda m, d: print(f"[extract] {m}", flush=True))
+        extractor = None
+        if args.extractor == "llamaextract":
+            if not settings.allow_third_party_apis:
+                raise RuntimeError("--extractor llamaextract uploads documents to a third-party API, which is disabled (set ALLOW_THIRD_PARTY_APIS=true to allow it)")
+            if not settings.llama_cloud_api_key:
+                raise RuntimeError("--extractor llamaextract needs LLAMA_CLOUD_API_KEY in the environment")
+            extractor = LlamaClaimExtractor(session, LlamaExtractClient(settings.llama_cloud_api_key, project_id=settings.llama_cloud_project_id,
+                                                                         tier="cost_effective"), settings.data_room_dir,
+                                            on_progress=lambda m, d: print(f"[extract] {m}", flush=True), should_stop=stopped)
+        service = ClaimService(session, llm, max_chars_per_call=args.batch_chars, use_vocabulary=args.vocabulary == "on",
+                               max_chunks_per_call=args.batch_chunks or None, should_stop=stopped, coverage_check=args.coverage_check == "on", on_progress=lambda m, d: print(f"[extract] {m}", flush=True))
 
         # ---- stage 1: read every chunk -> claims
         t = time.perf_counter()
         docs = list(session.scalars(select(Document).where(Document.processing_status == ProcessingStatus.processed.value).order_by(Document.filename)))
-        R.excluded = [d.filename for d in docs if any(fnmatch.fnmatch(d.filename.lower(), p.lower()) for p in args.exclude)]
+        wanted = None if args.only is None else {x.replace(chr(92), '/') for x in args.only}
+        R.excluded = [d.filename for d in docs if (wanted is not None and d.filename.replace(chr(92), '/') not in wanted)
+                      or any(fnmatch.fnmatch(d.filename.lower(), p.lower()) for p in args.exclude)]
         docs = [d for d in docs if d.filename not in R.excluded]
         if R.excluded:
             print(f"[extract] excluded by request: {R.excluded}", flush=True)
         print(f"[extract] {len(docs)} documents to read", flush=True)
         for doc in docs:
+            check_stop()
             chunks_total = session.scalar(select(func.count()).select_from(DocumentChunk).where(DocumentChunk.document_id == doc.id)) or 0
             readable = session.scalar(select(func.count()).select_from(DocumentChunk).where(
                 DocumentChunk.document_id == doc.id, DocumentChunk.content_type.not_in(EXCERPT_TYPES_SKIPPED))) or 0
             m0, c0, f0, t0 = len(llm.call_metrics), R.extraction.llm_calls, R.extraction.documents_failed, time.perf_counter()
             error = None
             try:
-                service.extract_document(doc, R.extraction)
+                (extractor or service).extract_document(doc, R.extraction)
             except Exception as exc:  # one document must not end the run
                 session.rollback()
                 session.execute(delete(Claim).where(Claim.document_id == doc.id))
@@ -326,23 +487,39 @@ def main():
         R.stage["1. read every chunk, extract claims"] = round((time.perf_counter() - t) * 1000)
         R.llm_bounds[0] = len(llm.call_metrics)
 
+        check_stop()
         # ---- stage 2: match claims
         t = time.perf_counter()
         print("[match] matching claims across documents", flush=True)
-        R.pairs = service.candidate_pairs(embedder)
+        if args.pairing == "llm":
+            R.pairs, R.pairing_stats = LLMPairer(session, llm, max_chars_per_call=args.pairing_batch_chars, should_stop=stopped, embedder=embedder).run()
+        else:
+            R.pairs = service.candidate_pairs(embedder)
+        R.llm_bounds[1] = len(llm.call_metrics)
         claim_doc = dict(session.execute(select(Claim.id, Claim.document_id)).all())
         R.pairs_cross = sum(claim_doc[p.claim_a_id] != claim_doc[p.claim_b_id] for p in R.pairs)
-        R.stage["2. match claims (local embeddings)"] = round((time.perf_counter() - t) * 1000)
+        R.stage["2. match claims (" + ("LLM grouping of sorted claims" if args.pairing == "llm" else "code + local embeddings") + ")"] = round((time.perf_counter() - t) * 1000)
         print(f"[match] {len(R.pairs)} candidate pairs", flush=True)
 
+        check_stop()
         # ---- stage 3: judge pairs
         t = time.perf_counter()
         registry = build_registry(session, None, investigation.id)
-        R.judge = PairJudge(session, llm, registry, max_chars_per_call=args.judge_batch_chars,
+        R.judge = PairJudge(session, llm, registry, max_chars_per_call=args.judge_batch_chars, should_stop=stopped, workers=args.judge_workers,
                             on_progress=lambda m, d: print(f"[judge] {m}", flush=True)).run(R.pairs)
         R.stage["3. judge pairs, verify quotes, save findings"] = round((time.perf_counter() - t) * 1000)
-        R.llm_bounds[1] = len(llm.call_metrics)
+        R.llm_bounds[2] = len(llm.call_metrics)
 
+        check_stop()
+        # ---- stage 3b: items a document refers to that the data room does not hold (no LLM call; the references came with the claims)
+        if extractor is not None:
+            t = time.perf_counter()
+            R.missing = MissingItemChecker(session, registry).run(extractor.references)
+            R.stage["3b. referenced items absent from the data room"] = round((time.perf_counter() - t) * 1000)
+            print(f"[missing] {R.missing.references} references, {R.missing.present} found in the room, {R.missing.saved} saved as missing information"
+                  + (f" (check skipped: {R.missing.skipped_reason})" if R.missing.skipped_reason else ""), flush=True)
+
+        check_stop()
         # ---- stage 4: per-document verdicts
         t = time.perf_counter()
         claims_by_doc: dict[str, set[str]] = {}
@@ -375,6 +552,9 @@ def main():
                 d["verdict"], d["reason"] = "partly_unverified", f"verdict call failed: {str(exc)[:80]}"
             print(f"[verdict] {d['file']}: {d['verdict']}", flush=True)
         R.stage["4. per-document verdicts"] = round((time.perf_counter() - t) * 1000)
+    except (RunStopped, KeyboardInterrupt):
+        R.stopped = True
+        print("[run] STOP requested: writing the results file with what was done so far", flush=True)
     except Exception:
         R.error = traceback.format_exc()
         print("[run] ERROR\n" + R.error, flush=True)
@@ -383,7 +563,7 @@ def main():
     R.wall_s = time.perf_counter() - t_run
     try:
         inv = session.get(Investigation, investigation.id)
-        inv.status = InvestigationStatus.failed.value if R.error else InvestigationStatus.completed.value
+        inv.status = (InvestigationStatus.failed if R.error else InvestigationStatus.stopped if R.stopped else InvestigationStatus.completed).value
         inv.completed_at, inv.duration_ms = utcnow(), round(R.wall_s * 1000)
         inv.total_tokens = llm.get_token_usage().total_tokens
         session.commit()
@@ -407,13 +587,18 @@ def main():
     for title, fn in [("AT A GLANCE", sec_glance), ("NEW OR CHANGED FILES AND CLAIM RESET", sec_new_files),
                       ("CONTRADICTIONS ONLY (classification = contradiction)", sec_contradictions),
                       ("FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)", base.sec_findings),
-                      ("COVERAGE AND PER-DOCUMENT VERDICTS", sec_documents), ("CLAIM LEDGER", sec_ledger), ("PAIR MATCHING AND JUDGING", sec_pairs),
+                      ("COVERAGE AND PER-DOCUMENT VERDICTS", sec_documents), ("CLAIM LEDGER", sec_ledger), ("PAIR MATCHING AND JUDGING", sec_pairs), ("EVERY CANDIDATE PAIR AND WHAT HAPPENED TO IT", sec_pair_log),
+                      ("REFERENCED ITEMS NOT IN THE DATA ROOM (single-claim missing information)", sec_missing),
                       ("LLM CALLS: tokens, context size, latency, failures", sec_llm), ("EMBEDDING CALLS", sec_embeddings), ("FAILURES", sec_failures),
                       ("TIMING", sec_timing), ("KNOWN LIMITS OF THIS RUN", sec_limits)]:
         section(title, fn)
     if R.error:
         lines.extend(["", "=" * 78, "Run error", "=" * 78, R.error])
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    try:
+        write_metrics(path, build_metrics(R, path))
+    except Exception as exc:  # the metrics file is a convenience: never lose the results file over it
+        print(f"[run] could not write the metrics file: {exc.__class__.__name__}: {exc}", flush=True)
     session.close()
     engine.dispose()
     print(f"[run] DONE in {R.wall_s:.0f}s. Results: {path}", flush=True)

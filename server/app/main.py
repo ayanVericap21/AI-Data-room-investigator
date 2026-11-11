@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import claims, documents, jobs
+from app.api.routes import claims, documents, findings, jobs, test_run
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
 
@@ -19,6 +19,8 @@ def create_app() -> FastAPI:
     app.include_router(documents.router)
     app.include_router(claims.router)
     app.include_router(jobs.router)
+    app.include_router(findings.router)
+    app.include_router(test_run.router)
 
     @app.get("/api/health")
     def health() -> dict[str, str]:

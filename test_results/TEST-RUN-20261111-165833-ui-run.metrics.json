@@ -1,0 +1,80 @@
+{
+  "investigation_id": "inv_41ab387b9c8b4ed6",
+  "config_name": "ui-run",
+  "state": "completed",
+  "started_at": "2026-11-11T16:58:33",
+  "finished_at": "2026-11-11T16:58:33",
+  "wall_s": 0.1,
+  "results_file": "C:\\Users\\Ayan Khan\\Desktop\\ai-dataroom-investigator\\AI-Data-room-investigator\\test_results\\TEST-RUN-20261111-165833-ui-run.txt",
+  "settings": {
+    "pairing": "llm",
+    "vocabulary": "off",
+    "coverage_check": "off",
+    "batch_chunks": null,
+    "batch_chars": 8000,
+    "llm_model": "gemini-3.1-flash-lite",
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2"
+  },
+  "counts": {
+    "documents": 0,
+    "documents_fully_read": 0,
+    "chunks": 0,
+    "claims_recorded": 0,
+    "claims_rejected": 0,
+    "candidate_pairs": 0,
+    "pairs_exact": 0,
+    "pairs_judged": 0,
+    "verdicts": {},
+    "findings_saved": 0,
+    "findings_rejected": 0,
+    "embedding_calls": 0,
+    "embedding_texts": 0,
+    "coverage_calls": 0,
+    "coverage_claims_added": 0
+  },
+  "llm": {
+    "attempts": 0,
+    "failed": 0,
+    "retries": 0,
+    "total_s": 0.0,
+    "avg_ms": 0,
+    "p95_ms": 0,
+    "max_ms": 0,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "thinking_tokens": 0,
+    "cached_tokens": 0,
+    "total_tokens": 0,
+    "min_context_tokens": 0,
+    "avg_context_tokens": 0,
+    "max_context_tokens": 0
+  },
+  "phases": [],
+  "stages": [
+    {
+      "stage": "0. scan files, process new or changed ones",
+      "seconds": 0.1,
+      "percent": 85.2
+    },
+    {
+      "stage": "1. read every chunk, extract claims",
+      "seconds": 0.0,
+      "percent": 1.4
+    },
+    {
+      "stage": "2. match claims (LLM grouping of sorted claims)",
+      "seconds": 0.0,
+      "percent": 3.5
+    },
+    {
+      "stage": "3. judge pairs, verify quotes, save findings",
+      "seconds": 0.0,
+      "percent": 0.7
+    },
+    {
+      "stage": "4. per-document verdicts",
+      "seconds": 0.0,
+      "percent": 0.0
+    }
+  ]
+}

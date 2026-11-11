@@ -1,0 +1,262 @@
+TEST RUN  20261111-151923  ledger-llm-pairing-sorted-claims-g31lite
+==============================================================================
+
+HOW THIS RUN WAS ACHIEVED
+1. Reading: every chunk of every processed document except Biochar Summary - HyveGeo Project Assessment.pdf, CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf, CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf, Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf, Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf, Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx, Hyve geo assest bulk_.xlsx, Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm, InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf, KSA Egypt Growth v2.pdf, Research Report - HyveGeo.pdf (database 'dataroom_run_20261111_ledger_llm_pairing') was sent to the LLM in batches of up to 8,000 characters; each batch returns claims, kept only if their value appears in the cited chunk (existing claim extractor, no chunk or call limits).
+2. Ledger: accepted claims are stored in the claims table; the claims are sorted by label and sent to the LLM in batches of up to 12,000 characters, which groups the ones that state the same attribute of the same subject (no code pairing, no fixed number of documents or claims assumed).
+3. Judging: pairs that agree exactly count as corroboration; every other pair (conflicting, partial, contextual) goes to the LLM in batches of up to 12,000 characters with both source excerpts.
+4. Findings: a discrepancy is saved only if its two quotes are exact substrings of their chunks (checked in code); per-document verdicts were skipped by request.
+5. Model: gemini-3.1-flash-lite, temperature 0, up to 5 attempts per call honouring Google's retry delay; no step, tool-call or finding limits.
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+Run started   : 2026-11-11 15:19:23 (local)   finished: 15:19:52   wall time: 28.8s
+Config        : ledger-llm-pairing-sorted-claims-g31lite
+Database      : dataroom_run_20261111_ledger_llm_pairing (documents were already processed; reused)
+Code version  : git a8c19bb + uncommitted changes   python 3.14.5
+Excluded      : Biochar Summary - HyveGeo Project Assessment.pdf, CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf, CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf, Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf, Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf, Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx, Hyve geo assest bulk_.xlsx, Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm, InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf, KSA Egypt Growth v2.pdf, Research Report - HyveGeo.pdf (by request: not read, not compared)
+Documents     : 2; fully read 2, incomplete 0
+Chunks        : 36 total; sent to the LLM 36 (headings are skipped by the extractor: 0)
+Claims        : 72 recorded, 0 rejected (value not found in cited chunk or unknown chunk id)
+Pairs         : 36 candidates; 32 agreed exactly (not sent to the LLM); 4 judged; verdicts {'contradiction': 4}
+Findings      : 4 saved with verified quotes; 0 rejected (quotes missing or not exact)
+LLM calls     : 5 provider attempts (0 failed, 0 retries incl. invalid-output retries), 28.4s total, avg 5675ms
+Tokens        : prompt 17,923  completion 10,028  thinking 0  cached 0  total 27,951   (cost not computed: no price per token configured)
+Context/call  : prompt tokens min 1,502  avg 3,585  max 4,397
+
+==============================================================================
+NEW OR CHANGED FILES AND CLAIM RESET
+==============================================================================
+claims deleted at the start of this run: 72 (all claims in this run are newly extracted)
+scan: discovered 14, new 0, updated 0, unchanged 13, missing 0
+      duplicates skipped (same content): ['Main Picth Deck HyveGeo .pdf']
+
+no new or changed files had to be processed
+
+==============================================================================
+CONTRADICTIONS ONLY (classification = contradiction)
+==============================================================================
+4 contradiction(s). Full evidence for each is in the findings report below (search for the finding id).
+
+- [fnd_19d3ec895e014ad4] severity medium, confidence 1.0: Contradictory clear height for Flex Units
+    Claim A states a clear height of 10m for Flex Units, while Claim B states 12m for the same subject in the same document.
+- [fnd_3f5d69b9b954435c] severity medium, confidence 1.0: Contradictory clear height for Standard Warehouses
+    Claim A states a clear height of 8.5m for Standard Warehouses, while Claim B states 9.5m for the same subject in the same document.
+- [fnd_8fb7aecdd061486f] severity medium, confidence 1.0: Contradictory raised floor level for Standard Warehouses
+    Claim A states a raised floor level of 1.3m for Standard Warehouses, while Claim B states 1.5m for the same subject in the same document.
+- [fnd_4a52ceccec8d4e93] severity medium, confidence 1.0: Contradictory power supply for Standard Warehouses
+    Claim A states a power supply of 185W/m² for Standard Warehouses, while Claim B states 175W/m² for the same subject in the same document.
+
+==============================================================================
+FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)
+==============================================================================
+Fields follow the Finding schema: title, description, classification, severity, confidence, evidence_status, verification_status, materiality_reasoning, business_impact, unresolved_questions; evidence rows follow the Evidence schema.
+Findings: 4   by classification: {'contradiction': 4}   by severity: {'medium': 4}
+
+--- FINDING 1 of 4  [fnd_19d3ec895e014ad4] ------------------------------
+title                 : Contradictory clear height for Flex Units
+classification        : contradiction
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A states a clear height of 10m for Flex Units, while Claim B states 12m for the same subject in the same document.
+materiality_reasoning : Clear height is a critical specification for warehouse utility and storage capacity.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_e7622c75649b41b9   (chunk_index 6)
+      location : page 7
+      quote    : "10m clear height"
+      relevance: 10m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 10m clear height | subject=Flex Units; metric=Clear height; value=10; unit=m
+  [2] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_055db6f150ea414c   (chunk_index 6)
+      location : page 7
+      quote    : "12m clear height"
+      relevance: 12m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 12m clear height | subject=Flex Units; metric=Clear height; value=12; unit=m
+
+--- FINDING 2 of 4  [fnd_3f5d69b9b954435c] ------------------------------
+title                 : Contradictory clear height for Standard Warehouses
+classification        : contradiction
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A states a clear height of 8.5m for Standard Warehouses, while Claim B states 9.5m for the same subject in the same document.
+materiality_reasoning : Clear height is a critical specification for warehouse utility and storage capacity.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_a8a90eef8fce4316   (chunk_index 10)
+      location : page 11
+      quote    : "8.5m clear height"
+      relevance: 8.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 8.5m clear height | subject=Standard Warehouses; metric=Clear height; value=8.5; unit=m
+  [2] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_57c073f90d054108   (chunk_index 10)
+      location : page 11
+      quote    : "9.5m clear height"
+      relevance: 9.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 9.5m clear height | subject=Standard Warehouses; metric=Clear height; value=9.5; unit=m
+
+--- FINDING 3 of 4  [fnd_8fb7aecdd061486f] ------------------------------
+title                 : Contradictory raised floor level for Standard Warehouses
+classification        : contradiction
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A states a raised floor level of 1.3m for Standard Warehouses, while Claim B states 1.5m for the same subject in the same document.
+materiality_reasoning : Raised floor level is a key specification for loading and accessibility.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_a8a90eef8fce4316   (chunk_index 10)
+      location : page 11
+      quote    : "1.3m raised floor level"
+      relevance: 1.3m raised floor level
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 1.3m raised floor level | subject=Standard Warehouses; metric=Raised floor level; value=1.3; unit=m
+  [2] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_57c073f90d054108   (chunk_index 10)
+      location : page 11
+      quote    : "1.5m raised floor level"
+      relevance: 1.5m raised floor level
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 1.5m raised floor level | subject=Standard Warehouses; metric=Raised floor level; value=1.5; unit=m
+
+--- FINDING 4 of 4  [fnd_4a52ceccec8d4e93] ------------------------------
+title                 : Contradictory power supply for Standard Warehouses
+classification        : contradiction
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A states a power supply of 185W/m² for Standard Warehouses, while Claim B states 175W/m² for the same subject in the same document.
+materiality_reasoning : Power supply capacity is a critical factor for industrial and logistics operations.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_a8a90eef8fce4316   (chunk_index 10)
+      location : page 11
+      quote    : "185W/m² power supply"
+      relevance: 185W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 185W/m² power supply | subject=Standard Warehouses; metric=Power supply; value=185; unit=W/m²
+  [2] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_57c073f90d054108   (chunk_index 10)
+      location : page 11
+      quote    : "175W/m² power supply"
+      relevance: 175W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 175W/m² power supply | subject=Standard Warehouses; metric=Power supply; value=175; unit=W/m²
+
+
+==============================================================================
+COVERAGE AND PER-DOCUMENT VERDICTS
+==============================================================================
+Coverage: 'read' = chunks the LLM was shown. A document counts as fully read only if every batch succeeded (all-or-nothing per document).
+
+  document                                                    chunks  read  fully read  claims  LLM calls  tokens  extract s  verdict  reason
+  ----------------------------------------------------------  ------  ----  ----------  ------  ---------  ------  ---------  -------  ---------------------------------------------
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  18      18    yes         36      1          8,315   10.9       skipped  verdicts skipped by request (--skip-verdicts)
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  18      18    yes         36      1          8,412   8.9        skipped  verdicts skipped by request (--skip-verdicts)
+
+==============================================================================
+CLAIM LEDGER
+==============================================================================
+claims recorded 72, rejected 0
+
+Per document (paired = has a comparable claim elsewhere; corroborated = same value stated elsewhere; unpaired = nothing comparable found):
+  document                                                    claims  paired  corroborated  unpaired  pairs judged  findings
+  ----------------------------------------------------------  ------  ------  ------------  --------  ------------  --------
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  36      36      32            0         4             4
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  36      36      32            0         4             4
+
+Rejected claims by reason (first 15):
+  none
+
+==============================================================================
+PAIR MATCHING AND JUDGING
+==============================================================================
+pairing mode: LLM grouping of sorted claims: 72 claims in 2 batch(es), 2 call(s) (0 failed), 36 groups covering 72 claims, 36 pairs, 0 unknown refs ignored
+  note: claims in different batches are never grouped together (more than one batch in this run)
+candidate pairs: 36
+  by relation hint : {'exact': 32, 'conflicting': 4}
+  by match route   : {'llm': 36}
+  across documents : 36   inside one document: 0
+exact agreements (corroboration, no LLM): 32
+judged by the LLM: 4 in 1 calls (0 batches failed)
+LLM verdicts: {'contradiction': 4}
+findings saved 4; rejected 0
+
+Rejected findings (first 15):
+  none
+
+==============================================================================
+LLM CALLS: tokens, context size, latency, failures
+==============================================================================
+Per phase:
+  phase               attempts  failed  prompt tok  completion tok  thinking tok  avg ctx tok  max ctx tok  avg ms  p95 ms  total s
+  ------------------  --------  ------  ----------  --------------  ------------  -----------  -----------  ------  ------  -------
+  extract claims      2         0       8,661       8,066           0             4,330        4,397        9816    10826   19.6
+  group claims (LLM)  2         0       5,657       1,207           0             2,828        4,155        2742    3446    5.5
+  judge pairs         1         0       3,605       755             0             3,605        3,605        3259    3259    3.3
+
+Every provider attempt (context = what was sent; tokens as counted by the API):
+  #  phase               at s  result  ctx chars  ctx tokens  cached  completion  thinking  total tok  latency ms  resp chars  error
+  -  ------------------  ----  ------  ---------  ----------  ------  ----------  --------  ---------  ----------  ----------  -----
+  1  extract claims      0.2   ok      13,703     4,264       0       4051        0         8,315      10826       10,911
+  2  extract claims      11.1  ok      14,350     4,397       0       4015        0         8,412      8805        10,812
+  3  group claims (LLM)  20.0  ok      13,523     4,155       0       948         0         5,103      3446        2,667
+  4  group claims (LLM)  23.4  ok      4,825      1,502       0       259         0         1,761      2039        694
+  5  judge pairs         25.5  ok      13,100     3,605       0       755         0         4,360      3259        2,717
+
+==============================================================================
+EMBEDDING CALLS
+==============================================================================
+calls 0, failed 0, texts 0 (claim topic texts embedded locally for matching)
+
+  #  texts  chars  latency ms  result  error
+  -  -----  -----  ----------  ------  -----
+
+==============================================================================
+FAILURES
+==============================================================================
+LLM attempt failures:
+  none
+Documents not fully read:
+  none
+Pair-judging problems:
+  none
+
+==============================================================================
+TIMING
+==============================================================================
+  stage                                            duration  share of wall time
+  -----------------------------------------------  --------  ------------------
+  0. scan files, process new or changed ones       0.1s      0%
+  1. read every chunk, extract claims              19.8s     69%
+  2. match claims (LLM grouping of sorted claims)  5.5s      19%
+  3. judge pairs, verify quotes, save findings     3.3s      12%
+  4. per-document verdicts                         0.0s      0%
+
+==============================================================================
+KNOWN LIMITS OF THIS RUN
+==============================================================================
+- Reading is all-or-nothing per document: if one batch fails after all retries, that document's claims are discarded and it counts as not read.
+- Candidate matching keeps at most 5 partners per claim (an existing default), so some comparable pairs are never judged.
+- The claim-extraction prompt lists business categories (capacity, supply, pricing, ...) and is not yet domain-agnostic.
+- Claims inside one document are also paired and judged; matching quality depends on how the model labels subject/metric/unit/period.
+- Exact agreements are trusted as corroboration without an LLM check.

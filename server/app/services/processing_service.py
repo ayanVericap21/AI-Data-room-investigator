@@ -88,15 +88,19 @@ class ProcessingService:
         self.extract_workers = max(1, extract_workers)
         self.extract_phase_ms = 0  # wall time of the parallel parsing phase (0 when parsing one at a time)
 
-    def process_pending(self) -> list[ProcessResult]:
+    def process_pending(self, only: set[str] | None = None) -> list[ProcessResult]:
+        """Process the pending documents; with ``only`` (relative paths), just those, and no other document is touched."""
         stmt = select(Document).where(Document.processing_status.in_(
             [ProcessingStatus.pending.value, ProcessingStatus.failed.value, ProcessingStatus.processing.value]
         )).order_by(Document.filename)
-        docs = list(self.session.scalars(stmt))
+        docs = [d for d in self.session.scalars(stmt) if only is None or d.filename in only]
         parsed = self._extract_in_parallel(docs)
         results = [self.process_document(doc, parsed.get(doc.id)) for doc in docs]
         done = sum(1 for r in results if r.status == ProcessingStatus.processed.value)
-        self.on_progress(f"{done} of {len(results)} documents processed", {"processed": done, "total": len(results)})
+        if not results:
+            self.on_progress("Nothing to parse: the selected documents are already processed (unchanged)", {"processed": 0, "total": 0})
+        else:
+            self.on_progress(f"{done} of {len(results)} documents processed", {"processed": done, "total": len(results)})
         return results
 
     def _extract_in_parallel(self, docs: list[Document]) -> dict[str, Extracted]:

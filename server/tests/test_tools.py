@@ -190,12 +190,23 @@ def test_unknown_chunk_is_rejected(registry, room, session):
     assert session.scalar(select(func.count()).select_from(Finding)) == 0
 
 
+def test_a_passage_that_contradicts_itself_needs_two_quotes_but_not_two_chunks(registry, room):
+    args = finding_args(room, evidence=[
+        dict(chunk_id=room.rent_1, quoted_text="Annual rent is INR 1.2 crore.", role="contradicting",
+             relevance_reason="Rent", support_assessment="States rent"),
+        dict(chunk_id=room.rent_1, quoted_text="Payable quarterly in advance.", role="contradicting",
+             relevance_reason="Payment", support_assessment="States payment")])
+    assert registry.execute("submit_finding", args).ok
+    args["evidence"][1]["quoted_text"] = "Annual rent is INR 1.2 crore."  # the same quote twice is still one passage
+    assert registry.execute("submit_finding", args).error.code == "validation_failed"
+
+
 @pytest.mark.parametrize("classification", ["contradiction", "contextual_difference", "consistent"])
 def test_comparing_classifications_need_two_chunks(registry, room, classification):
     args = finding_args(room, classification=classification)
     args["evidence"] = args["evidence"][:1]
     result = registry.execute("submit_finding", args)
-    assert result.error.code == "validation_failed" and "two different chunks" in result.error.message
+    assert result.error.code == "validation_failed" and "two different quoted passages" in result.error.message
 
 
 def test_missing_information_may_cite_a_single_chunk(registry, room):

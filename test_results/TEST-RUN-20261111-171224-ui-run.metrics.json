@@ -1,0 +1,75 @@
+{
+  "investigation_id": "inv_cfef99bb7d944382",
+  "config_name": "ui-run",
+  "state": "stopped",
+  "started_at": "2026-11-11T17:12:24",
+  "finished_at": "2026-11-11T17:13:34",
+  "wall_s": 69.7,
+  "results_file": "C:\\Users\\Ayan Khan\\Desktop\\ai-dataroom-investigator\\AI-Data-room-investigator\\test_results\\TEST-RUN-20261111-171224-ui-run.txt",
+  "settings": {
+    "pairing": "llm",
+    "vocabulary": "off",
+    "coverage_check": "off",
+    "batch_chunks": null,
+    "batch_chars": 8000,
+    "llm_model": "gemini-3.1-flash-lite",
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2"
+  },
+  "counts": {
+    "documents": 1,
+    "documents_fully_read": 1,
+    "chunks": 2,
+    "claims_recorded": 13,
+    "claims_rejected": 1,
+    "candidate_pairs": 0,
+    "pairs_without_clustering": 0,
+    "pairs_exact": 0,
+    "pairs_judged": 0,
+    "verdicts": {},
+    "findings_saved": 0,
+    "findings_rejected": 0,
+    "embedding_calls": 8,
+    "embedding_texts": 29,
+    "coverage_calls": 0,
+    "coverage_claims_added": 0
+  },
+  "llm": {
+    "attempts": 2,
+    "failed": 1,
+    "retries": 1,
+    "total_s": 5.8,
+    "avg_ms": 4841,
+    "p95_ms": 4841,
+    "max_ms": 4841,
+    "prompt_tokens": 1740,
+    "completion_tokens": 1577,
+    "thinking_tokens": 0,
+    "cached_tokens": 0,
+    "total_tokens": 3317,
+    "min_context_tokens": 1740,
+    "avg_context_tokens": 1740,
+    "max_context_tokens": 1740
+  },
+  "phases": [
+    {
+      "phase": "document verdicts",
+      "attempts": 2,
+      "failed": 1,
+      "prompt_tokens": 1740,
+      "completion_tokens": 1577,
+      "thinking_tokens": 0,
+      "avg_context_tokens": 1740,
+      "max_context_tokens": 1740,
+      "avg_ms": 4841,
+      "p95_ms": 4841,
+      "total_s": 5.8
+    }
+  ],
+  "stages": [
+    {
+      "stage": "0. scan files, process new or changed ones",
+      "seconds": 3.8,
+      "percent": 5.5
+    }
+  ]
+}

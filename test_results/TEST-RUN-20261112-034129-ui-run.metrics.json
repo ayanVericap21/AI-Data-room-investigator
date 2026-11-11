@@ -1,0 +1,123 @@
+{
+  "investigation_id": "inv_507b4f4c022042e7",
+  "config_name": "ui-run",
+  "state": "completed",
+  "started_at": "2026-11-12T03:41:29",
+  "finished_at": "2026-11-12T03:43:09",
+  "wall_s": 99.7,
+  "results_file": "C:\\Users\\Ayan Khan\\Desktop\\ai-dataroom-investigator\\AI-Data-room-investigator\\test_results\\TEST-RUN-20261112-034129-ui-run.txt",
+  "settings": {
+    "extractor": "llamaextract",
+    "pairing": "llm",
+    "vocabulary": "off",
+    "coverage_check": "off",
+    "batch_chunks": null,
+    "batch_chars": 8000,
+    "llm_model": "cost_effective",
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2"
+  },
+  "counts": {
+    "documents": 8,
+    "documents_fully_read": 8,
+    "chunks": 29,
+    "claims_recorded": 234,
+    "claims_rejected": 1,
+    "candidate_pairs": 157,
+    "extractor_credits": 78.0,
+    "pairs_without_clustering": 73,
+    "pairs_exact": 42,
+    "pairs_judged": 115,
+    "verdicts": {
+      "consistent": 12,
+      "not_comparable": 86,
+      "contradiction": 3,
+      "contextual_difference": 3,
+      "missing_information": 2,
+      "insufficient_evidence": 9
+    },
+    "findings_saved": 34,
+    "findings_rejected": 2,
+    "embedding_calls": 4,
+    "embedding_texts": 234,
+    "coverage_calls": 0,
+    "coverage_claims_added": 0
+  },
+  "llm": {
+    "attempts": 26,
+    "failed": 1,
+    "retries": 1,
+    "total_s": 292.6,
+    "avg_ms": 11265,
+    "p95_ms": 31373,
+    "max_ms": 40289,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "thinking_tokens": 0,
+    "cached_tokens": 0,
+    "total_tokens": 0,
+    "credits": 925.0,
+    "min_context_tokens": 0,
+    "avg_context_tokens": 0,
+    "max_context_tokens": 0
+  },
+  "phases": [
+    {
+      "phase": "group claims (LLM)",
+      "attempts": 2,
+      "failed": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "thinking_tokens": 0,
+      "avg_context_tokens": 0,
+      "max_context_tokens": 0,
+      "avg_ms": 1400,
+      "p95_ms": 1913,
+      "total_s": 2.8
+    },
+    {
+      "phase": "judge pairs",
+      "attempts": 24,
+      "failed": 1,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "thinking_tokens": 0,
+      "avg_context_tokens": 0,
+      "max_context_tokens": 0,
+      "avg_ms": 12122,
+      "p95_ms": 31373,
+      "total_s": 289.8
+    }
+  ],
+  "stages": [
+    {
+      "stage": "0. scan files, process new or changed ones",
+      "seconds": 0.0,
+      "percent": 0.0
+    },
+    {
+      "stage": "1. read every chunk, extract claims",
+      "seconds": 9.4,
+      "percent": 9.5
+    },
+    {
+      "stage": "2. match claims (LLM grouping of sorted claims)",
+      "seconds": 5.9,
+      "percent": 5.9
+    },
+    {
+      "stage": "3. judge pairs, verify quotes, save findings",
+      "seconds": 84.0,
+      "percent": 84.2
+    },
+    {
+      "stage": "3b. referenced items absent from the data room",
+      "seconds": 0.1,
+      "percent": 0.1
+    },
+    {
+      "stage": "4. per-document verdicts",
+      "seconds": 0.0,
+      "percent": 0.0
+    }
+  ]
+}

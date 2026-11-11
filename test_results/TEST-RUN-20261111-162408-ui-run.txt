@@ -1,0 +1,1026 @@
+TEST RUN  20261111-162408  ui-run
+==============================================================================
+
+HOW THIS RUN WAS ACHIEVED
+1. Reading: every chunk of every processed document except Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm (database 'data_room') was sent to the LLM in batches of up to 8,000 characters; each batch returns claims, kept only if their value appears in the cited chunk (existing claim extractor, no chunk or call limits).
+2. Ledger: accepted claims are stored in the claims table; the claims are sorted by label and sent to the LLM in batches of up to 12,000 characters, which groups the ones that state the same attribute of the same subject (no code pairing, no fixed number of documents or claims assumed).
+3. Judging: pairs that agree exactly count as corroboration; every other pair (conflicting, partial, contextual) goes to the LLM in batches of up to 12,000 characters with both source excerpts.
+4. Findings: a discrepancy is saved only if its two quotes are exact substrings of their chunks (checked in code); per-document verdicts were skipped by request.
+5. Model: gemini-3.1-flash-lite, temperature 0, up to 5 attempts per call honouring Google's retry delay; no step, tool-call or finding limits.
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+>>> THIS RUN WAS STOPPED BEFORE IT FINISHED: everything below covers only the part that ran. <<<
+Run started   : 2026-11-11 16:24:08 (local)   finished: 16:56:15   wall time: 1927.0s
+Config        : ui-run
+Database      : data_room (documents were already processed; reused)
+Code version  : git a8c19bb + uncommitted changes   python 3.14.5
+Excluded      : Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm (by request: not read, not compared)
+Documents     : 12; fully read 12, incomplete 0
+Chunks        : 188 total; sent to the LLM 188 (headings are skipped by the extractor: 0)
+Claims        : 435 recorded, 5 rejected (value not found in cited chunk or unknown chunk id)
+Extraction    : up to any number of chunks per call (and 8,000 characters); running vocabulary off; coverage check off
+Pairs         : 1520 candidates; 157 agreed exactly (not sent to the LLM); 1363 judged; verdicts {'not_comparable': 617, 'consistent': 463, 'contextual_difference': 20}
+Findings      : 20 saved with verified quotes; 0 rejected (quotes missing or not exact)
+LLM calls     : 290 provider attempts (25 failed, 43 retries incl. invalid-output retries), 1074.1s total, avg 3723ms
+Tokens        : prompt 1,679,694  completion 142,716  thinking 0  cached 36,322  total 1,822,410   (cost not computed: no price per token configured)
+Context/call  : prompt tokens min 1,655  avg 6,338  max 7,024
+
+==============================================================================
+NEW OR CHANGED FILES AND CLAIM RESET
+==============================================================================
+claims deleted at the start of this run: 155 (all claims in this run are newly extracted)
+scan: discovered 14, new 0, updated 0, unchanged 13, missing 0
+      duplicates skipped (same content): ['Main Picth Deck HyveGeo .pdf']
+
+no new or changed files had to be processed
+
+==============================================================================
+CONTRADICTIONS ONLY (classification = contradiction)
+==============================================================================
+No finding was classified as a contradiction in this run.
+
+==============================================================================
+FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)
+==============================================================================
+Fields follow the Finding schema: title, description, classification, severity, confidence, evidence_status, verification_status, materiality_reasoning, business_impact, unresolved_questions; evidence rows follow the Evidence schema.
+Findings: 20   by classification: {'contextual_difference': 20}   by severity: {'informational': 10, 'low': 10}
+
+--- FINDING 1 of 20  [fnd_fccc22b58c1d49f1] ------------------------------
+title                 : Different rows in Project Financials Form
+classification        : contextual_difference
+severity              : informational
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to row 72 and Claim B refers to row 53 of the Project Financials Form.
+materiality_reasoning : The claims refer to different rows in the spreadsheet, so they are not contradictory.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_3199f293de054c90   (chunk_index 11)
+      location : sheet Project , cell A70:Z75
+      quote    : "Project Financials Form: =IF(D72="","","Y")"
+      relevance: Project Financials Form row 72 status is Y if D72 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 72 status is Y if D72 is not empty. | subject=Project Financials Form; metric=Row 72 status; value=Y; conditions=D72 is not empty
+  [2] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_ff3f6d1bd9c14ba4   (chunk_index 8)
+      location : sheet Project , cell A52:Z57
+      quote    : "Project Financials Form: =IF(D53="","","Y")"
+      relevance: Project Financials Form row 53 status is Y if D53 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 53 status is Y if D53 is not empty. | subject=Project Financials Form; metric=Row 53 status; value=Y; conditions=D53 is not empty
+
+--- FINDING 2 of 20  [fnd_d0ee0d4f8206402b] ------------------------------
+title                 : Different rows in Project Financials Form
+classification        : contextual_difference
+severity              : informational
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to row 53 and Claim B refers to row 73 of the Project Financials Form.
+materiality_reasoning : The claims refer to different rows in the spreadsheet, so they are not contradictory.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_ff3f6d1bd9c14ba4   (chunk_index 8)
+      location : sheet Project , cell A52:Z57
+      quote    : "Project Financials Form: =IF(D53="","","Y")"
+      relevance: Project Financials Form row 53 status is Y if D53 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 53 status is Y if D53 is not empty. | subject=Project Financials Form; metric=Row 53 status; value=Y; conditions=D53 is not empty
+  [2] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_3199f293de054c90   (chunk_index 11)
+      location : sheet Project , cell A70:Z75
+      quote    : "Project Financials Form: =IF(D73="","","Y")"
+      relevance: Project Financials Form row 73 status is Y if D73 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 73 status is Y if D73 is not empty. | subject=Project Financials Form; metric=Row 73 status; value=Y; conditions=D73 is not empty
+
+--- FINDING 3 of 20  [fnd_2e7d888030f44fb9] ------------------------------
+title                 : Different rows in Project Financials Form
+classification        : contextual_difference
+severity              : informational
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to row 53 and Claim B refers to row 74 of the Project Financials Form.
+materiality_reasoning : The claims refer to different rows in the spreadsheet, so they are not contradictory.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_ff3f6d1bd9c14ba4   (chunk_index 8)
+      location : sheet Project , cell A52:Z57
+      quote    : "Project Financials Form: =IF(D53="","","Y")"
+      relevance: Project Financials Form row 53 status is Y if D53 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 53 status is Y if D53 is not empty. | subject=Project Financials Form; metric=Row 53 status; value=Y; conditions=D53 is not empty
+  [2] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_3199f293de054c90   (chunk_index 11)
+      location : sheet Project , cell A70:Z75
+      quote    : "Project Financials Form: =IF(D74="","","Y")"
+      relevance: Project Financials Form row 74 status is Y if D74 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 74 status is Y if D74 is not empty. | subject=Project Financials Form; metric=Row 74 status; value=Y; conditions=D74 is not empty
+
+--- FINDING 4 of 20  [fnd_d5f8f77310e947d2] ------------------------------
+title                 : Different rows in Project Financials Form
+classification        : contextual_difference
+severity              : informational
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to row 53 and Claim B refers to row 75 of the Project Financials Form.
+materiality_reasoning : The claims refer to different rows in the spreadsheet, so they are not contradictory.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_ff3f6d1bd9c14ba4   (chunk_index 8)
+      location : sheet Project , cell A52:Z57
+      quote    : "Project Financials Form: =IF(D53="","","Y")"
+      relevance: Project Financials Form row 53 status is Y if D53 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 53 status is Y if D53 is not empty. | subject=Project Financials Form; metric=Row 53 status; value=Y; conditions=D53 is not empty
+  [2] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_3199f293de054c90   (chunk_index 11)
+      location : sheet Project , cell A70:Z75
+      quote    : "Project Financials Form: =IF(D75="","","Y")"
+      relevance: Project Financials Form row 75 status is Y if D75 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 75 status is Y if D75 is not empty. | subject=Project Financials Form; metric=Row 75 status; value=Y; conditions=D75 is not empty
+
+--- FINDING 5 of 20  [fnd_1d01d3e286be4267] ------------------------------
+title                 : Different rows in Project Financials Form
+classification        : contextual_difference
+severity              : informational
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to row 53 and Claim B refers to row 76 of the Project Financials Form.
+materiality_reasoning : The claims refer to different rows in the spreadsheet, so they are not contradictory.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_ff3f6d1bd9c14ba4   (chunk_index 8)
+      location : sheet Project , cell A52:Z57
+      quote    : "Project Financials Form: =IF(D53="","","Y")"
+      relevance: Project Financials Form row 53 status is Y if D53 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 53 status is Y if D53 is not empty. | subject=Project Financials Form; metric=Row 53 status; value=Y; conditions=D53 is not empty
+  [2] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_01b06185eb63449b   (chunk_index 12)
+      location : sheet Project , cell A76:Z81
+      quote    : "Project Financials Form: =IF(D76="","","Y")"
+      relevance: Project Financials Form row 76 status is Y if D76 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 76 status is Y if D76 is not empty. | subject=Project Financials Form; metric=Row 76 status; value=Y; conditions=D76 is not empty
+
+--- FINDING 6 of 20  [fnd_f9a0a5fd16124704] ------------------------------
+title                 : Different rows in Project Financials Form
+classification        : contextual_difference
+severity              : low
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to row 90 status while Claim B refers to row 56 status in the same Project Financials Form.
+materiality_reasoning : The claims refer to different rows in the spreadsheet, so they are not contradictory.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_64d8b2be5f33423c   (chunk_index 14)
+      location : sheet Project , cell A88:Z93
+      quote    : "[Project !A90:Z90] Project Financials Form: =IF(D90="","","Y")"
+      relevance: Project Financials Form row 90 status is Y if D90 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 90 status is Y if D90 is not empty. | subject=Project Financials Form; metric=Row 90 status; value=Y; conditions=D90 is not empty
+  [2] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_ff3f6d1bd9c14ba4   (chunk_index 8)
+      location : sheet Project , cell A52:Z57
+      quote    : "[Project !A56:Z56] Project Financials Form: =IF(D56="","","Y")"
+      relevance: Project Financials Form row 56 status is Y if D56 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 56 status is Y if D56 is not empty. | subject=Project Financials Form; metric=Row 56 status; value=Y; conditions=D56 is not empty
+
+--- FINDING 7 of 20  [fnd_d8efe7d65fdc48d1] ------------------------------
+title                 : Different rows in Project Financials Form
+classification        : contextual_difference
+severity              : low
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to row 91 status while Claim B refers to row 56 status in the same Project Financials Form.
+materiality_reasoning : The claims refer to different rows in the spreadsheet, so they are not contradictory.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_64d8b2be5f33423c   (chunk_index 14)
+      location : sheet Project , cell A88:Z93
+      quote    : "[Project !A91:Z91] Project Financials Form: =IF(D91="","","Y")"
+      relevance: Project Financials Form row 91 status is Y if D91 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 91 status is Y if D91 is not empty. | subject=Project Financials Form; metric=Row 91 status; value=Y; conditions=D91 is not empty
+  [2] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_ff3f6d1bd9c14ba4   (chunk_index 8)
+      location : sheet Project , cell A52:Z57
+      quote    : "[Project !A56:Z56] Project Financials Form: =IF(D56="","","Y")"
+      relevance: Project Financials Form row 56 status is Y if D56 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 56 status is Y if D56 is not empty. | subject=Project Financials Form; metric=Row 56 status; value=Y; conditions=D56 is not empty
+
+--- FINDING 8 of 20  [fnd_7f36317462cb4285] ------------------------------
+title                 : Different rows in Project Financials Form
+classification        : contextual_difference
+severity              : low
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to row 92 status while Claim B refers to row 56 status in the same Project Financials Form.
+materiality_reasoning : The claims refer to different rows in the spreadsheet, so they are not contradictory.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_64d8b2be5f33423c   (chunk_index 14)
+      location : sheet Project , cell A88:Z93
+      quote    : "[Project !A92:Z92] Project Financials Form: =IF(D92="","","Y")"
+      relevance: Project Financials Form row 92 status is Y if D92 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 92 status is Y if D92 is not empty. | subject=Project Financials Form; metric=Row 92 status; value=Y; conditions=D92 is not empty
+  [2] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_ff3f6d1bd9c14ba4   (chunk_index 8)
+      location : sheet Project , cell A52:Z57
+      quote    : "[Project !A56:Z56] Project Financials Form: =IF(D56="","","Y")"
+      relevance: Project Financials Form row 56 status is Y if D56 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 56 status is Y if D56 is not empty. | subject=Project Financials Form; metric=Row 56 status; value=Y; conditions=D56 is not empty
+
+--- FINDING 9 of 20  [fnd_c4a2b945d7374c01] ------------------------------
+title                 : Different rows in Project Financials Form
+classification        : contextual_difference
+severity              : low
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to row 56 status while Claim B refers to row 93 status in the same Project Financials Form.
+materiality_reasoning : The claims refer to different rows in the spreadsheet, so they are not contradictory.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_ff3f6d1bd9c14ba4   (chunk_index 8)
+      location : sheet Project , cell A52:Z57
+      quote    : "[Project !A56:Z56] Project Financials Form: =IF(D56="","","Y")"
+      relevance: Project Financials Form row 56 status is Y if D56 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 56 status is Y if D56 is not empty. | subject=Project Financials Form; metric=Row 56 status; value=Y; conditions=D56 is not empty
+  [2] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_64d8b2be5f33423c   (chunk_index 14)
+      location : sheet Project , cell A88:Z93
+      quote    : "[Project !A93:Z93] Project Financials Form: =IF(D93="","","Y")"
+      relevance: Project Financials Form row 93 status is Y if D93 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 93 status is Y if D93 is not empty. | subject=Project Financials Form; metric=Row 93 status; value=Y; conditions=D93 is not empty
+
+--- FINDING 10 of 20  [fnd_1ac44e6719d949ef] ------------------------------
+title                 : Different rows in Project Financials Form
+classification        : contextual_difference
+severity              : low
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to row 94 status while Claim B refers to row 56 status in the same Project Financials Form.
+materiality_reasoning : The claims refer to different rows in the spreadsheet, so they are not contradictory.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_0ac56f75e2ea469e   (chunk_index 15)
+      location : sheet Project , cell A94:Z99
+      quote    : "[Project !A94:Z94] Project Financials Form: =IF(D94="","","Y")"
+      relevance: Project Financials Form row 94 status is Y if D94 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 94 status is Y if D94 is not empty. | subject=Project Financials Form; metric=Row 94 status; value=Y; conditions=D94 is not empty
+  [2] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_ff3f6d1bd9c14ba4   (chunk_index 8)
+      location : sheet Project , cell A52:Z57
+      quote    : "[Project !A56:Z56] Project Financials Form: =IF(D56="","","Y")"
+      relevance: Project Financials Form row 56 status is Y if D56 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 56 status is Y if D56 is not empty. | subject=Project Financials Form; metric=Row 56 status; value=Y; conditions=D56 is not empty
+
+--- FINDING 11 of 20  [fnd_359680292f8a482e] ------------------------------
+title                 : Different rows in Project Financials Form
+classification        : contextual_difference
+severity              : low
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to row 95 and Claim B refers to row 56 of the Project Financials Form.
+materiality_reasoning : The claims refer to different rows in the same spreadsheet, which is expected behavior for a form.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_0ac56f75e2ea469e   (chunk_index 15)
+      location : sheet Project , cell A94:Z99
+      quote    : "Project Financials Form: =IF(D95="","","Y")"
+      relevance: Project Financials Form row 95 status is Y if D95 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 95 status is Y if D95 is not empty. | subject=Project Financials Form; metric=Row 95 status; value=Y; conditions=D95 is not empty
+  [2] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_ff3f6d1bd9c14ba4   (chunk_index 8)
+      location : sheet Project , cell A52:Z57
+      quote    : "Project Financials Form: =IF(D56="","","Y")"
+      relevance: Project Financials Form row 56 status is Y if D56 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 56 status is Y if D56 is not empty. | subject=Project Financials Form; metric=Row 56 status; value=Y; conditions=D56 is not empty
+
+--- FINDING 12 of 20  [fnd_65790be0803940b4] ------------------------------
+title                 : Different rows in Project Financials Form
+classification        : contextual_difference
+severity              : low
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to row 96 and Claim B refers to row 56 of the Project Financials Form.
+materiality_reasoning : The claims refer to different rows in the same spreadsheet, which is expected behavior for a form.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_0ac56f75e2ea469e   (chunk_index 15)
+      location : sheet Project , cell A94:Z99
+      quote    : "Project Financials Form: =IF(D96="","","Y")"
+      relevance: Project Financials Form row 96 status is Y if D96 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 96 status is Y if D96 is not empty. | subject=Project Financials Form; metric=Row 96 status; value=Y; conditions=D96 is not empty
+  [2] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_ff3f6d1bd9c14ba4   (chunk_index 8)
+      location : sheet Project , cell A52:Z57
+      quote    : "Project Financials Form: =IF(D56="","","Y")"
+      relevance: Project Financials Form row 56 status is Y if D56 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 56 status is Y if D56 is not empty. | subject=Project Financials Form; metric=Row 56 status; value=Y; conditions=D56 is not empty
+
+--- FINDING 13 of 20  [fnd_be066bc898194c27] ------------------------------
+title                 : Different rows in Project Financials Form
+classification        : contextual_difference
+severity              : low
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to row 56 and Claim B refers to row 97 of the Project Financials Form.
+materiality_reasoning : The claims refer to different rows in the same spreadsheet, which is expected behavior for a form.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_ff3f6d1bd9c14ba4   (chunk_index 8)
+      location : sheet Project , cell A52:Z57
+      quote    : "Project Financials Form: =IF(D56="","","Y")"
+      relevance: Project Financials Form row 56 status is Y if D56 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 56 status is Y if D56 is not empty. | subject=Project Financials Form; metric=Row 56 status; value=Y; conditions=D56 is not empty
+  [2] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_0ac56f75e2ea469e   (chunk_index 15)
+      location : sheet Project , cell A94:Z99
+      quote    : "Project Financials Form: =IF(D97="","","Y")"
+      relevance: Project Financials Form row 97 status is Y if D97 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 97 status is Y if D97 is not empty. | subject=Project Financials Form; metric=Row 97 status; value=Y; conditions=D97 is not empty
+
+--- FINDING 14 of 20  [fnd_6b16c779293b4fca] ------------------------------
+title                 : Different rows in Project Financials Form
+classification        : contextual_difference
+severity              : low
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to row 98 and Claim B refers to row 56 of the Project Financials Form.
+materiality_reasoning : The claims refer to different rows in the same spreadsheet, which is expected behavior for a form.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_0ac56f75e2ea469e   (chunk_index 15)
+      location : sheet Project , cell A94:Z99
+      quote    : "Project Financials Form: =IF(D98="","","Y")"
+      relevance: Project Financials Form row 98 status is Y if D98 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 98 status is Y if D98 is not empty. | subject=Project Financials Form; metric=Row 98 status; value=Y; conditions=D98 is not empty
+  [2] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_ff3f6d1bd9c14ba4   (chunk_index 8)
+      location : sheet Project , cell A52:Z57
+      quote    : "Project Financials Form: =IF(D56="","","Y")"
+      relevance: Project Financials Form row 56 status is Y if D56 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 56 status is Y if D56 is not empty. | subject=Project Financials Form; metric=Row 56 status; value=Y; conditions=D56 is not empty
+
+--- FINDING 15 of 20  [fnd_d0edde15e84d4221] ------------------------------
+title                 : Different rows in Project Financials Form
+classification        : contextual_difference
+severity              : low
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to row 99 and Claim B refers to row 56 of the Project Financials Form.
+materiality_reasoning : The claims refer to different rows in the same spreadsheet, which is expected behavior for a form.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_0ac56f75e2ea469e   (chunk_index 15)
+      location : sheet Project , cell A94:Z99
+      quote    : "Project Financials Form: =IF(D99="","","Y")"
+      relevance: Project Financials Form row 99 status is Y if D99 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 99 status is Y if D99 is not empty. | subject=Project Financials Form; metric=Row 99 status; value=Y; conditions=D99 is not empty
+  [2] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_ff3f6d1bd9c14ba4   (chunk_index 8)
+      location : sheet Project , cell A52:Z57
+      quote    : "Project Financials Form: =IF(D56="","","Y")"
+      relevance: Project Financials Form row 56 status is Y if D56 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 56 status is Y if D56 is not empty. | subject=Project Financials Form; metric=Row 56 status; value=Y; conditions=D56 is not empty
+
+--- FINDING 16 of 20  [fnd_73cbf8c2862c41c4] ------------------------------
+title                 : Different rows in Project Financials Form
+classification        : contextual_difference
+severity              : informational
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to row 74 and Claim B refers to row 97 of the Project Financials Form.
+materiality_reasoning : The claims refer to different rows in the spreadsheet, so they are not contradictory.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_3199f293de054c90   (chunk_index 11)
+      location : sheet Project , cell A70:Z75
+      quote    : "Project Financials Form: =IF(D74="","","Y")"
+      relevance: Project Financials Form row 74 status is Y if D74 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 74 status is Y if D74 is not empty. | subject=Project Financials Form; metric=Row 74 status; value=Y; conditions=D74 is not empty
+  [2] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_0ac56f75e2ea469e   (chunk_index 15)
+      location : sheet Project , cell A94:Z99
+      quote    : "Project Financials Form: =IF(D97="","","Y")"
+      relevance: Project Financials Form row 97 status is Y if D97 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 97 status is Y if D97 is not empty. | subject=Project Financials Form; metric=Row 97 status; value=Y; conditions=D97 is not empty
+
+--- FINDING 17 of 20  [fnd_368a1d0fc85f4240] ------------------------------
+title                 : Different rows in Project Financials Form
+classification        : contextual_difference
+severity              : informational
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to row 98 and Claim B refers to row 74 of the Project Financials Form.
+materiality_reasoning : The claims refer to different rows in the spreadsheet, so they are not contradictory.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_0ac56f75e2ea469e   (chunk_index 15)
+      location : sheet Project , cell A94:Z99
+      quote    : "Project Financials Form: =IF(D98="","","Y")"
+      relevance: Project Financials Form row 98 status is Y if D98 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 98 status is Y if D98 is not empty. | subject=Project Financials Form; metric=Row 98 status; value=Y; conditions=D98 is not empty
+  [2] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_3199f293de054c90   (chunk_index 11)
+      location : sheet Project , cell A70:Z75
+      quote    : "Project Financials Form: =IF(D74="","","Y")"
+      relevance: Project Financials Form row 74 status is Y if D74 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 74 status is Y if D74 is not empty. | subject=Project Financials Form; metric=Row 74 status; value=Y; conditions=D74 is not empty
+
+--- FINDING 18 of 20  [fnd_bbe6b4bf2201404c] ------------------------------
+title                 : Different rows in Project Financials Form
+classification        : contextual_difference
+severity              : informational
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to row 99 and Claim B refers to row 74 of the Project Financials Form.
+materiality_reasoning : The claims refer to different rows in the spreadsheet, so they are not contradictory.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_0ac56f75e2ea469e   (chunk_index 15)
+      location : sheet Project , cell A94:Z99
+      quote    : "Project Financials Form: =IF(D99="","","Y")"
+      relevance: Project Financials Form row 99 status is Y if D99 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 99 status is Y if D99 is not empty. | subject=Project Financials Form; metric=Row 99 status; value=Y; conditions=D99 is not empty
+  [2] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_3199f293de054c90   (chunk_index 11)
+      location : sheet Project , cell A70:Z75
+      quote    : "Project Financials Form: =IF(D74="","","Y")"
+      relevance: Project Financials Form row 74 status is Y if D74 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 74 status is Y if D74 is not empty. | subject=Project Financials Form; metric=Row 74 status; value=Y; conditions=D74 is not empty
+
+--- FINDING 19 of 20  [fnd_6928c2ec906348d4] ------------------------------
+title                 : Different rows in Project Financials Form
+classification        : contextual_difference
+severity              : informational
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to row 75 and Claim B refers to row 76 of the Project Financials Form.
+materiality_reasoning : The claims refer to different rows in the spreadsheet, so they are not contradictory.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_3199f293de054c90   (chunk_index 11)
+      location : sheet Project , cell A70:Z75
+      quote    : "Project Financials Form: =IF(D75="","","Y")"
+      relevance: Project Financials Form row 75 status is Y if D75 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 75 status is Y if D75 is not empty. | subject=Project Financials Form; metric=Row 75 status; value=Y; conditions=D75 is not empty
+  [2] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_01b06185eb63449b   (chunk_index 12)
+      location : sheet Project , cell A76:Z81
+      quote    : "Project Financials Form: =IF(D76="","","Y")"
+      relevance: Project Financials Form row 76 status is Y if D76 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 76 status is Y if D76 is not empty. | subject=Project Financials Form; metric=Row 76 status; value=Y; conditions=D76 is not empty
+
+--- FINDING 20 of 20  [fnd_34493e61bb864568] ------------------------------
+title                 : Different rows in Project Financials Form
+classification        : contextual_difference
+severity              : informational
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to row 77 and Claim B refers to row 75 of the Project Financials Form.
+materiality_reasoning : The claims refer to different rows in the spreadsheet, so they are not contradictory.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_01b06185eb63449b   (chunk_index 12)
+      location : sheet Project , cell A76:Z81
+      quote    : "Project Financials Form: =IF(D77="","","Y")"
+      relevance: Project Financials Form row 77 status is Y if D77 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 77 status is Y if D77 is not empty. | subject=Project Financials Form; metric=Row 77 status; value=Y; conditions=D77 is not empty
+  [2] role=contextual
+      document : Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+      chunk    : chk_3199f293de054c90   (chunk_index 11)
+      location : sheet Project , cell A70:Z75
+      quote    : "Project Financials Form: =IF(D75="","","Y")"
+      relevance: Project Financials Form row 75 status is Y if D75 is not empty.
+      assessment: Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx states: Project Financials Form row 75 status is Y if D75 is not empty. | subject=Project Financials Form; metric=Row 75 status; value=Y; conditions=D75 is not empty
+
+
+==============================================================================
+COVERAGE AND PER-DOCUMENT VERDICTS
+==============================================================================
+Coverage: 'read' = chunks the LLM was shown. A document counts as fully read only if every batch succeeded (all-or-nothing per document).
+
+  document                                                    chunks  read  fully read  claims  LLM calls  tokens  extract s  verdict  reason
+  ----------------------------------------------------------  ------  ----  ----------  ------  ---------  ------  ---------  -------  ------
+  Biochar Summary - HyveGeo Project Assessment.pdf            20      20    yes         30      2          9,973   10.2       -
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  18      18    yes         31      1          7,683   20.7       -
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  18      18    yes         36      1          8,295   10.0       -
+  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digita  15      15    yes         60      1          10,782  13.9       -
+  CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version  17      17    yes         28      1          7,184   7.2        -
+  Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAF  5       5     yes         9       1          3,547   3.9        -
+  Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf                 16      16    yes         15      1          4,742   4.6        -
+  Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_  19      19    yes         83      3          22,951  20.1       -
+  Hyve geo assest bulk_.xlsx                                  3       3     yes         50      1          7,600   9.5        -
+  InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf    37      37    yes         49      3          15,759  14.6       -
+  KSA Egypt Growth v2.pdf                                     8       8     yes         11      1          3,600   3.8        -
+  Research Report - HyveGeo.pdf                               12      12    yes         33      2          9,543   10.2       -
+
+==============================================================================
+CLAIM LEDGER
+==============================================================================
+claims recorded 435, rejected 5
+
+Per document (paired = has a comparable claim elsewhere; corroborated = same value stated elsewhere; unpaired = nothing comparable found):
+  document                                                    claims  paired  corroborated  unpaired  pairs judged  findings
+  ----------------------------------------------------------  ------  ------  ------------  --------  ------------  --------
+  Biochar Summary - HyveGeo Project Assessment.pdf            30      0       0             0         0             0
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  31      0       0             0         0             0
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  36      0       0             0         0             0
+  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digita  60      0       0             0         0             0
+  CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version  28      0       0             0         0             0
+  Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAF  9       0       0             0         0             0
+  Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf                 15      0       0             0         0             0
+  Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_  83      0       0             0         0             0
+  Hyve geo assest bulk_.xlsx                                  50      0       0             0         0             0
+  InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf    49      0       0             0         0             0
+  KSA Egypt Growth v2.pdf                                     11      0       0             0         0             0
+  Research Report - HyveGeo.pdf                               33      0       0             0         0             0
+
+Rejected claims by reason (first 15):
+  - value 'at least 100' not found in cited chunk
+  - value 1000000 not found in cited chunk
+  - value 'Domestic Economic Zone (Mainland)' not found in cited chunk
+  - unknown chunk_id 'chk_8e27b276b837f4118'
+  - value 'March 2025' not found in cited chunk
+
+==============================================================================
+PAIR MATCHING AND JUDGING
+==============================================================================
+pairing mode: LLM grouping of sorted claims: 435 claims in 8 batch(es), 8 call(s) (0 failed), 67 groups covering 262 claims, 1520 pairs, 0 unknown refs ignored
+  note: claims in different batches are never grouped together (more than one batch in this run)
+candidate pairs: 1520
+  by relation hint : {'partial': 1152, 'contextual': 20, 'conflicting': 191, 'exact': 157}
+  by match route   : {'llm': 1520}
+  across documents : 88   inside one document: 1432
+exact agreements (corroboration, no LLM): 157
+judged by the LLM: 1363 in 222 calls (2 batches failed)
+LLM verdicts: {'not_comparable': 617, 'consistent': 463, 'contextual_difference': 20}
+findings saved 20; rejected 0
+
+Rejected findings (first 15):
+  none
+
+==============================================================================
+LLM CALLS: tokens, context size, latency, failures
+==============================================================================
+Per phase:
+  phase               attempts  failed  prompt tok  completion tok  thinking tok  avg ctx tok  max ctx tok  avg ms  p95 ms  total s
+  ------------------  --------  ------  ----------  --------------  ------------  -----------  -----------  ------  ------  -------
+  extract claims      18        0       60,776      50,883          0             3,376        5,280        7100    20585   127.8
+  group claims (LLM)  8         0       34,951      3,228           0             4,369        5,166        2510    3511    20.1
+  judge pairs         264       25      1,583,967   88,605          0             6,627        7,024        3510    6855    926.2
+
+Every provider attempt (context = what was sent; tokens as counted by the API):
+  #    phase               at s    result  ctx chars  ctx tokens  cached  completion  thinking  total tok  latency ms  resp chars  error
+  ---  ------------------  ------  ------  ---------  ----------  ------  ----------  --------  ---------  ----------  ----------  ------------------------------------------------------------
+  1    extract claims      0.2     ok      13,985     3,489       0       1121        0         4,610      3669        3,133
+  2    extract claims      3.8     ok      9,826      2,561       0       2802        0         5,363      6470        7,728
+  3    extract claims      10.4    ok      13,703     4,269       0       3414        0         7,683      20585       8,776
+  4    extract claims      31.1    ok      13,692     4,267       0       4028        0         8,295      9887        10,669
+  5    extract claims      41.0    ok      12,962     4,125       0       6657        0         10,782     13806       17,501
+  6    extract claims      54.9    ok      12,399     3,892       0       3292        0         7,184      7130        9,030
+  7    extract claims      62.1    ok      9,151      2,314       0       1233        0         3,547      3920        3,567
+  8    extract claims      66.1    ok      10,384     2,974       0       1768        0         4,742      4575        4,858
+  9    extract claims      70.7    ok      13,783     5,280       0       2467        0         7,747      4924        5,955
+  10   extract claims      75.6    ok      13,971     5,140       0       5376        0         10,516     10216       14,564
+  11   extract claims      85.8    ok      7,880      2,547       0       2141        0         4,688      4846        4,876
+  12   extract claims      90.8    ok      8,229      2,509       0       5091        0         7,600      9377        13,380
+  13   extract claims      100.3   ok      13,675     3,253       0       1902        0         5,155      4797        5,614
+  14   extract claims      105.1   ok      14,121     3,512       0       2463        0         5,975      5915        7,215
+  15   extract claims      111.0   ok      12,226     3,187       0       1442        0         4,629      3790        4,708
+  16   extract claims      114.9   ok      8,310      2,306       0       1294        0         3,600      3811        3,588
+  17   extract claims      118.7   ok      13,655     3,496       0       3811        0         7,307      7959        12,220
+  18   extract claims      126.7   ok      6,558      1,655       0       581         0         2,236      2120        1,971
+  19   group claims (LLM)  129.0   ok      13,494     4,929       0       367         0         5,296      1957        820
+  20   group claims (LLM)  131.0   ok      13,440     4,126       0       419         0         4,545      2682        1,218
+  21   group claims (LLM)  133.7   ok      13,599     4,222       0       362         0         4,584      2130        992
+  22   group claims (LLM)  135.8   ok      13,555     5,166       0       402         0         5,568      2159        987
+  23   group claims (LLM)  138.0   ok      13,508     4,125       0       363         0         4,488      2128        897
+  24   group claims (LLM)  140.1   ok      13,469     4,232       0       373         0         4,605      3511        1,075
+  25   group claims (LLM)  143.6   ok      13,515     4,481       0       461         0         4,942      2747        1,129
+  26   group claims (LLM)  146.4   ok      11,208     3,670       0       481         0         4,151      2769        1,162
+  27   judge pairs         149.2   ok      18,017     6,616       0       338         0         6,954      2020        1,122
+  28   judge pairs         151.3   ok      18,017     6,616       0       338         0         6,954      3103        1,122
+  29   judge pairs         154.4   ok      18,017     6,616       0       398         0         7,014      2135        1,467
+  30   judge pairs         156.5   ok      18,017     6,616       0       388         0         7,004      2094        1,367
+  31   judge pairs         158.6   ok      18,017     6,616       0       438         0         7,054      2181        1,557
+  32   judge pairs         160.8   ok      18,017     6,616       0       448         0         7,064      3122        1,612
+  33   judge pairs         163.9   ok      18,017     6,616       0       338         0         6,954      2092        1,122
+  34   judge pairs         166.0   ok      18,017     6,616       0       338         0         6,954      1730        1,122
+  35   judge pairs         167.8   ok      18,017     6,616       0       433         0         7,049      2246        1,552
+  36   judge pairs         170.0   FAIL    18,017     0           0       0           0         0          712         0           Google API 429: { "error": { "code": 429, "message": "You...
+  37   judge pairs         170.7   FAIL    18,017     0           0       0           0         0          741         0           Google API 429: { "error": { "code": 429, "message": "You...
+  38   judge pairs         171.5   FAIL    18,017     0           0       0           0         0          710         0           Google API 429: { "error": { "code": 429, "message": "You...
+  39   judge pairs         231.2   ok      18,017     6,616       0       338         0         6,954      2786        1,122
+  40   judge pairs         234.0   ok      18,017     6,616       0       384         0         7,000      2163        1,331
+  41   judge pairs         236.1   ok      18,017     6,616       0       338         0         6,954      26158       1,122
+  42   judge pairs         262.3   ok      18,017     6,616       0       353         0         6,969      2213        1,282
+  43   judge pairs         264.5   ok      18,017     6,616       0       1018        0         7,634      4214        3,662
+  44   judge pairs         268.8   ok      18,017     6,616       0       388         0         7,004      1967        1,367
+  45   judge pairs         270.8   ok      18,017     6,616       0       338         0         6,954      2399        1,122
+  46   judge pairs         273.2   ok      18,017     6,616       0       388         0         7,004      1881        1,367
+  47   judge pairs         275.1   ok      18,017     6,616       0       388         0         7,004      1923        1,367
+  48   judge pairs         277.0   ok      18,017     6,616       0       338         0         6,954      2143        1,122
+  49   judge pairs         279.2   ok      18,017     6,616       0       463         0         7,079      2325        1,772
+  50   judge pairs         281.5   ok      18,017     6,616       0       338         0         6,954      11440       1,122
+  51   judge pairs         293.0   ok      18,017     6,616       0       338         0         6,954      2944        1,122
+  52   judge pairs         295.9   ok      18,017     6,616       0       338         0         6,954      2407        1,122
+  53   judge pairs         298.3   ok      18,017     6,616       0       338         0         6,954      3064        1,122
+  54   judge pairs         301.4   ok      18,017     6,616       0       388         0         7,004      2247        1,367
+  55   judge pairs         303.6   ok      18,017     6,616       0       433         0         7,049      2496        1,552
+  56   judge pairs         306.1   ok      18,017     6,616       0       338         0         6,954      2755        1,122
+  57   judge pairs         308.9   ok      18,017     6,616       0       338         0         6,954      2218        1,122
+  58   judge pairs         311.1   ok      18,017     6,616       0       338         0         6,954      1997        1,122
+  59   judge pairs         313.1   ok      18,017     6,616       0       308         0         6,924      2075        1,157
+  60   judge pairs         315.2   ok      18,017     6,616       0       398         0         7,014      3189        1,402
+  61   judge pairs         318.4   ok      18,017     6,616       0       338         0         6,954      1988        1,122
+  62   judge pairs         320.4   ok      18,017     6,616       0       338         0         6,954      2314        1,122
+  63   judge pairs         322.7   ok      18,017     6,616       0       408         0         7,024      3140        1,487
+  64   judge pairs         325.9   ok      18,017     6,616       0       338         0         6,954      2093        1,122
+  65   judge pairs         328.0   ok      18,017     6,616       0       338         0         6,954      2112        1,122
+  66   judge pairs         330.1   ok      18,017     6,616       0       334         0         6,950      2877        1,106
+  67   judge pairs         333.0   ok      18,378     6,718       0       358         0         7,076      2234        1,220
+  68   judge pairs         335.2   ok      18,017     6,616       0       338         0         6,954      2016        1,122
+  69   judge pairs         337.2   ok      18,017     6,616       0       338         0         6,954      2536        1,122
+  70   judge pairs         339.8   FAIL    18,017     0           0       0           0         0          686         0           Google API 429: { "error": { "code": 429, "message": "You...
+  71   judge pairs         351.4   FAIL    18,017     0           0       0           0         0          691         0           Google API 429: { "error": { "code": 429, "message": "You...
+  72   judge pairs         411.1   ok      18,017     6,616       0       393         0         7,009      2661        1,422
+  73   judge pairs         413.8   ok      18,017     6,616       0       388         0         7,004      2612        1,367
+  74   judge pairs         416.4   ok      18,017     6,616       0       338         0         6,954      2262        1,122
+  75   judge pairs         418.7   ok      18,017     6,616       0       338         0         6,954      2398        1,122
+  76   judge pairs         421.1   ok      18,017     6,616       0       1128        0         7,744      5011        3,907
+  77   judge pairs         426.1   ok      18,017     6,616       0       1028        0         7,644      3355        3,677
+  78   judge pairs         429.6   ok      18,017     6,616       0       338         0         6,954      3172        1,122
+  79   judge pairs         432.7   ok      18,017     6,616       0       388         0         7,004      2230        1,367
+  80   judge pairs         435.0   ok      18,017     6,616       0       338         0         6,954      2100        1,122
+  81   judge pairs         437.1   ok      18,017     6,616       0       338         0         6,954      5067        1,122
+  82   judge pairs         442.1   ok      18,017     6,616       0       388         0         7,004      2644        1,367
+  83   judge pairs         444.8   ok      18,017     6,616       0       338         0         6,954      3084        1,122
+  84   judge pairs         447.9   ok      18,017     6,616       0       338         0         6,954      3982        1,122
+  85   judge pairs         451.9   ok      18,017     6,616       0       306         0         6,922      2608        999
+  86   judge pairs         454.5   ok      18,378     6,718       4,035   317         0         7,035      2713        1,026
+  87   judge pairs         457.2   ok      18,739     6,820       4,036   316         0         7,136      2408        1,019
+  88   judge pairs         459.6   ok      19,100     6,922       0       317         0         7,239      2589        1,026
+  89   judge pairs         462.2   ok      19,461     7,024       4,037   318         0         7,342      3154        1,037
+  90   judge pairs         465.4   ok      18,017     6,616       0       338         0         6,954      3312        1,122
+  91   judge pairs         468.7   ok      18,017     6,616       0       388         0         7,004      2581        1,367
+  92   judge pairs         471.3   FAIL    18,017     0           0       0           0         0          723         0           Google API 429: { "error": { "code": 429, "message": "You...
+  93   judge pairs         531.0   ok      18,017     6,616       0       323         0         6,939      2273        1,237
+  94   judge pairs         533.3   ok      18,017     6,616       0       338         0         6,954      2535        1,122
+  95   judge pairs         535.8   ok      18,017     6,616       0       363         0         6,979      3568        1,287
+  96   judge pairs         539.4   ok      18,017     6,616       0       338         0         6,954      2592        1,122
+  97   judge pairs         542.0   ok      18,017     6,616       0       353         0         6,969      2108        1,282
+  98   judge pairs         544.1   ok      18,017     6,616       0       388         0         7,004      2793        1,367
+  99   judge pairs         546.9   ok      18,017     6,616       0       338         0         6,954      2326        1,122
+  100  judge pairs         549.2   ok      18,017     6,616       0       433         0         7,049      5561        1,552
+  101  judge pairs         554.8   ok      18,017     6,616       0       398         0         7,014      3040        1,457
+  102  judge pairs         557.8   ok      18,017     6,616       0       338         0         6,954      2389        1,122
+  103  judge pairs         560.2   ok      18,017     6,616       0       388         0         7,004      2504        1,367
+  104  judge pairs         562.7   ok      18,017     6,616       0       338         0         6,954      2202        1,122
+  105  judge pairs         564.9   ok      18,017     6,616       0       388         0         7,004      5741        1,367
+  106  judge pairs         570.7   ok      18,017     6,616       0       388         0         7,004      2978        1,367
+  107  judge pairs         573.7   ok      18,017     6,616       0       388         0         7,004      35249       1,367
+  108  judge pairs         608.9   ok      18,017     6,616       0       348         0         6,964      3184        1,171
+  109  judge pairs         612.1   ok      18,017     6,616       0       338         0         6,954      4196        1,122
+  110  judge pairs         616.3   ok      18,017     6,616       0       408         0         7,024      3779        1,492
+  111  judge pairs         620.1   ok      18,017     6,616       0       338         0         6,954      3235        1,122
+  112  judge pairs         623.4   ok      18,017     6,616       0       338         0         6,954      2804        1,122
+  113  judge pairs         626.2   ok      18,017     6,616       0       338         0         6,954      3944        1,122
+  114  judge pairs         630.1   ok      18,017     6,616       0       338         0         6,954      6440        1,122
+  115  judge pairs         636.6   ok      18,017     6,616       0       338         0         6,954      2439        1,122
+  116  judge pairs         639.0   ok      18,017     6,616       0       338         0         6,954      2180        1,122
+  117  judge pairs         641.2   ok      18,017     6,616       0       338         0         6,954      3437        1,122
+  118  judge pairs         644.6   ok      18,017     6,616       0       338         0         6,954      9181        1,122
+  119  judge pairs         653.8   ok      18,017     6,616       0       388         0         7,004      2780        1,367
+  120  judge pairs         656.6   ok      18,017     6,616       0       388         0         7,004      4880        1,367
+  121  judge pairs         661.5   ok      18,017     6,616       0       338         0         6,954      3251        1,122
+  122  judge pairs         664.8   ok      18,017     6,616       0       338         0         6,954      3816        1,122
+  123  judge pairs         668.6   ok      18,017     6,616       0       338         0         6,954      2157        1,122
+  124  judge pairs         670.8   ok      18,017     6,616       0       308         0         6,924      4943        1,157
+  125  judge pairs         675.7   ok      18,017     6,616       0       338         0         6,954      3120        1,122
+  126  judge pairs         678.8   ok      18,017     6,616       0       338         0         6,954      2518        1,122
+  127  judge pairs         681.4   ok      18,017     6,616       0       338         0         6,954      3004        1,122
+  128  judge pairs         684.4   ok      18,017     6,616       0       338         0         6,954      2767        1,122
+  129  judge pairs         687.1   ok      18,017     6,616       0       453         0         7,069      2369        1,682
+  130  judge pairs         689.5   ok      18,017     6,616       0       453         0         7,069      4028        1,682
+  131  judge pairs         693.5   ok      18,017     6,616       0       338         0         6,954      2396        1,122
+  132  judge pairs         695.9   ok      18,017     6,616       0       338         0         6,954      2799        1,122
+  133  judge pairs         698.7   ok      18,017     6,616       0       338         0         6,954      2181        1,122
+  134  judge pairs         700.9   ok      18,017     6,616       0       338         0         6,954      3598        1,122
+  135  judge pairs         704.5   ok      18,017     6,616       0       338         0         6,954      2978        1,122
+  136  judge pairs         707.5   ok      18,017     6,616       0       448         0         7,064      6375        1,612
+  137  judge pairs         713.9   ok      18,017     6,616       0       352         0         6,968      2005        1,193
+  138  judge pairs         715.9   FAIL    18,378     0           0       0           0         0          730         0           Google API 429: { "error": { "code": 429, "message": "You...
+  139  judge pairs         770.6   ok      18,378     6,718       4,035   388         0         7,106      1987        1,367
+  140  judge pairs         772.6   ok      18,017     6,616       0       318         0         6,934      8875        1,192
+  141  judge pairs         781.5   ok      18,017     6,616       0       338         0         6,954      1939        1,122
+  142  judge pairs         783.5   ok      18,017     6,616       0       338         0         6,954      2512        1,122
+  143  judge pairs         786.0   ok      18,017     6,616       0       338         0         6,954      2266        1,122
+  144  judge pairs         788.2   ok      18,017     6,616       0       338         0         6,954      2336        1,122
+  145  judge pairs         790.6   ok      18,017     6,616       0       388         0         7,004      2051        1,367
+  146  judge pairs         792.6   ok      18,017     6,616       0       391         0         7,007      3444        1,382
+  147  judge pairs         796.1   ok      18,378     6,718       0       365         0         7,083      3515        1,236
+  148  judge pairs         799.6   ok      18,017     6,616       0       383         0         6,999      3117        1,312
+  149  judge pairs         802.7   ok      18,017     6,616       0       398         0         7,014      2774        1,402
+  150  judge pairs         805.5   ok      18,017     6,616       0       398         0         7,014      2519        1,457
+  151  judge pairs         808.0   ok      18,017     6,616       0       338         0         6,954      3016        1,122
+  152  judge pairs         811.1   ok      18,017     6,616       0       338         0         6,954      2294        1,122
+  153  judge pairs         813.4   ok      18,017     6,616       0       338         0         6,954      2443        1,122
+  154  judge pairs         815.8   ok      18,017     6,616       0       398         0         7,014      3185        1,457
+  155  judge pairs         819.0   ok      18,017     6,616       0       338         0         6,954      4437        1,122
+  156  judge pairs         823.4   FAIL    18,017     0           0       0           0         0          663         0           Google API 429: { "error": { "code": 429, "message": "You...
+  157  judge pairs         831.1   FAIL    18,017     0           0       0           0         0          814         0           Google API 429: { "error": { "code": 429, "message": "You...
+  158  judge pairs         890.9   ok      18,017     6,616       0       458         0         7,074      2795        1,702
+  159  judge pairs         893.7   ok      18,017     6,616       0       453         0         7,069      29222       1,682
+  160  judge pairs         923.0   ok      18,017     6,616       0       338         0         6,954      4068        1,122
+  161  judge pairs         927.0   ok      18,017     6,616       0       338         0         6,954      2950        1,122
+  162  judge pairs         930.0   ok      18,017     6,616       0       338         0         6,954      4455        1,122
+  163  judge pairs         934.4   ok      18,017     6,616       0       438         0         7,054      5185        1,582
+  164  judge pairs         939.6   ok      18,017     6,616       0       338         0         6,954      2494        1,122
+  165  judge pairs         942.1   ok      18,017     6,616       0       448         0         7,064      3423        1,612
+  166  judge pairs         945.6   ok      18,017     6,616       0       338         0         6,954      2110        1,122
+  167  judge pairs         947.7   ok      18,017     6,616       0       338         0         6,954      3136        1,122
+  168  judge pairs         950.8   ok      18,017     6,616       0       448         0         7,064      2111        1,612
+  169  judge pairs         952.9   ok      18,017     6,616       0       338         0         6,954      1905        1,122
+  170  judge pairs         954.8   ok      18,017     6,616       0       388         0         7,004      2106        1,367
+  171  judge pairs         957.0   ok      18,017     6,616       0       388         0         7,004      3007        1,367
+  172  judge pairs         960.0   ok      18,017     6,616       0       403         0         7,019      2829        1,417
+  173  judge pairs         962.8   ok      18,017     6,616       0       363         0         6,979      5295        1,317
+  174  judge pairs         968.1   ok      18,017     6,616       0       388         0         7,004      2078        1,367
+  175  judge pairs         970.2   ok      18,017     6,616       0       352         0         6,968      3805        1,193
+  176  judge pairs         974.0   ok      18,378     6,718       0       388         0         7,106      4859        1,367
+  177  judge pairs         978.9   ok      18,017     6,616       0       388         0         7,004      3278        1,367
+  178  judge pairs         982.2   FAIL    18,017     0           0       0           0         0          3624        0           Google API 503: { "error": { "code": 503, "message": "Thi...
+  179  judge pairs         986.8   ok      18,017     6,616       0       338         0         6,954      3585        1,122
+  180  judge pairs         990.4   ok      18,017     6,616       0       448         0         7,064      2498        1,612
+  181  judge pairs         992.9   ok      18,017     6,616       0       338         0         6,954      7749        1,122
+  182  judge pairs         1000.6  ok      18,017     6,616       0       388         0         7,004      3547        1,367
+  183  judge pairs         1004.2  ok      18,017     6,616       0       388         0         7,004      2154        1,367
+  184  judge pairs         1006.3  ok      18,017     6,616       0       338         0         6,954      1843        1,122
+  185  judge pairs         1008.2  ok      18,017     6,616       0       338         0         6,954      2216        1,122
+  186  judge pairs         1010.4  ok      18,017     6,616       0       388         0         7,004      2143        1,367
+  187  judge pairs         1012.6  ok      18,017     6,616       0       338         0         6,954      3054        1,122
+  188  judge pairs         1015.6  FAIL    18,017     0           0       0           0         0          638         0           Google API 429: { "error": { "code": 429, "message": "You...
+  189  judge pairs         1071.3  ok      18,017     6,616       0       448         0         7,064      3242        1,612
+  190  judge pairs         1074.5  ok      18,017     6,616       0       338         0         6,954      2303        1,122
+  191  judge pairs         1076.8  ok      18,017     6,616       0       338         0         6,954      3483        1,122
+  192  judge pairs         1080.3  ok      18,017     6,616       0       388         0         7,004      2098        1,367
+  193  judge pairs         1082.4  ok      18,017     6,616       0       388         0         7,004      2283        1,367
+  194  judge pairs         1084.7  ok      18,017     6,616       0       338         0         6,954      3146        1,122
+  195  judge pairs         1087.9  ok      18,017     6,616       0       398         0         7,014      2504        1,457
+  196  judge pairs         1090.4  ok      18,017     6,616       0       323         0         6,939      2931        1,237
+  197  judge pairs         1093.3  ok      18,017     6,616       0       338         0         6,954      1879        1,122
+  198  judge pairs         1095.2  ok      18,017     6,616       0       338         0         6,954      2360        1,122
+  199  judge pairs         1097.5  ok      18,017     6,616       0       338         0         6,954      2113        1,122
+  200  judge pairs         1099.7  ok      18,017     6,616       0       398         0         7,014      3624        1,457
+  201  judge pairs         1103.3  ok      18,017     6,616       0       308         0         6,924      2118        1,157
+  202  judge pairs         1105.4  ok      18,017     6,616       0       338         0         6,954      2380        1,122
+  203  judge pairs         1107.8  ok      18,017     6,616       0       338         0         6,954      3411        1,122
+  204  judge pairs         1111.2  ok      18,017     6,616       0       338         0         6,954      2918        1,122
+  205  judge pairs         1114.1  ok      18,017     6,616       0       388         0         7,004      2567        1,367
+  206  judge pairs         1116.7  ok      18,017     6,616       0       374         0         6,990      2143        1,323
+  207  judge pairs         1118.9  ok      18,017     6,616       0       338         0         6,954      2260        1,122
+  208  judge pairs         1121.1  ok      18,017     6,616       0       388         0         7,004      2790        1,367
+  209  judge pairs         1123.9  FAIL    18,017     0           0       0           0         0          684         0           Google API 429: { "error": { "code": 429, "message": "You...
+  210  judge pairs         1130.6  FAIL    18,017     0           0       0           0         0          915         0           Google API 429: { "error": { "code": 429, "message": "You...
+  211  judge pairs         1190.5  ok      18,017     6,616       0       338         0         6,954      2134        1,122
+  212  judge pairs         1192.7  ok      18,017     6,616       0       338         0         6,954      2043        1,122
+  213  judge pairs         1194.7  ok      18,017     6,616       0       316         0         6,932      3044        1,019
+  214  judge pairs         1197.8  ok      18,378     6,718       0       316         0         7,034      2141        1,019
+  215  judge pairs         1199.9  ok      18,739     6,820       4,036   329         0         7,149      2109        1,082
+  216  judge pairs         1202.0  ok      19,100     6,922       4,037   1018        0         7,940      3360        3,662
+  217  judge pairs         1205.4  ok      18,017     6,616       0       388         0         7,004      4432        1,367
+  218  judge pairs         1209.9  ok      18,017     6,616       0       338         0         6,954      2154        1,122
+  219  judge pairs         1212.0  ok      18,017     6,616       0       338         0         6,954      3026        1,122
+  220  judge pairs         1215.0  ok      18,017     6,616       0       361         0         6,977      7345        1,234
+  221  judge pairs         1222.4  ok      18,017     6,616       0       364         0         6,980      2174        1,268
+  222  judge pairs         1224.6  ok      18,378     6,718       0       334         0         7,052      3711        1,106
+  223  judge pairs         1228.3  ok      18,739     6,820       4,036   383         0         7,203      2296        1,312
+  224  judge pairs         1230.6  ok      18,017     6,616       0       388         0         7,004      4692        1,367
+  225  judge pairs         1235.3  ok      18,017     6,616       0       338         0         6,954      2338        1,122
+  226  judge pairs         1237.6  ok      18,017     6,616       0       338         0         6,954      4635        1,122
+  227  judge pairs         1242.3  ok      18,017     6,616       0       338         0         6,954      2137        1,122
+  228  judge pairs         1244.4  ok      18,017     6,616       0       306         0         6,922      4206        1,112
+  229  judge pairs         1248.6  ok      18,335     6,707       4,035   338         0         7,045      2606        1,122
+  230  judge pairs         1251.2  ok      18,017     6,616       0       338         0         6,954      2784        1,122
+  231  judge pairs         1254.0  ok      18,017     6,616       0       338         0         6,954      2334        1,122
+  232  judge pairs         1256.4  FAIL    18,017     0           0       0           0         0          585         0           Google API 429: { "error": { "code": 429, "message": "You...
+  233  judge pairs         1310.9  ok      18,017     6,616       0       398         0         7,014      2955        1,402
+  234  judge pairs         1313.9  FAIL    18,017     0           0       0           0         0          60335       0           Google API network error: The read operation timed out
+  235  judge pairs         1375.2  FAIL    18,017     0           0       0           0         0          5791        0           Google API 503: { "error": { "code": 503, "message": "Thi...
+  236  judge pairs         1383.0  ok      18,017     6,616       0       338         0         6,954      2407        1,122
+  237  judge pairs         1385.4  ok      18,017     6,616       0       338         0         6,954      2335        1,122
+  238  judge pairs         1387.8  ok      18,017     6,616       0       338         0         6,954      3812        1,122
+  239  judge pairs         1391.6  ok      18,017     6,616       0       338         0         6,954      3586        1,122
+  240  judge pairs         1395.2  ok      18,017     6,616       0       338         0         6,954      2361        1,122
+  241  judge pairs         1397.6  ok      18,017     6,616       0       338         0         6,954      8761        1,122
+  242  judge pairs         1406.3  ok      18,017     6,616       0       388         0         7,004      3209        1,367
+  243  judge pairs         1409.5  ok      18,017     6,616       0       338         0         6,954      2727        1,122
+  244  judge pairs         1412.3  ok      18,017     6,616       0       338         0         6,954      6855        1,122
+  245  judge pairs         1419.1  ok      18,017     6,616       0       338         0         6,954      2994        1,122
+  246  judge pairs         1422.1  ok      18,017     6,616       0       338         0         6,954      2704        1,122
+  247  judge pairs         1424.8  ok      18,017     6,616       0       338         0         6,954      3103        1,122
+  248  judge pairs         1428.0  FAIL    18,017     0           0       0           0         0          2650        0           Google API 503: { "error": { "code": 503, "message": "Thi...
+  249  judge pairs         1431.6  ok      18,017     6,616       0       388         0         7,004      2865        1,367
+  250  judge pairs         1434.5  ok      18,017     6,616       0       338         0         6,954      2456        1,122
+  251  judge pairs         1436.9  ok      18,017     6,616       0       388         0         7,004      2979        1,367
+  252  judge pairs         1439.9  ok      18,017     6,616       0       388         0         7,004      7460        1,367
+  253  judge pairs         1447.4  ok      18,017     6,616       0       338         0         6,954      2173        1,122
+  254  judge pairs         1449.6  ok      18,017     6,616       0       403         0         7,019      2356        1,462
+  255  judge pairs         1451.9  ok      18,017     6,616       0       398         0         7,014      2781        1,457
+  256  judge pairs         1454.7  ok      18,017     6,616       0       338         0         6,954      2352        1,122
+  257  judge pairs         1457.1  ok      18,017     6,616       0       357         0         6,973      2211        1,205
+  258  judge pairs         1459.3  ok      18,017     6,616       0       338         0         6,954      2413        1,122
+  259  judge pairs         1461.7  ok      18,017     6,616       0       352         0         6,968      2406        1,193
+  260  judge pairs         1464.1  ok      18,378     6,718       0       388         0         7,106      3714        1,367
+  261  judge pairs         1467.8  ok      18,017     6,616       0       353         0         6,969      2283        1,282
+  262  judge pairs         1470.1  ok      18,017     6,616       0       338         0         6,954      2304        1,122
+  263  judge pairs         1472.4  ok      18,017     6,616       0       326         0         6,942      3633        1,070
+  264  judge pairs         1476.1  ok      18,378     6,718       4,035   338         0         7,056      2816        1,122
+  265  judge pairs         1478.9  ok      18,017     6,616       0       338         0         6,954      2496        1,122
+  266  judge pairs         1481.4  FAIL    18,017     0           0       0           0         0          669         0           Google API 429: { "error": { "code": 429, "message": "You...
+  267  judge pairs         1491.0  ok      18,017     6,616       0       433         0         7,049      2150        1,552
+  268  judge pairs         1493.2  ok      18,017     6,616       0       382         0         6,998      3028        1,318
+  269  judge pairs         1496.2  FAIL    18,017     0           0       0           0         0          603         0           Google API 429: { "error": { "code": 429, "message": "You...
+  270  judge pairs         1550.8  ok      18,017     6,616       0       338         0         6,954      3662        1,122
+  271  judge pairs         1554.5  ok      18,017     6,616       0       388         0         7,004      4793        1,367
+  272  judge pairs         1559.3  ok      18,017     6,616       0       353         0         6,969      5878        1,282
+  273  judge pairs         1565.2  ok      18,017     6,616       0       398         0         7,014      2340        1,372
+  274  judge pairs         1567.5  ok      18,017     6,616       0       338         0         6,954      26444       1,122
+  275  judge pairs         1594.0  ok      18,017     6,616       0       353         0         6,969      2143        1,282
+  276  judge pairs         1596.1  ok      18,017     6,616       0       338         0         6,954      3517        1,122
+  277  judge pairs         1599.7  ok      18,017     6,616       0       388         0         7,004      2322        1,367
+  278  judge pairs         1602.0  ok      18,017     6,616       0       338         0         6,954      2449        1,122
+  279  judge pairs         1604.4  ok      18,017     6,616       0       308         0         6,924      2384        1,157
+  280  judge pairs         1606.8  ok      18,017     6,616       0       338         0         6,954      3304        1,122
+  281  judge pairs         1610.1  ok      18,017     6,616       0       338         0         6,954      2663        1,122
+  282  judge pairs         1612.8  ok      18,017     6,616       0       309         0         6,925      2813        1,002
+  283  judge pairs         1615.6  ok      18,378     6,718       0       300         0         7,018      3216        977
+  284  judge pairs         1618.8  FAIL    18,739     0           0       0           0         0          650         0           Google API 429: { "error": { "code": 429, "message": "You...
+  285  judge pairs         1679.5  FAIL    18,739     0           0       0           0         0          697         0           Google API 429: { "error": { "code": 429, "message": "You...
+  286  judge pairs         1740.2  FAIL    18,739     0           0       0           0         0          1018        0           Google API 429: { "error": { "code": 429, "message": "You...
+  287  judge pairs         1801.2  FAIL    18,739     0           0       0           0         0          761         0           Google API 429: { "error": { "code": 429, "message": "You...
+  288  judge pairs         1862.0  FAIL    18,739     0           0       0           0         0          666         0           Google API 429: { "error": { "code": 429, "message": "You...
+  289  judge pairs         1862.6  FAIL    18,017     0           0       0           0         0          651         0           Google API 429: { "error": { "code": 429, "message": "You...
+  290  judge pairs         1923.3  ok      18,017     6,616       0       453         0         7,069      3734        1,682
+
+==============================================================================
+EMBEDDING CALLS
+==============================================================================
+calls 0, failed 0, texts 0 (claim topic texts embedded locally for matching)
+
+  #  texts  chars  latency ms  result  error
+  -  -----  -----  ----------  ------  -----
+
+==============================================================================
+FAILURES
+==============================================================================
+LLM attempt failures:
+  judge pairs: 712ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+  judge pairs: 741ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+  judge pairs: 710ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+  judge pairs: 686ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+  judge pairs: 691ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+  judge pairs: 723ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+  judge pairs: 730ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+  judge pairs: 663ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+  judge pairs: 814ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+  judge pairs: 3624ms Google API 503: { "error": { "code": 503, "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try ag...
+  judge pairs: 638ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+  judge pairs: 684ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+  judge pairs: 915ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+  judge pairs: 585ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+  judge pairs: 60335ms Google API network error: The read operation timed out
+  judge pairs: 5791ms Google API 503: { "error": { "code": 503, "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try ag...
+  judge pairs: 2650ms Google API 503: { "error": { "code": 503, "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try ag...
+  judge pairs: 669ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+  judge pairs: 603ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+  judge pairs: 650ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+  judge pairs: 697ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+  judge pairs: 1018ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+  judge pairs: 761ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+  judge pairs: 666ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+  judge pairs: 651ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+Documents not fully read:
+  none
+Pair-judging problems:
+  Model output did not match PairVerdictBatch after 5 attempts: 4 validation errors for PairVerdictBatch
+verdicts.1.classification
+  Field required [type=missing, input_value={'pair_index': 1, 'same_a..
+  Google API 429: {
+  "error": {
+    "code": 429,
+    "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://aistud
+  stop requested
+
+==============================================================================
+TIMING
+==============================================================================
+  stage                                            duration  share of wall time
+  -----------------------------------------------  --------  ------------------
+  0. scan files, process new or changed ones       0.1s      0%
+  1. read every chunk, extract claims              128.7s    7%
+  2. match claims (LLM grouping of sorted claims)  20.3s     1%
+  3. judge pairs, verify quotes, save findings     1777.9s   92%
+
+==============================================================================
+KNOWN LIMITS OF THIS RUN
+==============================================================================
+- Reading is all-or-nothing per document: if one batch fails after all retries, that document's claims are discarded and it counts as not read.
+- Candidate matching keeps at most 5 partners per claim (an existing default), so some comparable pairs are never judged.
+- The claim-extraction prompt lists business categories (capacity, supply, pricing, ...) and is not yet domain-agnostic.
+- Claims inside one document are also paired and judged; matching quality depends on how the model labels subject/metric/unit/period.
+- Exact agreements are trusted as corroboration without an LLM check.

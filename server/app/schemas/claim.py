@@ -97,6 +97,9 @@ class ClaimView(BaseModel):
     period: str | None = None
     conditions: str | None = None
     assumptions: list[str] = Field(default_factory=list)
+    claim_text: str | None = None
+    value_type: str | None = None  # quantity, date, identifier, name, state or statement (the claim's claim_category); None when unknown
+    table_key: str | None = None  # set when the claim was read from a table; claims with the same key are rows of one table
 
 
 class AttributeComparison(BaseModel):
@@ -117,7 +120,7 @@ class CandidatePair(BaseModel):
     topic_score: float
     relation_hint: RelationHint
     comparison: AttributeComparison
-    matched_by: Literal["lexical", "embedding"] = "lexical"
+    matched_by: Literal["lexical", "embedding", "llm"] = "lexical"
 
 
 class CandidateListOut(BaseModel):

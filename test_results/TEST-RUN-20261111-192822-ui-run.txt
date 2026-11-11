@@ -1,0 +1,845 @@
+TEST RUN  20261111-192822  ui-run
+==============================================================================
+
+HOW THIS RUN WAS ACHIEVED
+1. Reading: the documents selected for this run were uploaded to LlamaExtract (LlamaIndex Cloud, cost_effective tier), which returns claims with the page and text they came from; each claim is tied to a stored chunk and kept only if its value appears in that chunk text.
+2. Ledger: accepted claims are stored in the claims table; the claims are sorted by label and sent to the LLM in batches of up to 60,000 characters, which groups the ones that state the same attribute of the same subject (no code pairing, no fixed number of documents or claims assumed).
+3. Judging: pairs that agree exactly count as corroboration; every other pair (conflicting, partial, contextual) goes to the LLM in batches of up to 12,000 characters with both source excerpts.
+4. Findings: a discrepancy is saved only if its two quotes are exact substrings of their chunks (checked in code); per-document verdicts were skipped by request.
+5. Model: cost_effective, through LlamaExtract, up to 5 attempts per call honouring the provider's retry delay; no step, tool-call or finding limits.
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+Run started   : 2026-11-11 19:28:22 (local)   finished: 19:41:54   wall time: 811.9s
+Config        : ui-run
+Database      : data_room (documents were already processed; reused)
+Code version  : git a8c19bb + uncommitted changes   python 3.14.5
+Documents     : 8; fully read 8, incomplete 0
+Chunks        : 29 total; sent to the LLM 29 (headings are skipped by the extractor: 0)
+Claims        : 204 recorded, 5 rejected (value not found in cited chunk or unknown chunk id)
+Extraction    : up to any number of chunks per call (and 8,000 characters); running vocabulary off; coverage check off
+Extractor     : LlamaExtract (cost_effective tier) instead of the LLM: 8 documents uploaded to LlamaIndex Cloud, 78 credits used, 0 documents failed (the batch and coverage settings above do not apply)
+Pairs         : 145 candidates; 59 agreed exactly (not sent to the LLM); 86 judged; verdicts {'consistent': 17, 'not_comparable': 56, 'insufficient_evidence': 7, 'contradiction': 1, 'missing_information': 6, 'contextual_difference': 1}
+Findings      : 24 saved with verified quotes; 20 rejected (quotes missing or not exact)
+LLM calls     : 16 provider attempts (0 failed, 0 retries incl. invalid-output retries), 496.6s total, avg 31036ms
+Tokens        : prompt 0  completion 0  thinking 0  cached 0  total 0   (cost not computed: no price per token configured)
+Context/call  : prompt tokens min 0  avg 0  max 0
+
+==============================================================================
+NEW OR CHANGED FILES AND CLAIM RESET
+==============================================================================
+claims deleted at the start of this run: 207 (all claims in this run are newly extracted)
+scan: discovered 8, new 0, updated 0, unchanged 8, missing 0
+      duplicates skipped (same content): none
+
+no new or changed files had to be processed
+
+==============================================================================
+CONTRADICTIONS ONLY (classification = contradiction)
+==============================================================================
+1 contradiction(s). Each lists its evidence (document, location, exact quote); the full detail is in the findings report below (search for the finding id).
+Locations: 'page N' is the PDF page number (the first page of the file is 1), which can differ from a page number printed on the page itself.
+
+- [fnd_d1163b2c9bab44c9] severity medium, confidence 0.97: ISO 9001:2015 certification status differs
+    The investor presentation states, “SiliconForge is ISO 9001:2015 certified.” The quality and compliance report states that “No ISO 9001:2015 certificate had been received as of this report date” (as of 31 October 2026...
+    evidence: 04_Investor_Presentation.docx | heading Certifications and readiness | chunk chk_0ac9c8a674d3420a | "SiliconForge is ISO 9001:2015 certified."
+    evidence: 03_Quality_and_Compliance_Report.pdf | page 1 | chunk chk_c0881784d84b4f3c | "No ISO 9001:2015 certificate had been received as of this report date."
+
+==============================================================================
+FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)
+==============================================================================
+Fields follow the Finding schema: title, description, classification, severity, confidence, evidence_status, verification_status, materiality_reasoning, business_impact, unresolved_questions; evidence rows follow the Evidence schema.
+Findings: 24   by classification: {'consistent': 22, 'contradiction': 1, 'contextual_difference': 1}   by severity: {'informational': 22, 'medium': 2}
+
+--- FINDING 1 of 24  [fnd_98c0173d278e4179] ------------------------------
+title                 : Consistent: Tool_Category
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 08_Financial_and_Capacity_Model.xlsx (sheet Tool_Capex_Summary, A1:D7) and 07_Equipment_Register.xlsx (sheet Installed_Tools, A1:F5) state the same value for Tool_Category: Lithography.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_657ba53a11464852   (chunk_index 1)
+      location : sheet Tool_Capex_Summary, cell A1:D7
+      quote    : "[Tool_Capex_Summary!A2:D2] Tool_ID: LTH-001; Tool_Category: Lithography; Budgeted_Cost_INR_Crore: 185; Procurement_Status: Installed"
+      relevance: | LTH-001   | Lithography      | 185                     | Installed          |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | LTH-001   | Lithography      | 185                     | Installed          | | subject=LTH-001; metric=Tool_Category; value=Lithography
+  [2] role=supporting
+      document : 07_Equipment_Register.xlsx
+      chunk    : chk_d3c5174163434419   (chunk_index 0)
+      location : sheet Installed_Tools, cell A1:F5
+      quote    : "[Installed_Tools!A2:F2] Tool_ID: LTH-001; Tool_Category: Lithography; Process_Area: Photolithography; Status: Installed; Installed_Cost_INR_Crore: 185; Commissioning_Date: 2026-03-14"
+      relevance: | LTH-001   | Lithography      | Photolithography | Installed | 185                      | 2026-03-14         |
+      assessment: 07_Equipment_Register.xlsx states: | LTH-001   | Lithography      | Photolithography | Installed | 185                      | 2026-03-14         | | subject=LTH-001; metric=Tool_Category; value=Lithography
+
+--- FINDING 2 of 24  [fnd_63c22d6201114a3a] ------------------------------
+title                 : Consistent: Tool_Category
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 07_Equipment_Register.xlsx (sheet Installed_Tools, A6:F10) and 08_Financial_and_Capacity_Model.xlsx (sheet Tool_Capex_Summary, A1:D7) state the same value for Tool_Category: Ion implantation.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 07_Equipment_Register.xlsx
+      chunk    : chk_4dbf1947b38e410f   (chunk_index 1)
+      location : sheet Installed_Tools, cell A6:F10
+      quote    : "[Installed_Tools!A7:F7] Tool_ID: IMPL-002; Tool_Category: Ion implantation; Process_Area: Implant; Status: Installed; Installed_Cost_INR_Crore: 54; Commissioning_Date: 2026-07-03"
+      relevance: | IMPL-002  | Ion implantation | Implant          | Installed | 54                       | 2026-07-03         |
+      assessment: 07_Equipment_Register.xlsx states: | IMPL-002  | Ion implantation | Implant          | Installed | 54                       | 2026-07-03         | | subject=IMPL-002; metric=Tool_Category; value=Ion implantation
+  [2] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_657ba53a11464852   (chunk_index 1)
+      location : sheet Tool_Capex_Summary, cell A1:D7
+      quote    : "[Tool_Capex_Summary!A7:D7] Tool_ID: IMPL-002; Tool_Category: Ion implantation; Budgeted_Cost_INR_Crore: 54; Procurement_Status: Installed"
+      relevance: | IMPL-002  | Ion implantation | 54                      | Installed          |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | IMPL-002  | Ion implantation | 54                      | Installed          | | subject=IMPL-002; metric=Tool_Category; value=Ion implantation
+
+--- FINDING 3 of 24  [fnd_a53fafa182cc494e] ------------------------------
+title                 : Consistent: Tool_Category
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 08_Financial_and_Capacity_Model.xlsx (sheet Tool_Capex_Summary, A1:D7) and 07_Equipment_Register.xlsx (sheet Installed_Tools, A1:F5) state the same value for Tool_Category: Metrology.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_657ba53a11464852   (chunk_index 1)
+      location : sheet Tool_Capex_Summary, cell A1:D7
+      quote    : "[Tool_Capex_Summary!A5:D5] Tool_ID: MET-003; Tool_Category: Metrology; Budgeted_Cost_INR_Crore: 28; Procurement_Status: Installed"
+      relevance: | MET-003   | Metrology        | 28                      | Installed          |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | MET-003   | Metrology        | 28                      | Installed          | | subject=MET-003; metric=Tool_Category; value=Metrology
+  [2] role=supporting
+      document : 07_Equipment_Register.xlsx
+      chunk    : chk_d3c5174163434419   (chunk_index 0)
+      location : sheet Installed_Tools, cell A1:F5
+      quote    : "[Installed_Tools!A5:F5] Tool_ID: MET-003; Tool_Category: Metrology; Process_Area: Metrology; Status: Installed; Installed_Cost_INR_Crore: 28; Commissioning_Date: 2026-05-09"
+      relevance: | MET-003   | Metrology        | Metrology        | Installed | 28                       | 2026-05-09         |
+      assessment: 07_Equipment_Register.xlsx states: | MET-003   | Metrology        | Metrology        | Installed | 28                       | 2026-05-09         | | subject=MET-003; metric=Tool_Category; value=Metrology
+
+--- FINDING 4 of 24  [fnd_893a3990decd492f] ------------------------------
+title                 : Consistent: Tool_Category
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 08_Financial_and_Capacity_Model.xlsx (sheet Tool_Capex_Summary, A1:D7) and 07_Equipment_Register.xlsx (sheet Installed_Tools, A6:F10) state the same value for Tool_Category: CMP.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_657ba53a11464852   (chunk_index 1)
+      location : sheet Tool_Capex_Summary, cell A1:D7
+      quote    : "[Tool_Capex_Summary!A6:D6] Tool_ID: CMP-006; Tool_Category: CMP; Budgeted_Cost_INR_Crore: 31; Procurement_Status: Installed"
+      relevance: | CMP-006   | CMP              | 31                      | Installed          |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | CMP-006   | CMP              | 31                      | Installed          | | subject=CMP-006; metric=Tool_Category; value=CMP
+  [2] role=supporting
+      document : 07_Equipment_Register.xlsx
+      chunk    : chk_4dbf1947b38e410f   (chunk_index 1)
+      location : sheet Installed_Tools, cell A6:F10
+      quote    : "[Installed_Tools!A6:F6] Tool_ID: CMP-006; Tool_Category: CMP; Process_Area: Planarization; Status: Installed; Installed_Cost_INR_Crore: 31; Commissioning_Date: 2026-06-11"
+      relevance: | CMP-006   | CMP              | Planarization    | Installed | 31                       | 2026-06-11         |
+      assessment: 07_Equipment_Register.xlsx states: | CMP-006   | CMP              | Planarization    | Installed | 31                       | 2026-06-11         | | subject=CMP-006; metric=Tool_Category; value=CMP
+
+--- FINDING 5 of 24  [fnd_b4cb402aebb9406f] ------------------------------
+title                 : Consistent: Tool_Category
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 08_Financial_and_Capacity_Model.xlsx (sheet Tool_Capex_Summary, A1:D7) and 07_Equipment_Register.xlsx (sheet Installed_Tools, A1:F5) state the same value for Tool_Category: CVD deposition.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_657ba53a11464852   (chunk_index 1)
+      location : sheet Tool_Capex_Summary, cell A1:D7
+      quote    : "[Tool_Capex_Summary!A4:D4] Tool_ID: DEP-008; Tool_Category: CVD deposition; Budgeted_Cost_INR_Crore: 36; Procurement_Status: Installed"
+      relevance: | DEP-008   | CVD deposition   | 36                      | Installed          |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | DEP-008   | CVD deposition   | 36                      | Installed          | | subject=DEP-008; metric=Tool_Category; value=CVD deposition
+  [2] role=supporting
+      document : 07_Equipment_Register.xlsx
+      chunk    : chk_d3c5174163434419   (chunk_index 0)
+      location : sheet Installed_Tools, cell A1:F5
+      quote    : "[Installed_Tools!A4:F4] Tool_ID: DEP-008; Tool_Category: CVD deposition; Process_Area: Deposition; Status: Installed; Installed_Cost_INR_Crore: 36; Commissioning_Date: 2026-04-18"
+      relevance: | DEP-008   | CVD deposition   | Deposition       | Installed | 36                       | 2026-04-18         |
+      assessment: 07_Equipment_Register.xlsx states: | DEP-008   | CVD deposition   | Deposition       | Installed | 36                       | 2026-04-18         | | subject=DEP-008; metric=Tool_Category; value=CVD deposition
+
+--- FINDING 6 of 24  [fnd_567ba600df5b4094] ------------------------------
+title                 : Consistent: Tool_Category
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 08_Financial_and_Capacity_Model.xlsx (sheet Tool_Capex_Summary, A8:D13) and 07_Equipment_Register.xlsx (sheet Installed_Tools, A6:F10) state the same value for Tool_Category: Wet clean.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_e9e6cecad9b04671   (chunk_index 2)
+      location : sheet Tool_Capex_Summary, cell A8:D13
+      quote    : "[Tool_Capex_Summary!A8:D8] Tool_ID: CLEAN-011; Tool_Category: Wet clean; Budgeted_Cost_INR_Crore: 19; Procurement_Status: Installed"
+      relevance: | CLEAN-011 | Wet clean        | 19                      | Installed          |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | CLEAN-011 | Wet clean        | 19                      | Installed          | | subject=CLEAN-011; metric=Tool_Category; value=Wet clean
+  [2] role=supporting
+      document : 07_Equipment_Register.xlsx
+      chunk    : chk_4dbf1947b38e410f   (chunk_index 1)
+      location : sheet Installed_Tools, cell A6:F10
+      quote    : "[Installed_Tools!A8:F8] Tool_ID: CLEAN-011; Tool_Category: Wet clean; Process_Area: Wet processing; Status: Installed; Installed_Cost_INR_Crore: 19; Commissioning_Date: 2026-07-22"
+      relevance: | CLEAN-011 | Wet clean        | Wet processing   | Installed | 19                       | 2026-07-22         |
+      assessment: 07_Equipment_Register.xlsx states: | CLEAN-011 | Wet clean        | Wet processing   | Installed | 19                       | 2026-07-22         | | subject=CLEAN-011; metric=Tool_Category; value=Wet clean
+
+--- FINDING 7 of 24  [fnd_c2fda250565e46d8] ------------------------------
+title                 : Consistent: Tool_Category
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 08_Financial_and_Capacity_Model.xlsx (sheet Tool_Capex_Summary, A1:D7) and 07_Equipment_Register.xlsx (sheet Installed_Tools, A1:F5) state the same value for Tool_Category: Dry etch.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_657ba53a11464852   (chunk_index 1)
+      location : sheet Tool_Capex_Summary, cell A1:D7
+      quote    : "[Tool_Capex_Summary!A3:D3] Tool_ID: ETCH-014; Tool_Category: Dry etch; Budgeted_Cost_INR_Crore: 42; Procurement_Status: Installed"
+      relevance: | ETCH-014  | Dry etch         | 42                      | Installed          |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | ETCH-014  | Dry etch         | 42                      | Installed          | | subject=ETCH-014; metric=Tool_Category; value=Dry etch
+  [2] role=supporting
+      document : 07_Equipment_Register.xlsx
+      chunk    : chk_d3c5174163434419   (chunk_index 0)
+      location : sheet Installed_Tools, cell A1:F5
+      quote    : "[Installed_Tools!A3:F3] Tool_ID: ETCH-014; Tool_Category: Dry etch; Process_Area: Etch; Status: Installed; Installed_Cost_INR_Crore: 42; Commissioning_Date: 2026-04-02"
+      relevance: | ETCH-014  | Dry etch         | Etch             | Installed | 42                       | 2026-04-02         |
+      assessment: 07_Equipment_Register.xlsx states: | ETCH-014  | Dry etch         | Etch             | Installed | 42                       | 2026-04-02         | | subject=ETCH-014; metric=Tool_Category; value=Dry etch
+
+--- FINDING 8 of 24  [fnd_0ee260b24c46468c] ------------------------------
+title                 : Consistent: Tool_Category
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 08_Financial_and_Capacity_Model.xlsx (sheet Tool_Capex_Summary, A8:D13) and 07_Equipment_Register.xlsx (sheet Installed_Tools, A6:F10) state the same value for Tool_Category: Wafer test.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_e9e6cecad9b04671   (chunk_index 2)
+      location : sheet Tool_Capex_Summary, cell A8:D13
+      quote    : "[Tool_Capex_Summary!A9:D9] Tool_ID: TEST-021; Tool_Category: Wafer test; Budgeted_Cost_INR_Crore: 24; Procurement_Status: Installed"
+      relevance: | TEST-021  | Wafer test       | 24                      | Installed          |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | TEST-021  | Wafer test       | 24                      | Installed          | | subject=TEST-021; metric=Tool_Category; value=Wafer test
+  [2] role=supporting
+      document : 07_Equipment_Register.xlsx
+      chunk    : chk_4dbf1947b38e410f   (chunk_index 1)
+      location : sheet Installed_Tools, cell A6:F10
+      quote    : "[Installed_Tools!A9:F9] Tool_ID: TEST-021; Tool_Category: Wafer test; Process_Area: Electrical test; Status: Installed; Installed_Cost_INR_Crore: 24; Commissioning_Date: 2026-08-16"
+      relevance: | TEST-021  | Wafer test       | Electrical test  | Installed | 24                       | 2026-08-16         |
+      assessment: 07_Equipment_Register.xlsx states: | TEST-021  | Wafer test       | Electrical test  | Installed | 24                       | 2026-08-16         | | subject=TEST-021; metric=Tool_Category; value=Wafer test
+
+--- FINDING 9 of 24  [fnd_549d010316444d53] ------------------------------
+title                 : Consistent: Status
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 07_Equipment_Register.xlsx (sheet Installed_Tools, A1:F5) and 08_Financial_and_Capacity_Model.xlsx (sheet Tool_Capex_Summary, A1:D7) state the same value for Status: Installed.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 07_Equipment_Register.xlsx
+      chunk    : chk_d3c5174163434419   (chunk_index 0)
+      location : sheet Installed_Tools, cell A1:F5
+      quote    : "[Installed_Tools!A1:F1] A1: Tool_ID; B1: Tool_Category; C1: Process_Area; D1: Status; E1: Installed_Cost_INR_Crore; F1: Commissioning_Date"
+      relevance: | LTH-001   | Lithography      | Photolithography | Installed | 185                      | 2026-03-14         |
+      assessment: 07_Equipment_Register.xlsx states: | LTH-001   | Lithography      | Photolithography | Installed | 185                      | 2026-03-14         | | subject=LTH-001; metric=Status; value=Installed
+  [2] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_657ba53a11464852   (chunk_index 1)
+      location : sheet Tool_Capex_Summary, cell A1:D7
+      quote    : "[Tool_Capex_Summary!A2:D2] Tool_ID: LTH-001; Tool_Category: Lithography; Budgeted_Cost_INR_Crore: 185; Procurement_Status: Installed"
+      relevance: | LTH-001   | Lithography      | 185                     | Installed          |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | LTH-001   | Lithography      | 185                     | Installed          | | subject=LTH-001; metric=Procurement_Status; value=Installed
+
+--- FINDING 10 of 24  [fnd_ada319692c8b4847] ------------------------------
+title                 : Consistent: Model_Value
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 08_Financial_and_Capacity_Model.xlsx (sheet Capacity_Assumptions, A1:D6) and 04_Investor_Presentation.docx (section Operating performance) state the same value for Model_Value: 96.8 %.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_984c2a5664f4434d   (chunk_index 0)
+      location : sheet Capacity_Assumptions, cell A1:D6
+      quote    : "[Capacity_Assumptions!A5:D5] Assumption: Q3 2026 production yield; Model_Value: 96.8; Unit: %; Model_Note: SF-65-A"
+      relevance: | Q3 2026 production yield            | 96.8        | %            | SF-65-A                 |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | Q3 2026 production yield            | 96.8        | %            | SF-65-A                 | | subject=Q3 2026 production yield; metric=Model_Value; value=96.8; unit=%; period=Q3 2026; conditions=SF-65-A
+  [2] role=supporting
+      document : 04_Investor_Presentation.docx
+      chunk    : chk_96070feabd7f4239   (chunk_index 2)
+      location : heading Operating performance
+      quote    : "Current production yield: 96.8% on SF-65-A during Q3 2026."
+      relevance: Current production yield: 96.8% on SF-65-A during Q3 2026.
+      assessment: 04_Investor_Presentation.docx states: Current production yield: 96.8% on SF-65-A during Q3 2026. | subject=Current production yield; metric=yield; value=96.8%; unit=%; period=Q3 2026; conditions=on SF-65-A
+
+--- FINDING 11 of 24  [fnd_74b590aabef84862] ------------------------------
+title                 : Consistent: semiconductor manufacturing platform process node
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 04_Investor_Presentation.docx (section Investment highlights) and 06_Facility_and_Utilities_Plan.docx (section Facility design basis) state the same value for semiconductor manufacturing platform process node: 65 nm nm.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 04_Investor_Presentation.docx
+      chunk    : chk_8ec8b97dc4484fed   (chunk_index 1)
+      location : heading Investment highlights
+      quote    : "SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets."
+      relevance: SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets.
+      assessment: 04_Investor_Presentation.docx states: SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets. | subject=SiliconForge; metric=semiconductor manufacturing platform process node; value=65 nm; unit=nm; conditions=in Karnataka for industrial, automotive-support and power-management markets
+  [2] role=supporting
+      document : 06_Facility_and_Utilities_Plan.docx
+      chunk    : chk_f74e2ee123864003   (chunk_index 1)
+      location : heading Facility design basis
+      quote    : "Facility designed for 300 mm wafer manufacturing using a 65 nm process platform; cleanroom and support areas are being commissioned in phases."
+      relevance: Facility designed for 300 mm wafer manufacturing using a 65 nm process platform; cleanroom and support areas are being commissioned in phases.
+      assessment: 06_Facility_and_Utilities_Plan.docx states: Facility designed for 300 mm wafer manufacturing using a 65 nm process platform; cleanroom and support areas are being commissioned in phases. | subject=Facility; metric=process platform; value=65 nm; unit=nm
+
+--- FINDING 12 of 24  [fnd_3589be89e02e49fe] ------------------------------
+title                 : Consistent: semiconductor manufacturing platform process node
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 04_Investor_Presentation.docx (section Investment highlights) and 01_Corporate_Overview.pdf (page 1) state the same value for semiconductor manufacturing platform process node: 65 nm nm.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 04_Investor_Presentation.docx
+      chunk    : chk_8ec8b97dc4484fed   (chunk_index 1)
+      location : heading Investment highlights
+      quote    : "SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets."
+      relevance: SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets.
+      assessment: 04_Investor_Presentation.docx states: SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets. | subject=SiliconForge; metric=semiconductor manufacturing platform process node; value=65 nm; unit=nm; conditions=in Karnataka for industrial, automotive-support and power-management markets
+  [2] role=supporting
+      document : 01_Corporate_Overview.pdf
+      chunk    : chk_7f941e7be7704ecb   (chunk_index 1)
+      location : page 1
+      quote    : "Business focus: mature-node logic and mixed-signal components for industrial, automotive-support and power-management applications. Initial process platform: 65 nm."
+      relevance: Business focus: mature-node logic and mixed-signal components for industrial, automotive-support and power-management applications. Initial process platform: 65 nm.
+      assessment: 01_Corporate_Overview.pdf states: Business focus: mature-node logic and mixed-signal components for industrial, automotive-support and power-management applications. Initial process platform: 65 nm. | subject=SiliconForge; metric=Initial process platform; value=65 nm
+
+--- FINDING 13 of 24  [fnd_60e9ecfe86134a48] ------------------------------
+title                 : Consistent: semiconductor manufacturing platform wafer size
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 04_Investor_Presentation.docx (section Investment highlights) and 01_Corporate_Overview.pdf (page 1) state the same value for semiconductor manufacturing platform wafer size: 300 mm mm.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 04_Investor_Presentation.docx
+      chunk    : chk_8ec8b97dc4484fed   (chunk_index 1)
+      location : heading Investment highlights
+      quote    : "SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets."
+      relevance: SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets.
+      assessment: 04_Investor_Presentation.docx states: SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets. | subject=SiliconForge; metric=semiconductor manufacturing platform wafer size; value=300 mm; unit=mm; conditions=in Karnataka for industrial, automotive-support and power-management markets
+  [2] role=supporting
+      document : 01_Corporate_Overview.pdf
+      chunk    : chk_7f941e7be7704ecb   (chunk_index 1)
+      location : page 1
+      quote    : "SiliconForge is a fictional Indian semiconductor manufacturer developing a 300 mm wafer fabrication facility in Nanjangud Industrial Area, Mysuru district, Karnataka."
+      relevance: SiliconForge is a fictional Indian semiconductor manufacturer developing a 300 mm wafer fabrication facility in Nanjangud Industrial Area, Mysuru district, Karnataka.
+      assessment: 01_Corporate_Overview.pdf states: SiliconForge is a fictional Indian semiconductor manufacturer developing a 300 mm wafer fabrication facility in Nanjangud Industrial Area, Mysuru district, Karnataka. | subject=SiliconForge; metric=wafer fabrication facility size; value=300 mm
+
+--- FINDING 14 of 24  [fnd_7982db2470e24b6c] ------------------------------
+title                 : Consistent: electrical load
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 06_Facility_and_Utilities_Plan.docx (section Electrical demand) and 03_Quality_and_Compliance_Report.pdf (page 1) state the same value for electrical load: 22 MW MW.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 03_Quality_and_Compliance_Report.pdf
+      chunk    : chk_c0881784d84b4f3c   (chunk_index 1)
+      location : page 1
+      quote    : "No final Consent for Establishment amendment covering the proposed 22 MW connected load was present in records reviewed."
+      relevance: No final Consent for Establishment amendment covering the proposed 22 MW connected load was present in records reviewed.
+      assessment: 03_Quality_and_Compliance_Report.pdf states: No final Consent for Establishment amendment covering the proposed 22 MW connected load was present in records reviewed. | subject=proposed connected load; metric=load; value=22 MW; conditions=proposed
+  [2] role=supporting
+      document : 06_Facility_and_Utilities_Plan.docx
+      chunk    : chk_0c06f30ef345465c   (chunk_index 2)
+      location : heading Electrical demand
+      quote    : "Design connected electrical load: 22 MW at full planned equipment installation."
+      relevance: Design connected electrical load: 22 MW at full planned equipment installation.
+      assessment: 06_Facility_and_Utilities_Plan.docx states: Design connected electrical load: 22 MW at full planned equipment installation. | subject=Design connected electrical load; metric=electrical load; value=22 MW; unit=MW; conditions=at full planned equipment installation
+
+--- FINDING 15 of 24  [fnd_a1c2403285b94e5d] ------------------------------
+title                 : Consistent: Budgeted_Cost_INR_Crore
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 08_Financial_and_Capacity_Model.xlsx (sheet Tool_Capex_Summary, A8:D13) and 07_Equipment_Register.xlsx (sheet Installed_Tools, A6:F10) state the same value for Budgeted_Cost_INR_Crore: 176 INR_Crore.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_e9e6cecad9b04671   (chunk_index 2)
+      location : sheet Tool_Capex_Summary, cell A8:D13
+      quote    : "[Tool_Capex_Summary!A10:D10] Tool_ID: LTH-002; Tool_Category: Lithography; Budgeted_Cost_INR_Crore: 176; Procurement_Status: Installed"
+      relevance: | LTH-002   | Lithography      | 176                     | Installed          |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | LTH-002   | Lithography      | 176                     | Installed          | | subject=LTH-002; metric=Budgeted_Cost_INR_Crore; value=176; unit=INR_Crore
+  [2] role=supporting
+      document : 07_Equipment_Register.xlsx
+      chunk    : chk_4dbf1947b38e410f   (chunk_index 1)
+      location : sheet Installed_Tools, cell A6:F10
+      quote    : "[Installed_Tools!A10:F10] Tool_ID: LTH-002; Tool_Category: Lithography; Process_Area: Photolithography; Status: Installed; Installed_Cost_INR_Crore: 176; Commissioning_Date: 2026-09-01"
+      relevance: | LTH-002   | Lithography      | Photolithography | Installed | 176                      | 2026-09-01         |
+      assessment: 07_Equipment_Register.xlsx states: | LTH-002   | Lithography      | Photolithography | Installed | 176                      | 2026-09-01         | | subject=LTH-002; metric=Installed_Cost_INR_Crore; value=176; unit=INR_Crore
+
+--- FINDING 16 of 24  [fnd_7a8121935bfa4b3e] ------------------------------
+title                 : Consistent: Budgeted_Cost_INR_Crore
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 08_Financial_and_Capacity_Model.xlsx (sheet Tool_Capex_Summary, A8:D13) and 07_Equipment_Register.xlsx (sheet Installed_Tools, A11:F13) state the same value for Budgeted_Cost_INR_Crore: 34 INR_Crore.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_e9e6cecad9b04671   (chunk_index 2)
+      location : sheet Tool_Capex_Summary, cell A8:D13
+      quote    : "[Tool_Capex_Summary!A12:D12] Tool_ID: DEP-009; Tool_Category: CVD deposition; Budgeted_Cost_INR_Crore: 34; Procurement_Status: Installed"
+      relevance: | DEP-009   | CVD deposition   | 34                      | Installed          |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | DEP-009   | CVD deposition   | 34                      | Installed          | | subject=DEP-009; metric=Budgeted_Cost_INR_Crore; value=34; unit=INR_Crore
+  [2] role=supporting
+      document : 07_Equipment_Register.xlsx
+      chunk    : chk_f4c943e362ff4a6c   (chunk_index 2)
+      location : sheet Installed_Tools, cell A11:F13
+      quote    : "[Installed_Tools!A12:F12] Tool_ID: DEP-009; Tool_Category: CVD deposition; Process_Area: Deposition; Status: Installed; Installed_Cost_INR_Crore: 34; Commissioning_Date: 2026-09-26"
+      relevance: | DEP-009   | CVD deposition   | Deposition       | Installed | 34                       | 2026-09-26         |
+      assessment: 07_Equipment_Register.xlsx states: | DEP-009   | CVD deposition   | Deposition       | Installed | 34                       | 2026-09-26         | | subject=DEP-009; metric=Installed_Cost_INR_Crore; value=34; unit=INR_Crore
+
+--- FINDING 17 of 24  [fnd_86a4a4c541464540] ------------------------------
+title                 : Consistent: Budgeted_Cost_INR_Crore
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 08_Financial_and_Capacity_Model.xlsx (sheet Tool_Capex_Summary, A8:D13) and 07_Equipment_Register.xlsx (sheet Installed_Tools, A11:F13) state the same value for Budgeted_Cost_INR_Crore: 39 INR_Crore.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_e9e6cecad9b04671   (chunk_index 2)
+      location : sheet Tool_Capex_Summary, cell A8:D13
+      quote    : "[Tool_Capex_Summary!A11:D11] Tool_ID: ETCH-015; Tool_Category: Dry etch; Budgeted_Cost_INR_Crore: 39; Procurement_Status: Installed"
+      relevance: | ETCH-015  | Dry etch         | 39                      | Installed          |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | ETCH-015  | Dry etch         | 39                      | Installed          | | subject=ETCH-015; metric=Budgeted_Cost_INR_Crore; value=39; unit=INR_Crore
+  [2] role=supporting
+      document : 07_Equipment_Register.xlsx
+      chunk    : chk_f4c943e362ff4a6c   (chunk_index 2)
+      location : sheet Installed_Tools, cell A11:F13
+      quote    : "[Installed_Tools!A11:F11] Tool_ID: ETCH-015; Tool_Category: Dry etch; Process_Area: Etch; Status: Installed; Installed_Cost_INR_Crore: 39; Commissioning_Date: 2026-09-18"
+      relevance: | ETCH-015  | Dry etch         | Etch             | Installed | 39                       | 2026-09-18         |
+      assessment: 07_Equipment_Register.xlsx states: | ETCH-015  | Dry etch         | Etch             | Installed | 39                       | 2026-09-18         | | subject=ETCH-015; metric=Installed_Cost_INR_Crore; value=39; unit=INR_Crore
+
+--- FINDING 18 of 24  [fnd_094f9318e5e44f50] ------------------------------
+title                 : Consistent: Installed_Cost_INR_Crore
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 07_Equipment_Register.xlsx (sheet Installed_Tools, A6:F10) and 08_Financial_and_Capacity_Model.xlsx (sheet Capacity_Assumptions, A1:D6) state the same value for Installed_Cost_INR_Crore: 24 INR_Crore.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 07_Equipment_Register.xlsx
+      chunk    : chk_4dbf1947b38e410f   (chunk_index 1)
+      location : sheet Installed_Tools, cell A6:F10
+      quote    : "[Installed_Tools!A9:F9] Tool_ID: TEST-021; Tool_Category: Wafer test; Process_Area: Electrical test; Status: Installed; Installed_Cost_INR_Crore: 24; Commissioning_Date: 2026-08-16"
+      relevance: | TEST-021  | Wafer test       | Electrical test  | Installed | 24                       | 2026-08-16         |
+      assessment: 07_Equipment_Register.xlsx states: | TEST-021  | Wafer test       | Electrical test  | Installed | 24                       | 2026-08-16         | | subject=TEST-021; metric=Installed_Cost_INR_Crore; value=24; unit=INR_Crore
+  [2] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_984c2a5664f4434d   (chunk_index 0)
+      location : sheet Capacity_Assumptions, cell A1:D6
+      quote    : "[Capacity_Assumptions!A2:D2] Assumption: Designed nameplate capacity; Model_Value: 24000; Unit: WSPM; Model_Note: Full build-out capacity"
+      relevance: | TEST-021  | Wafer test       | 24                      | Installed          |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | TEST-021  | Wafer test       | 24                      | Installed          | | subject=TEST-021; metric=Budgeted_Cost_INR_Crore; value=24; unit=INR_Crore
+
+--- FINDING 19 of 24  [fnd_1fd6bb5ccfe34fec] ------------------------------
+title                 : Q3 2026 average monthly wafer starts: 9200 and 9,200 WSPM
+classification        : consistent
+severity              : informational
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Excerpt A in 08_Financial_and_Capacity_Model.xlsx, Capacity_Assumptions!A4:D4, states 9200 WSPM. Excerpt B in 02_Manufacturing_Operations_Report.pdf, page 1, states 9,200 WSPM for actual average starts during Q3 2026; the claims agree.
+materiality_reasoning : The claims report the same average monthly wafer starts for the same period and unit.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_984c2a5664f4434d   (chunk_index 0)
+      location : sheet Capacity_Assumptions, cell A1:D6
+      quote    : "Q3 2026 average wafer starts; Model_Value: 9200; Unit: WSPM"
+      relevance: | Q3 2026 average wafer starts        | 9200        | WSPM         | Average monthly starts  |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | Q3 2026 average wafer starts        | 9200        | WSPM         | Average monthly starts  | | subject=Q3 2026 average wafer starts; metric=Model_Value; value=9200; unit=WSPM; period=Q3 2026; conditions=Average monthly starts
+  [2] role=supporting
+      document : 02_Manufacturing_Operations_Report.pdf
+      chunk    : chk_7dc559a8ce7242fe   (chunk_index 1)
+      location : page 1
+      quote    : "Actual average starts during Q3 2026 were 9,200 WSPM."
+      relevance: | Average monthly wafer starts | 9,200 WSPM    | 27,600 / 3 months              |
+      assessment: 02_Manufacturing_Operations_Report.pdf states: | Average monthly wafer starts | 9,200 WSPM    | 27,600 / 3 months              | | subject=Average monthly wafer starts; metric=Q3 2026 value; value=9,200 WSPM; unit=WSPM; period=Q3 2026
+
+--- FINDING 20 of 24  [fnd_442a67ff56b1430e] ------------------------------
+title                 : Current qualified capacity: 12000 and 12,000 WSPM
+classification        : consistent
+severity              : informational
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Excerpt A in 08_Financial_and_Capacity_Model.xlsx, Capacity_Assumptions!A3:D3, states 12000 WSPM as of 30-Sep-2026. Excerpt B in 02_Manufacturing_Operations_Report.pdf, page 1, states 12,000 WSPM; the claims agree.
+materiality_reasoning : The claims report the same current qualified capacity and unit; the model also specifies its date.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_984c2a5664f4434d   (chunk_index 0)
+      location : sheet Capacity_Assumptions, cell A1:D6
+      quote    : "Current qualified capacity; Model_Value: 12000; Unit: WSPM"
+      relevance: | Current qualified capacity          | 12000       | WSPM         | As of 30-Sep-2026       |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | Current qualified capacity          | 12000       | WSPM         | As of 30-Sep-2026       | | subject=Current qualified capacity; metric=Model_Value; value=12000; unit=WSPM; period=As of 30-Sep-2026
+  [2] role=supporting
+      document : 02_Manufacturing_Operations_Report.pdf
+      chunk    : chk_7dc559a8ce7242fe   (chunk_index 1)
+      location : page 1
+      quote    : "Current qualified capacity is 12,000 WSPM."
+      relevance: Current qualified capacity is 12,000 WSPM.
+      assessment: 02_Manufacturing_Operations_Report.pdf states: Current qualified capacity is 12,000 WSPM. | subject=Current qualified capacity; metric=Capacity; value=12,000 WSPM; unit=WSPM
+
+--- FINDING 21 of 24  [fnd_d1163b2c9bab44c9] ------------------------------
+title                 : ISO 9001:2015 certification status differs
+classification        : contradiction
+severity              : medium
+confidence            : 0.97
+evidence_status       : adequate
+verification_status   : verified
+description           : The investor presentation states, “SiliconForge is ISO 9001:2015 certified.” The quality and compliance report states that “No ISO 9001:2015 certificate had been received as of this report date” (as of 31 October 2026). The excerpts give conflicting certification status, and the presentation states no differing date or condition.
+materiality_reasoning : Certification status can materially affect a reader’s view of the company’s readiness and compliance.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : 04_Investor_Presentation.docx
+      chunk    : chk_0ac9c8a674d3420a   (chunk_index 3)
+      location : heading Certifications and readiness
+      quote    : "SiliconForge is ISO 9001:2015 certified."
+      relevance: SiliconForge is ISO 9001:2015 certified.
+      assessment: 04_Investor_Presentation.docx states: SiliconForge is ISO 9001:2015 certified. | subject=SiliconForge; metric=ISO certification; value=ISO 9001:2015 certified
+  [2] role=contradicting
+      document : 03_Quality_and_Compliance_Report.pdf
+      chunk    : chk_c0881784d84b4f3c   (chunk_index 1)
+      location : page 1
+      quote    : "No ISO 9001:2015 certificate had been received as of this report date."
+      relevance: No ISO 9001:2015 certificate had been received as of this report date.
+      assessment: 03_Quality_and_Compliance_Report.pdf states: No ISO 9001:2015 certificate had been received as of this report date. | subject=ISO 9001:2015 certificate; metric=received status; value=No; period=as of this report date
+
+--- FINDING 22 of 24  [fnd_08ec60baef954907] ------------------------------
+title                 : Current capacity: 24,000 WSPM installed nameplate vs 12,000 WSPM qualified
+classification        : contextual_difference
+severity              : medium
+confidence            : 0.99
+evidence_status       : adequate
+verification_status   : verified
+description           : The investor presentation states “Current installed nameplate capacity: 24,000 WSPM,” while the Manufacturing Operations Report states “Current qualified capacity is 12,000 WSPM.” The excerpts distinguish installed nameplate capacity from qualified capacity, so the scope differs.
+materiality_reasoning : The distinction between installed nameplate and qualified capacity materially affects an understanding of operational capacity.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : 04_Investor_Presentation.docx
+      chunk    : chk_96070feabd7f4239   (chunk_index 2)
+      location : heading Operating performance
+      quote    : "Current installed nameplate capacity: 24,000 WSPM."
+      relevance: Current installed nameplate capacity: 24,000 WSPM.
+      assessment: 04_Investor_Presentation.docx states: Current installed nameplate capacity: 24,000 WSPM. | subject=Current installed nameplate capacity; metric=capacity; value=24,000 WSPM; unit=WSPM
+  [2] role=contextual
+      document : 02_Manufacturing_Operations_Report.pdf
+      chunk    : chk_7dc559a8ce7242fe   (chunk_index 1)
+      location : page 1
+      quote    : "Current qualified capacity is 12,000 WSPM."
+      relevance: Current qualified capacity is 12,000 WSPM.
+      assessment: 02_Manufacturing_Operations_Report.pdf states: Current qualified capacity is 12,000 WSPM. | subject=Current qualified capacity; metric=Capacity; value=12,000 WSPM; unit=WSPM
+
+--- FINDING 23 of 24  [fnd_0cf48c221cb846df] ------------------------------
+title                 : CMP-006 category: CMP in both claims
+classification        : consistent
+severity              : informational
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A in Tool_Capex_Summary row 8 identifies CLEAN-011 as Wet clean, while Claim B in Installed_Tools row 6 identifies CMP-006 as CMP; the excerpts concern different tools, so this pair does not support a comparison of the same subject.
+materiality_reasoning : The stated categories agree for CMP-006; the different tool IDs make the apparent category difference immaterial to that comparison.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 08_Financial_and_Capacity_Model.xlsx
+      chunk    : chk_e9e6cecad9b04671   (chunk_index 2)
+      location : sheet Tool_Capex_Summary, cell A8:D13
+      quote    : "Tool_Category: Wet clean"
+      relevance: | CLEAN-011 | Wet clean        | 19                      | Installed          |
+      assessment: 08_Financial_and_Capacity_Model.xlsx states: | CLEAN-011 | Wet clean        | 19                      | Installed          | | subject=CLEAN-011; metric=Tool_Category; value=Wet clean
+  [2] role=supporting
+      document : 07_Equipment_Register.xlsx
+      chunk    : chk_4dbf1947b38e410f   (chunk_index 1)
+      location : sheet Installed_Tools, cell A6:F10
+      quote    : "Tool_Category: CMP"
+      relevance: | CMP-006   | CMP              | Planarization    | Installed | 31                       | 2026-06-11         |
+      assessment: 07_Equipment_Register.xlsx states: | CMP-006   | CMP              | Planarization    | Installed | 31                       | 2026-06-11         | | subject=CMP-006; metric=Tool_Category; value=CMP
+
+--- FINDING 24 of 24  [fnd_1e95c28f197e410a] ------------------------------
+title                 : SiliconForge location: Karnataka, India; Nanjangud Industrial Area, Mysuru district, Karnataka
+classification        : consistent
+severity              : informational
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A identifies the supplier as located in Karnataka, India, in the Parties and scope section. Claim B locates the facility in Nanjangud Industrial Area, Mysuru district, Karnataka, in Company profile. These statements are consistent; Claim A gives a broader location.
+materiality_reasoning : The stated locations do not conflict; one is less specific than the other.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 05_Customer_Supply_Agreement.docx
+      chunk    : chk_4e7ea9a77dc546df   (chunk_index 1)
+      location : heading Parties and scope
+      quote    : "Supplier: SiliconForge Semiconductors Pvt. Ltd., Karnataka, India."
+      relevance: Supplier: SiliconForge Semiconductors Pvt. Ltd., Karnataka, India.
+      assessment: 05_Customer_Supply_Agreement.docx states: Supplier: SiliconForge Semiconductors Pvt. Ltd., Karnataka, India. | subject=Supplier; metric=name and location; value=SiliconForge Semiconductors Pvt. Ltd., Karnataka, India.
+  [2] role=supporting
+      document : 01_Corporate_Overview.pdf
+      chunk    : chk_7f941e7be7704ecb   (chunk_index 1)
+      location : page 1
+      quote    : "facility in Nanjangud Industrial Area, Mysuru district, Karnataka."
+      relevance: SiliconForge is a fictional Indian semiconductor manufacturer developing a 300 mm wafer fabrication facility in Nanjangud Industrial Area, Mysuru district, Karnataka.
+      assessment: 01_Corporate_Overview.pdf states: SiliconForge is a fictional Indian semiconductor manufacturer developing a 300 mm wafer fabrication facility in Nanjangud Industrial Area, Mysuru district, Karnataka. | subject=SiliconForge; metric=location; value=Nanjangud Industrial Area, Mysuru district, Karnataka
+
+
+==============================================================================
+COVERAGE AND PER-DOCUMENT VERDICTS
+==============================================================================
+Coverage: 'read' = chunks the LLM was shown. A document counts as fully read only if every batch succeeded (all-or-nothing per document).
+
+  document                                chunks  read  fully read  claims  LLM calls  tokens  extract s  verdict  reason
+  --------------------------------------  ------  ----  ----------  ------  ---------  ------  ---------  -------  ---------------------------------------------
+  01_Corporate_Overview.pdf               2       2     yes         13      0          0       124.0      skipped  verdicts skipped by request (--skip-verdicts)
+  02_Manufacturing_Operations_Report.pdf  2       2     yes         16      0          0       24.5       skipped  verdicts skipped by request (--skip-verdicts)
+  03_Quality_and_Compliance_Report.pdf    2       2     yes         13      0          0       20.6       skipped  verdicts skipped by request (--skip-verdicts)
+  04_Investor_Presentation.docx           5       5     yes         12      0          0       20.6       skipped  verdicts skipped by request (--skip-verdicts)
+  05_Customer_Supply_Agreement.docx       5       5     yes         16      0          0       24.2       skipped  verdicts skipped by request (--skip-verdicts)
+  06_Facility_and_Utilities_Plan.docx     5       5     yes         18      0          0       37.3       skipped  verdicts skipped by request (--skip-verdicts)
+  07_Equipment_Register.xlsx              4       4     yes         72      0          0       37.1       skipped  verdicts skipped by request (--skip-verdicts)
+  08_Financial_and_Capacity_Model.xlsx    4       4     yes         44      0          0       24.1       skipped  verdicts skipped by request (--skip-verdicts)
+
+==============================================================================
+CLAIM LEDGER
+==============================================================================
+claims recorded 204, rejected 5
+
+Per document (paired = has a comparable claim elsewhere; corroborated = same value stated elsewhere; unpaired = nothing comparable found):
+  document                                claims  paired  corroborated  unpaired  pairs judged  findings
+  --------------------------------------  ------  ------  ------------  --------  ------------  --------
+  01_Corporate_Overview.pdf               13      6       2             7         9             3
+  02_Manufacturing_Operations_Report.pdf  16      5       3             11        4             3
+  03_Quality_and_Compliance_Report.pdf    13      2       1             11        2             2
+  04_Investor_Presentation.docx           12      7       3             5         10            6
+  05_Customer_Supply_Agreement.docx       16      3       0             13        4             1
+  06_Facility_and_Utilities_Plan.docx     18      4       3             14        2             2
+  07_Equipment_Register.xlsx              72      57      35            15        66            14
+  08_Financial_and_Capacity_Model.xlsx    44      42      36            2         73            17
+
+Rejected claims by reason (first 15):
+  - value 'Pilot production; commercial ramp in progress' not found in any chunk of 01_Corporate_Overview.pdf
+  - value '12,000 WSPM as of 30 September 2026' not found in any chunk of 01_Corporate_Overview.pdf
+  - value '92.4%' not found in any chunk of 02_Manufacturing_Operations_Report.pdf
+  - value '92.4% for Q3 2026; see Operations Report' not found in any chunk of 03_Quality_and_Compliance_Report.pdf
+  - value 'Lot-level traceability maintained in MES, per management' not found in any chunk of 03_Quality_and_Compliance_Report.pdf
+
+==============================================================================
+PAIR MATCHING AND JUDGING
+==============================================================================
+pairing mode: LLM grouping of sorted claims: 204 claims in 1 batch(es), 1 call(s) (0 failed), 35 groups covering 77 claims (largest 4), 145 pairs (99 added from nearest neighbours in other documents), 0 unknown refs ignored
+  pairing every claim with every other in its group would have made 51 pairs; claims stating the same value are linked as agreement, and one claim per distinct value (49 values) is compared
+  note: claims in different batches are never grouped together (one batch: no such gap in this run)
+candidate pairs: 145
+  by relation hint : {'exact': 59, 'contextual': 12, 'conflicting': 73, 'partial': 1}
+  by match route   : {'llm': 46, 'embedding': 99}
+  across documents : 142   inside one document: 3
+exact agreements (corroboration, no LLM): 59
+judged by the LLM: 86 in 15 calls (0 batches failed)
+LLM verdicts: {'consistent': 17, 'not_comparable': 56, 'insufficient_evidence': 7, 'contradiction': 1, 'missing_information': 6, 'contextual_difference': 1}
+findings saved 24; rejected 20
+
+Rejected findings (first 15):
+  - missing_information pair 1: the quotes do not show the claims' values ('Implant' and 'Installed')
+  - consistent pair 1: the quotes do not show the claims' values ('Implant' and 'Installed')
+  - consistent 'Process_Area: Photolithography in both claims': validation_failed: Finding not saved. evidence 2: the quote is not in chunk 'chk_657ba53a11464852' (08_Financial_and_Capacity_Model.xlsx, sheet Tool_Capex_Summary, cell A1:D7). Co
+  - insufficient_evidence pair 1: the quotes do not show the claims' values ('Installed' and 'Metrology')
+  - insufficient_evidence pair 1: the quotes do not show the claims' values ('Deposition' and 'Installed')
+  - missing_information pair 4: the quotes do not show the claims' values ('Wet processing' and 'Wet clean')
+  - consistent pair 1: the quotes do not show the claims' values ('Installed' and '54')
+  - consistent pair 1: the quotes do not show the claims' values ('19' and '24')
+  - consistent pair 5: the quotes do not show the claims' values ('CMP' and 'Wet clean')
+  - missing_information pair 1: the quotes do not show the claims' values ('Installed' and 'Wafer test')
+  - consistent pair 2: the quotes do not show the claims' values ('Wafer test' and 'Wet clean')
+  - missing_information pair 4: the quotes do not show the claims' values ('Installed' and '2026-03-14')
+  - consistent pair 1: the quotes do not show the claims' values ('2026-07-03' and 'Ion implantation')
+  - missing_information pair 1: the quotes do not show the claims' values ('2026-07-03' and 'Ion implantation')
+  - consistent pair 2: the quotes do not show the claims' values ('Installed' and '2026-09-01')
+
+==============================================================================
+LLM CALLS: tokens, context size, latency, failures
+==============================================================================
+Per phase:
+  phase               attempts  failed  prompt tok  completion tok  thinking tok  avg ctx tok  max ctx tok  avg ms  p95 ms  total s
+  ------------------  --------  ------  ----------  --------------  ------------  -----------  -----------  ------  ------  -------
+  group claims (LLM)  1         0       0           0               0             0            0            300055  300055  300.1
+  judge pairs         15        0       0           0               0             0            0            13102   30430   196.5
+
+Every provider attempt (context = what was sent; tokens as counted by the API):
+  #   phase               at s   result  ctx chars  ctx tokens  cached  completion  thinking  total tok  latency ms  resp chars  error
+  --  ------------------  -----  ------  ---------  ----------  ------  ----------  --------  ---------  ----------  ----------  -----
+  1   group claims (LLM)  312.7  ok      51,298     0           0       0           0         0          300055      2,339
+  2   judge pairs         615.3  ok      18,095     0           0       0           0         0          11560       3,693
+  3   judge pairs         626.9  ok      17,206     0           0       0           0         0          11332       4,651
+  4   judge pairs         638.2  ok      17,285     0           0       0           0         0          7558        2,368
+  5   judge pairs         645.8  ok      17,156     0           0       0           0         0          7501        2,171
+  6   judge pairs         653.3  ok      17,181     0           0       0           0         0          7710        1,731
+  7   judge pairs         661.0  ok      17,206     0           0       0           0         0          7605        2,297
+  8   judge pairs         668.6  ok      17,164     0           0       0           0         0          7538        2,875
+  9   judge pairs         676.2  ok      18,733     0           0       0           0         0          30430       2,172
+  10  judge pairs         706.6  ok      18,567     0           0       0           0         0          14188       3,833
+  11  judge pairs         720.8  ok      17,243     0           0       0           0         0          7516        2,580
+  12  judge pairs         728.3  ok      17,416     0           0       0           0         0          7559        2,705
+  13  judge pairs         735.9  ok      18,492     0           0       0           0         0          27092       2,102
+  14  judge pairs         763.0  ok      18,557     0           0       0           0         0          27308       2,226
+  15  judge pairs         790.3  ok      18,403     0           0       0           0         0          10836       3,101
+  16  judge pairs         801.1  ok      18,657     0           0       0           0         0          10795       3,757
+
+==============================================================================
+EMBEDDING CALLS
+==============================================================================
+calls 4, failed 0, texts 204 (claim topic texts embedded locally for matching)
+
+  #  texts  chars  latency ms  result  error
+  -  -----  -----  ----------  ------  -----
+  1  64     7,788  822         ok
+  2  64     8,403  401         ok
+  3  64     8,297  358         ok
+  4  12     1,410  52          ok
+
+==============================================================================
+FAILURES
+==============================================================================
+LLM attempt failures:
+  none
+Documents not fully read:
+  none
+Pair-judging problems:
+  none
+
+==============================================================================
+TIMING
+==============================================================================
+  stage                                            duration  share of wall time
+  -----------------------------------------------  --------  ------------------
+  0. scan files, process new or changed ones       0.0s      0%
+  1. read every chunk, extract claims              312.4s    38%
+  2. match claims (LLM grouping of sorted claims)  302.5s    37%
+  3. judge pairs, verify quotes, save findings     196.9s    24%
+  4. per-document verdicts                         0.0s      0%
+
+==============================================================================
+KNOWN LIMITS OF THIS RUN
+==============================================================================
+- Reading is all-or-nothing per document: if one batch fails after all retries, that document's claims are discarded and it counts as not read.
+- Candidate matching keeps at most 5 partners per claim (an existing default), so some comparable pairs are never judged.
+- The claim-extraction prompt lists business categories (capacity, supply, pricing, ...) and is not yet domain-agnostic.
+- Claims inside one document are also paired and judged; matching quality depends on how the model labels subject/metric/unit/period.
+- Exact agreements are trusted as corroboration without an LLM check.

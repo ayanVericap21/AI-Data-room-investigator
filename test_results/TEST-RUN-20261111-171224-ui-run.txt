@@ -1,0 +1,136 @@
+TEST RUN  20261111-171224  ui-run
+==============================================================================
+
+HOW THIS RUN WAS ACHIEVED
+1. Reading: every chunk of every processed document (database 'data_room') was sent to the LLM in batches of up to 8,000 characters; each batch returns claims, kept only if their value appears in the cited chunk (existing claim extractor, no chunk or call limits).
+2. Ledger: accepted claims are stored in the claims table; the claims are sorted by label and sent to the LLM in batches of up to 12,000 characters, which groups the ones that state the same attribute of the same subject (no code pairing, no fixed number of documents or claims assumed).
+3. Judging: pairs that agree exactly count as corroboration; every other pair (conflicting, partial, contextual) goes to the LLM in batches of up to 12,000 characters with both source excerpts.
+4. Findings: a discrepancy is saved only if its two quotes are exact substrings of their chunks (checked in code); per-document verdicts were skipped by request.
+5. Model: gemini-3.1-flash-lite, temperature 0, up to 5 attempts per call honouring Google's retry delay; no step, tool-call or finding limits.
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+>>> THIS RUN WAS STOPPED BEFORE IT FINISHED: everything below covers only the part that ran. <<<
+Run started   : 2026-11-11 17:12:24 (local)   finished: 17:13:34   wall time: 69.7s
+Config        : ui-run
+Database      : data_room (documents were already processed; reused)
+Code version  : git a8c19bb + uncommitted changes   python 3.14.5
+Documents     : 1; fully read 1, incomplete 0
+Chunks        : 2 total; sent to the LLM 2 (headings are skipped by the extractor: 0)
+Claims        : 13 recorded, 1 rejected (value not found in cited chunk or unknown chunk id)
+Extraction    : up to any number of chunks per call (and 8,000 characters); running vocabulary off; coverage check off
+LLM calls     : 2 provider attempts (1 failed, 1 retries incl. invalid-output retries), 5.8s total, avg 4841ms
+Tokens        : prompt 1,740  completion 1,577  thinking 0  cached 0  total 3,317   (cost not computed: no price per token configured)
+Context/call  : prompt tokens min 1,740  avg 1,740  max 1,740
+
+==============================================================================
+NEW OR CHANGED FILES AND CLAIM RESET
+==============================================================================
+claims deleted at the start of this run: 0 (all claims in this run are newly extracted)
+scan: discovered 8, new 0, updated 0, unchanged 8, missing 0
+      duplicates skipped (same content): none
+
+  new or changed file                     status     chunks  extract s  chunk ms  save ms  embed s  note
+  --------------------------------------  ---------  ------  ---------  --------  -------  -------  ----
+  01_Corporate_Overview.pdf               processed  2       1.0        0         13       0.7
+  02_Manufacturing_Operations_Report.pdf  processed  2       0.3        0         7        0.1
+  03_Quality_and_Compliance_Report.pdf    processed  2       0.3        0         8        0.1
+  04_Investor_Presentation.docx           processed  5       0.0        0         10       0.1
+  05_Customer_Supply_Agreement.docx       processed  5       0.0        0         8        0.1
+  06_Facility_and_Utilities_Plan.docx     processed  5       0.0        0         11       0.1
+  07_Equipment_Register.xlsx              processed  4       0.0        0         63       0.3
+  08_Financial_and_Capacity_Model.xlsx    processed  4       0.0        0         55       0.3
+
+==============================================================================
+CONTRADICTIONS ONLY (classification = contradiction)
+==============================================================================
+No finding was classified as a contradiction in this run.
+
+==============================================================================
+FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)
+==============================================================================
+[section failed: AttributeError: 'types.SimpleNamespace' object has no attribute 'termination']
+
+==============================================================================
+COVERAGE AND PER-DOCUMENT VERDICTS
+==============================================================================
+Coverage: 'read' = chunks the LLM was shown. A document counts as fully read only if every batch succeeded (all-or-nothing per document).
+
+  document                   chunks  read  fully read  claims  LLM calls  tokens  extract s  verdict  reason
+  -------------------------  ------  ----  ----------  ------  ---------  ------  ---------  -------  ------
+  01_Corporate_Overview.pdf  2       2     yes         13      1          3,317   65.8       -
+
+==============================================================================
+CLAIM LEDGER
+==============================================================================
+claims recorded 13, rejected 1
+
+Per document (paired = has a comparable claim elsewhere; corroborated = same value stated elsewhere; unpaired = nothing comparable found):
+  document                   claims  paired  corroborated  unpaired  pairs judged  findings
+  -------------------------  ------  ------  ------------  --------  ------------  --------
+  01_Corporate_Overview.pdf  13      0       0             0         0             0
+
+Rejected claims by reason (first 15):
+  - value 'Pilot production; commercial ramp in progress' not found in cited chunk
+
+==============================================================================
+PAIR MATCHING AND JUDGING
+==============================================================================
+[section failed: TypeError: object of type 'NoneType' has no len()]
+
+==============================================================================
+LLM CALLS: tokens, context size, latency, failures
+==============================================================================
+Per phase:
+  phase              attempts  failed  prompt tok  completion tok  thinking tok  avg ctx tok  max ctx tok  avg ms  p95 ms  total s
+  -----------------  --------  ------  ----------  --------------  ------------  -----------  -----------  ------  ------  -------
+  document verdicts  2         1       1,740       1,577           0             1,740        1,740        4841    4841    5.8
+
+Every provider attempt (context = what was sent; tokens as counted by the API):
+  #  phase              at s  result  ctx chars  ctx tokens  cached  completion  thinking  total tok  latency ms  resp chars  error
+  -  -----------------  ----  ------  ---------  ----------  ------  ----------  --------  ---------  ----------  ----------  ------------------------------------------------------------
+  1  document verdicts  3.9   FAIL    6,691      0           0       0           0         0          947         0           Google API 429: { "error": { "code": 429, "message": "You...
+  2  document verdicts  64.8  ok      6,691      1,740       0       1577        0         3,317      4841        4,523
+
+==============================================================================
+EMBEDDING CALLS
+==============================================================================
+calls 8, failed 0, texts 29 (claim topic texts embedded locally for matching)
+
+  #  texts  chars  latency ms  result  error
+  -  -----  -----  ----------  ------  -----
+  1  2      1,272  663         ok
+  2  2      1,210  46          ok
+  3  2      1,198  47          ok
+  4  5      1,175  81          ok
+  5  5      1,601  58          ok
+  6  5      1,429  53          ok
+  7  4      2,989  181         ok
+  8  4      2,921  211         ok
+
+==============================================================================
+FAILURES
+==============================================================================
+LLM attempt failures:
+  document verdicts: 947ms Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on th...
+Documents not fully read:
+  none
+Pair-judging problems:
+  none
+
+==============================================================================
+TIMING
+==============================================================================
+  stage                                       duration  share of wall time
+  ------------------------------------------  --------  ------------------
+  0. scan files, process new or changed ones  3.8s      6%
+
+==============================================================================
+KNOWN LIMITS OF THIS RUN
+==============================================================================
+- Reading is all-or-nothing per document: if one batch fails after all retries, that document's claims are discarded and it counts as not read.
+- Candidate matching keeps at most 5 partners per claim (an existing default), so some comparable pairs are never judged.
+- The claim-extraction prompt lists business categories (capacity, supply, pricing, ...) and is not yet domain-agnostic.
+- Claims inside one document are also paired and judged; matching quality depends on how the model labels subject/metric/unit/period.
+- Exact agreements are trusted as corroboration without an LLM check.

@@ -1,0 +1,202 @@
+TEST RUN  20261111-234706  ui-run
+==============================================================================
+
+HOW THIS RUN WAS ACHIEVED
+1. Reading: the documents selected for this run were uploaded to LlamaExtract (LlamaIndex Cloud, cost_effective tier), which returns claims with the page and text they came from; each claim is tied to a stored chunk and kept only if its value appears in that chunk text.
+2. Ledger: accepted claims are stored in the claims table; the claims are sorted by label and sent to the LLM in batches of up to 60,000 characters, which groups the ones that state the same attribute of the same subject (no code pairing, no fixed number of documents or claims assumed).
+3. Judging: pairs that agree exactly count as corroboration; every other pair (conflicting, partial, contextual) goes to the LLM in batches of up to 12,000 characters with both source excerpts.
+4. Findings: a discrepancy is saved only if its two quotes are exact substrings of their chunks (checked in code); per-document verdicts were skipped by request.
+5. Model: cost_effective, through LlamaExtract, up to 5 attempts per call honouring the provider's retry delay; no step, tool-call or finding limits.
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+Run started   : 2026-11-11 23:47:06 (local)   finished: 23:47:48   wall time: 41.5s
+Config        : ui-run
+Database      : data_room (documents were already processed; reused)
+Code version  : git a8c19bb + uncommitted changes   python 3.14.5
+Excluded      : 02_Manufacturing_Operations_Report.pdf, 03_Quality_and_Compliance_Report.pdf, 05_Customer_Supply_Agreement.docx, 06_Facility_and_Utilities_Plan.docx, 08_Financial_and_Capacity_Model.xlsx (by request: not read, not compared)
+Documents     : 3; fully read 3, incomplete 0
+Chunks        : 11 total; sent to the LLM 11 (headings are skipped by the extractor: 0)
+Claims        : 99 recorded, 0 rejected (value not found in cited chunk or unknown chunk id)
+Extraction    : up to any number of chunks per call (and 8,000 characters); running vocabulary off; coverage check off
+Extractor     : LlamaExtract (cost_effective tier) instead of the LLM: 3 documents uploaded to LlamaIndex Cloud, 28 credits used, 0 documents failed (the batch and coverage settings above do not apply)
+Pairs         : 6 candidates; 2 agreed exactly (not sent to the LLM); 4 judged; verdicts {'not_comparable': 4}
+Findings      : 2 saved with verified quotes; 0 rejected (quotes missing or not exact)
+LLM calls     : 2 provider attempts (0 failed, 0 retries incl. invalid-output retries), 35.3s total, avg 17660ms
+Tokens        : prompt 0  completion 0  thinking 0  cached 0  total 0   (cost not computed: no price per token configured)
+Context/call  : prompt tokens min 0  avg 0  max 0
+
+==============================================================================
+NEW OR CHANGED FILES AND CLAIM RESET
+==============================================================================
+claims deleted at the start of this run: 71 (all claims in this run are newly extracted)
+scan: discovered 3, new 0, updated 0, unchanged 3, missing 0
+      duplicates skipped (same content): none
+
+no new or changed files had to be processed
+
+==============================================================================
+CONTRADICTIONS ONLY (classification = contradiction)
+==============================================================================
+No finding was classified as a contradiction in this run.
+
+==============================================================================
+FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)
+==============================================================================
+Fields follow the Finding schema: title, description, classification, severity, confidence, evidence_status, verification_status, materiality_reasoning, business_impact, unresolved_questions; evidence rows follow the Evidence schema.
+Findings: 2   by classification: {'consistent': 2}   by severity: {'informational': 2}
+
+--- FINDING 1 of 2  [fnd_85236f7e166045d0] ------------------------------
+title                 : Consistent: wafer fabrication facility size
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 01_Corporate_Overview.pdf (page 1) and 04_Investor_Presentation.docx (section Investment highlights) state the same value for wafer fabrication facility size: 300 mm.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 01_Corporate_Overview.pdf
+      chunk    : chk_c8ed89a628c94a9a   (chunk_index 1)
+      location : page 1
+      quote    : "SiliconForge is a fictional Indian semiconductor manufacturer developing a 300 mm wafer fabrication facility in Nanjangud Industrial Area, Mysuru district, Karnataka."
+      relevance: SiliconForge is a fictional Indian semiconductor manufacturer developing a 300 mm wafer fabrication facility in Nanjangud Industrial Area, Mysuru district, Karnataka.
+      assessment: 01_Corporate_Overview.pdf states: SiliconForge is a fictional Indian semiconductor manufacturer developing a 300 mm wafer fabrication facility in Nanjangud Industrial Area, Mysuru district, Karnataka. | subject=SiliconForge; metric=wafer fabrication facility size; value=300 mm
+  [2] role=supporting
+      document : 04_Investor_Presentation.docx
+      chunk    : chk_4828952a6f2e4987   (chunk_index 1)
+      location : heading Investment highlights
+      quote    : "SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets."
+      relevance: SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets.
+      assessment: 04_Investor_Presentation.docx states: SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets. | subject=SiliconForge; metric=semiconductor manufacturing platform wafer size; value=300 mm; unit=mm; conditions=in Karnataka for industrial, automotive-support and power-management markets
+
+--- FINDING 2 of 2  [fnd_2e3bda42a993468e] ------------------------------
+title                 : Consistent: semiconductor manufacturing platform process node
+classification        : consistent
+severity              : informational
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : 04_Investor_Presentation.docx (section Investment highlights) and 01_Corporate_Overview.pdf (page 1) state the same value for semiconductor manufacturing platform process node: 65 nm nm.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : 01_Corporate_Overview.pdf
+      chunk    : chk_c8ed89a628c94a9a   (chunk_index 1)
+      location : page 1
+      quote    : "Business focus: mature-node logic and mixed-signal components for industrial, automotive-support and power-management applications. Initial process platform: 65 nm."
+      relevance: Business focus: mature-node logic and mixed-signal components for industrial, automotive-support and power-management applications. Initial process platform: 65 nm.
+      assessment: 01_Corporate_Overview.pdf states: Business focus: mature-node logic and mixed-signal components for industrial, automotive-support and power-management applications. Initial process platform: 65 nm. | subject=SiliconForge; metric=Initial process platform; value=65 nm
+  [2] role=supporting
+      document : 04_Investor_Presentation.docx
+      chunk    : chk_4828952a6f2e4987   (chunk_index 1)
+      location : heading Investment highlights
+      quote    : "SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets."
+      relevance: SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets.
+      assessment: 04_Investor_Presentation.docx states: SiliconForge is building a 300 mm, 65 nm semiconductor manufacturing platform in Karnataka for industrial, automotive-support and power-management markets. | subject=SiliconForge; metric=semiconductor manufacturing platform process node; value=65 nm; unit=nm; conditions=in Karnataka for industrial, automotive-support and power-management markets
+
+
+==============================================================================
+COVERAGE AND PER-DOCUMENT VERDICTS
+==============================================================================
+Coverage: 'read' = chunks the LLM was shown. A document counts as fully read only if every batch succeeded (all-or-nothing per document).
+
+  document                       chunks  read  fully read  claims  LLM calls  tokens  extract s  verdict  reason
+  -----------------------------  ------  ----  ----------  ------  ---------  ------  ---------  -------  ---------------------------------------------
+  01_Corporate_Overview.pdf      2       2     yes         15      0          0       2.4        skipped  verdicts skipped by request (--skip-verdicts)
+  04_Investor_Presentation.docx  5       5     yes         12      0          0       1.3        skipped  verdicts skipped by request (--skip-verdicts)
+  07_Equipment_Register.xlsx     4       4     yes         72      0          0       1.0        skipped  verdicts skipped by request (--skip-verdicts)
+
+==============================================================================
+CLAIM LEDGER
+==============================================================================
+claims recorded 99, rejected 0
+
+Per document (paired = has a comparable claim elsewhere; corroborated = same value stated elsewhere; unpaired = nothing comparable found):
+  document                       claims  paired  corroborated  unpaired  pairs judged  findings
+  -----------------------------  ------  ------  ------------  --------  ------------  --------
+  01_Corporate_Overview.pdf      15      4       2             11        4             2
+  04_Investor_Presentation.docx  12      3       2             9         4             2
+  07_Equipment_Register.xlsx     72      0       0             72        0             0
+
+Rejected claims by reason (first 15):
+  none
+
+==============================================================================
+PAIR MATCHING AND JUDGING
+==============================================================================
+pairing mode: LLM grouping of sorted claims: 99 claims in 1 batch(es), 1 call(s) (0 failed), 2 groups covering 4 claims (largest 2), 6 pairs (4 added from nearest neighbours in other documents), 0 unknown refs ignored
+  pairing every claim with every other in its group would have made 2 pairs; claims stating the same value are linked as agreement, and one claim per distinct value (4 values) is compared
+  note: claims in different batches are never grouped together (one batch: no such gap in this run)
+candidate pairs: 6
+  by relation hint : {'exact': 2, 'partial': 1, 'contextual': 3}
+  by match route   : {'llm': 2, 'embedding': 4}
+  across documents : 6   inside one document: 0
+exact agreements (corroboration, no LLM): 2
+judged by the LLM: 4 in 1 calls (0 batches failed)
+LLM verdicts: {'not_comparable': 4}
+findings saved 2; rejected 0
+
+Rejected findings (first 15):
+  none
+
+==============================================================================
+LLM CALLS: tokens, context size, latency, failures
+==============================================================================
+Per phase:
+  phase               attempts  failed  prompt tok  completion tok  thinking tok  avg ctx tok  max ctx tok  avg ms  p95 ms  total s
+  ------------------  --------  ------  ----------  --------------  ------------  -----------  -----------  ------  ------  -------
+  group claims (LLM)  1         0       0           0               0             0            0            27758   27758   27.8
+  judge pairs         1         0       0           0               0             0            0            7563    7563    7.6
+
+Every provider attempt (context = what was sent; tokens as counted by the API):
+  #  phase               at s  result  ctx chars  ctx tokens  cached  completion  thinking  total tok  latency ms  resp chars  error
+  -  ------------------  ----  ------  ---------  ----------  ------  ----------  --------  ---------  ----------  ----------  -----
+  1  group claims (LLM)  4.9   ok      25,627     0           0       0           0         0          27758       112
+  2  judge pairs         33.9  ok      12,836     0           0       0           0         0          7563        1,472
+
+==============================================================================
+EMBEDDING CALLS
+==============================================================================
+calls 2, failed 0, texts 99 (claim topic texts embedded locally for matching)
+
+  #  texts  chars  latency ms  result  error
+  -  -----  -----  ----------  ------  -----
+  1  64     8,621  884         ok
+  2  35     4,503  161         ok
+
+==============================================================================
+FAILURES
+==============================================================================
+LLM attempt failures:
+  none
+Documents not fully read:
+  none
+Pair-judging problems:
+  none
+
+==============================================================================
+TIMING
+==============================================================================
+  stage                                            duration  share of wall time
+  -----------------------------------------------  --------  ------------------
+  0. scan files, process new or changed ones       0.0s      0%
+  1. read every chunk, extract claims              4.7s      11%
+  2. match claims (LLM grouping of sorted claims)  28.9s     70%
+  3. judge pairs, verify quotes, save findings     7.6s      18%
+  4. per-document verdicts                         0.0s      0%
+
+==============================================================================
+KNOWN LIMITS OF THIS RUN
+==============================================================================
+- Reading is all-or-nothing per document: if one batch fails after all retries, that document's claims are discarded and it counts as not read.
+- Candidate matching keeps at most 5 partners per claim (an existing default), so some comparable pairs are never judged.
+- The claim-extraction prompt lists business categories (capacity, supply, pricing, ...) and is not yet domain-agnostic.
+- Claims inside one document are also paired and judged; matching quality depends on how the model labels subject/metric/unit/period.
+- Exact agreements are trusted as corroboration without an LLM check.

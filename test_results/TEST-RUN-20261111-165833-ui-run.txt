@@ -1,0 +1,131 @@
+TEST RUN  20261111-165833  ui-run
+==============================================================================
+
+HOW THIS RUN WAS ACHIEVED
+1. Reading: every chunk of every processed document except Biochar Summary - HyveGeo Project Assessment.pdf, CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf, CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf, CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf, CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf, Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf, Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf, Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx, Hyve geo assest bulk_.xlsx, Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm, InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf, KSA Egypt Growth v2.pdf, Research Report - HyveGeo.pdf (database 'data_room') was sent to the LLM in batches of up to 8,000 characters; each batch returns claims, kept only if their value appears in the cited chunk (existing claim extractor, no chunk or call limits).
+2. Ledger: accepted claims are stored in the claims table; the claims are sorted by label and sent to the LLM in batches of up to 12,000 characters, which groups the ones that state the same attribute of the same subject (no code pairing, no fixed number of documents or claims assumed).
+3. Judging: pairs that agree exactly count as corroboration; every other pair (conflicting, partial, contextual) goes to the LLM in batches of up to 12,000 characters with both source excerpts.
+4. Findings: a discrepancy is saved only if its two quotes are exact substrings of their chunks (checked in code); per-document verdicts were skipped by request.
+5. Model: gemini-3.1-flash-lite, temperature 0, up to 5 attempts per call honouring Google's retry delay; no step, tool-call or finding limits.
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+Run started   : 2026-11-11 16:58:33 (local)   finished: 16:58:33   wall time: 0.1s
+Config        : ui-run
+Database      : data_room (documents were already processed; reused)
+Code version  : git a8c19bb + uncommitted changes   python 3.14.5
+Excluded      : Biochar Summary - HyveGeo Project Assessment.pdf, CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf, CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf, CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf, CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf, Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf, Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf, Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx, Hyve geo assest bulk_.xlsx, Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm, InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf, KSA Egypt Growth v2.pdf, Research Report - HyveGeo.pdf (by request: not read, not compared)
+Documents     : 0; fully read 0, incomplete 0
+Chunks        : 0 total; sent to the LLM 0 (headings are skipped by the extractor: 0)
+Claims        : 0 recorded, 0 rejected (value not found in cited chunk or unknown chunk id)
+Extraction    : up to any number of chunks per call (and 8,000 characters); running vocabulary off; coverage check off
+Pairs         : 0 candidates; 0 agreed exactly (not sent to the LLM); 0 judged; verdicts {}
+Findings      : 0 saved with verified quotes; 0 rejected (quotes missing or not exact)
+LLM calls     : 0 provider attempts (0 failed, 0 retries incl. invalid-output retries), 0.0s total, avg 0ms
+Tokens        : prompt 0  completion 0  thinking 0  cached 0  total 0   (cost not computed: no price per token configured)
+
+==============================================================================
+NEW OR CHANGED FILES AND CLAIM RESET
+==============================================================================
+claims deleted at the start of this run: 435 (all claims in this run are newly extracted)
+scan: discovered 14, new 0, updated 0, unchanged 13, missing 0
+      duplicates skipped (same content): ['Main Picth Deck HyveGeo .pdf']
+
+no new or changed files had to be processed
+
+==============================================================================
+CONTRADICTIONS ONLY (classification = contradiction)
+==============================================================================
+No finding was classified as a contradiction in this run.
+
+==============================================================================
+FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)
+==============================================================================
+[section failed: AttributeError: 'types.SimpleNamespace' object has no attribute 'termination']
+
+==============================================================================
+COVERAGE AND PER-DOCUMENT VERDICTS
+==============================================================================
+Coverage: 'read' = chunks the LLM was shown. A document counts as fully read only if every batch succeeded (all-or-nothing per document).
+
+  document  chunks  read  fully read  claims  LLM calls  tokens  extract s  verdict  reason
+  --------  ------  ----  ----------  ------  ---------  ------  ---------  -------  ------
+
+==============================================================================
+CLAIM LEDGER
+==============================================================================
+claims recorded 0, rejected 0
+
+Per document (paired = has a comparable claim elsewhere; corroborated = same value stated elsewhere; unpaired = nothing comparable found):
+  document  claims  paired  corroborated  unpaired  pairs judged  findings
+  --------  ------  ------  ------------  --------  ------------  --------
+
+Rejected claims by reason (first 15):
+  none
+
+==============================================================================
+PAIR MATCHING AND JUDGING
+==============================================================================
+pairing mode: LLM grouping of sorted claims: 0 claims in 0 batch(es), 0 call(s) (0 failed), 0 groups covering 0 claims, 0 pairs, 0 unknown refs ignored
+  note: claims in different batches are never grouped together (one batch: no such gap in this run)
+candidate pairs: 0
+  by relation hint : {}
+  by match route   : {}
+  across documents : 0   inside one document: 0
+exact agreements (corroboration, no LLM): 0
+judged by the LLM: 0 in 0 calls (0 batches failed)
+LLM verdicts: {}
+findings saved 0; rejected 0
+
+Rejected findings (first 15):
+  none
+
+==============================================================================
+LLM CALLS: tokens, context size, latency, failures
+==============================================================================
+Per phase:
+  phase  attempts  failed  prompt tok  completion tok  thinking tok  avg ctx tok  max ctx tok  avg ms  p95 ms  total s
+  -----  --------  ------  ----------  --------------  ------------  -----------  -----------  ------  ------  -------
+
+Every provider attempt (context = what was sent; tokens as counted by the API):
+  #  phase  at s  result  ctx chars  ctx tokens  cached  completion  thinking  total tok  latency ms  resp chars  error
+  -  -----  ----  ------  ---------  ----------  ------  ----------  --------  ---------  ----------  ----------  -----
+
+==============================================================================
+EMBEDDING CALLS
+==============================================================================
+calls 0, failed 0, texts 0 (claim topic texts embedded locally for matching)
+
+  #  texts  chars  latency ms  result  error
+  -  -----  -----  ----------  ------  -----
+
+==============================================================================
+FAILURES
+==============================================================================
+LLM attempt failures:
+  none
+Documents not fully read:
+  none
+Pair-judging problems:
+  none
+
+==============================================================================
+TIMING
+==============================================================================
+  stage                                            duration  share of wall time
+  -----------------------------------------------  --------  ------------------
+  0. scan files, process new or changed ones       0.1s      85%
+  1. read every chunk, extract claims              0.0s      1%
+  2. match claims (LLM grouping of sorted claims)  0.0s      3%
+  3. judge pairs, verify quotes, save findings     0.0s      1%
+  4. per-document verdicts                         0.0s      0%
+
+==============================================================================
+KNOWN LIMITS OF THIS RUN
+==============================================================================
+- Reading is all-or-nothing per document: if one batch fails after all retries, that document's claims are discarded and it counts as not read.
+- Candidate matching keeps at most 5 partners per claim (an existing default), so some comparable pairs are never judged.
+- The claim-extraction prompt lists business categories (capacity, supply, pricing, ...) and is not yet domain-agnostic.
+- Claims inside one document are also paired and judged; matching quality depends on how the model labels subject/metric/unit/period.
+- Exact agreements are trusted as corroboration without an LLM check.

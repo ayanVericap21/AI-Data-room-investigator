@@ -159,7 +159,8 @@ def test_hints_exact_conflicting_partial():
     assert generate_candidate_pairs([view("a"), view("b", value=25000)])[0].relation_hint == "conflicting"
     assert generate_candidate_pairs([view("a", unit=None), view("b", value=25000, unit=None)])[0].relation_hint == "conflicting"
     assert generate_candidate_pairs([view("a"), view("b", value=None)])[0].relation_hint == "partial"
-    assert generate_candidate_pairs([view("a", unit="kg"), view("b", value=25000)])[0].relation_hint == "partial"
+    assert generate_candidate_pairs([view("a", unit="eur"), view("b", value=25000)])[0].relation_hint == "partial"  # units that cannot be converted
+    assert generate_candidate_pairs([view("a", value=30, unit="t"), view("b", value=30000, unit="kg")])[0].relation_hint == "exact"  # kg and tonne convert
 
 
 def test_unrelated_claims_are_not_paired():
@@ -168,9 +169,10 @@ def test_unrelated_claims_are_not_paired():
     assert generate_candidate_pairs([a, b]) == []
 
 
-def test_same_chunk_and_self_not_paired_and_pairs_deduplicated():
+def test_same_chunk_claims_are_paired_but_never_a_claim_with_itself_and_pairs_are_deduplicated():
     a, b = view("a", chunk="same"), view("b", chunk="same")
-    assert generate_candidate_pairs([a, b]) == []
+    assert len(generate_candidate_pairs([a, b])) == 1  # a passage can contradict itself
+    assert generate_candidate_pairs([a]) == []
     pairs = generate_candidate_pairs([view("a"), view("b"), view("c")])
     keys = {frozenset((p.claim_a_id, p.claim_b_id)) for p in pairs}
     assert len(pairs) == len(keys) == 3
@@ -191,3 +193,77 @@ def test_missing_attributes_fall_back_to_available_field():
     b = view("b", subject=None, value=25000)
     assert len(generate_candidate_pairs([a, b])) == 1
     assert generate_candidate_pairs([view("x", metric=None, subject=None), view("y", metric=None, subject=None)]) == []
+
+
+# ---- running vocabulary ----------------------------------------------------
+def test_vocabulary_is_empty_at_first_then_labels_are_shown_to_the_next_call(session, doc_with_chunks):
+    from app.services.vocabulary import RunningVocabulary
+
+    _, chunks = doc_with_chunks
+    llm = MockLLMClient([{"claims": [claim(chunks[0].id)]}, {"claims": []}])
+    service = ClaimService(session, llm, max_chars_per_call=80)  # forces one call per chunk
+    assert len(service.vocabulary) == 0
+    service.extract_all()
+    assert "Labels already used" not in llm.prompts[0]
+    assert "metrics: Annual capacity" in llm.prompts[1] and "subjects: Production" in llm.prompts[1]
+    assert isinstance(service.vocabulary, RunningVocabulary)
+
+
+def test_a_new_run_starts_with_an_empty_vocabulary(session, doc_with_chunks):
+    _, chunks = doc_with_chunks
+    service = ClaimService(session, MockLLMClient([{"claims": [claim(chunks[0].id)]}]))
+    service.extract_all()
+    assert len(service.vocabulary) > 0
+    assert len(ClaimService(session, MockLLMClient([])).vocabulary) == 0  # a new service (a new run) starts empty
+
+
+def test_rejected_claims_do_not_enter_the_vocabulary(session, doc_with_chunks):
+    _, chunks = doc_with_chunks
+    service = ClaimService(session, MockLLMClient([{"claims": [claim(chunks[0].id, value=99999, metric="Invented")]}]))
+    service.extract_all()
+    assert service.vocabulary.labels("metric") == []
+
+
+def test_vocabulary_ranks_by_use_merges_spelling_and_is_bounded():
+    from app.services.vocabulary import RunningVocabulary
+
+    v = RunningVocabulary(max_chars=40)
+    for label in ["Power load", "power  load", "Rent", "Power load", "Very long label that does not fit in the budget"]:
+        v.add("metric", label)
+    v.add("metric", None)
+    v.add("metric", "  ")
+    assert v.labels("metric") == ["Power load", "Rent"]  # "power  load" merged; the long label is cut by the char budget
+
+
+def test_a_range_value_is_supported_when_every_number_of_it_appears_in_the_text():
+    text = "Units from 395m2 with scalable combinations of up to 7,916m2"
+    assert value_supported_by_text("395 to 7,916", text) and value_supported_by_text("395-7,916", text)
+    assert not value_supported_by_text("395 to 8,000", text)
+
+
+def test_equal_values_agree_whatever_the_conditions_say_but_not_across_different_units_or_periods():
+    from app.services.candidate_matching import compare_attributes
+
+    same = (view("a", conditions="under optimized operations"), view("b", doc="x", conditions="in a normal scenario"))
+    assert relation_hint(compare_attributes(*same)) == "exact"
+    assert relation_hint(compare_attributes(view("a", period="annual"), view("b", doc="x", period="monthly"))) != "exact"
+    assert relation_hint(compare_attributes(view("a", unit="kg"), view("b", doc="x"))) != "exact"
+    assert relation_hint(compare_attributes(view("a", unit=None), view("b", doc="x"))) == "exact"  # unknown unit: still the same value
+    assert relation_hint(compare_attributes(view("a"), view("b", doc="x", value=25000))) == "conflicting"
+
+
+def test_ranges_are_compared_by_their_two_ends():
+    from decimal import Decimal
+
+    from app.services.candidate_matching import compare_attributes
+    from app.services.numbers import parse_range
+
+    assert parse_range("395-7,916") == parse_range("395 to 7,916") == parse_range("395m2 – 7,916m2") == (Decimal(395), Decimal(7916))
+    assert parse_range("7,916 - 395") == (Decimal(395), Decimal(7916))  # order does not matter
+    assert parse_range("-5 to 5") == (Decimal(-5), Decimal(5))
+    for not_a_range in ["8.5", "30 kN, 50 kN", "FM2 floor", "1 2 3", None, 5, "from 395m2"]:
+        assert parse_range(not_a_range) is None, not_a_range
+    same = compare_attributes(view("a", value="395-7,916"), view("b", doc="x", value="395 to 7,916"))
+    assert same.value_relation == "equal" and relation_hint(same) == "exact"
+    assert compare_attributes(view("a", value="395-7,916"), view("b", doc="x", value="395-8,000")).value_relation == "different"
+    assert compare_attributes(view("a", value="395-7,916"), view("b", doc="x", value=395)).value_relation == "different"  # a range is not a number

@@ -124,3 +124,17 @@ def test_workers_setting_defaults_to_four_and_reads_the_environment(monkeypatch)
     assert load_settings().extract_workers == 2
     with pytest.raises(ValueError):
         Settings(extract_workers=0)
+
+
+def test_model_names_come_from_the_code_and_not_from_the_environment_but_keys_still_do(monkeypatch):
+    from app.core import config
+
+    monkeypatch.setenv("LLM_MODEL", "something-from-a-stale-env-file")
+    monkeypatch.setenv("EMBEDDING_PROVIDER", "google")
+    monkeypatch.setenv("LLM_PROVIDER", "mock")
+    monkeypatch.setenv("LLM_API_KEY", "k-123")
+    monkeypatch.setattr(config, "_load_dotenv", lambda: None)
+    settings = config.load_settings()
+    assert (settings.llm_model, settings.llm_provider, settings.embedding_provider) == ("cost_effective", "llamaextract", "local")
+    assert settings.embedding_model == "sentence-transformers/all-MiniLM-L6-v2" and settings.embedding_dimensions == 384
+    assert settings.llm_api_key == "k-123"  # keys are the one thing read from the environment

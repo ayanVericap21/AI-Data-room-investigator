@@ -1,0 +1,402 @@
+TEST RUN  20261111-120304  ledger-running-vocabulary-edited-brochures-g31lite
+==============================================================================
+
+HOW THIS RUN WAS ACHIEVED
+1. Reading: every chunk of every processed document except Biochar Summary - HyveGeo Project Assessment.pdf, CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf, Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf, Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf, Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx, Hyve geo assest bulk_.xlsx, Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm, InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf, KSA Egypt Growth v2.pdf, Research Report - HyveGeo.pdf (database 'dataroom_run_20261111_ledger_vocab') was sent to the LLM in batches of up to 8,000 characters; each batch returns claims, kept only if their value appears in the cited chunk (existing claim extractor, no chunk or call limits).
+2. Ledger: accepted claims are stored in the claims table; claims are matched across and within documents by wording and by local embeddings (sentence-transformers/all-MiniLM-L6-v2), without a fixed number of documents or claims assumed.
+3. Judging: pairs that agree exactly count as corroboration; every other pair (conflicting, partial, contextual) goes to the LLM in batches of up to 12,000 characters with both source excerpts.
+4. Findings: a discrepancy is saved only if its two quotes are exact substrings of their chunks (checked in code); per-document verdicts were skipped by request.
+5. Model: gemini-3.1-flash-lite, temperature 0, up to 5 attempts per call honouring Google's retry delay; no step, tool-call or finding limits.
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+Run started   : 2026-11-11 12:03:04 (local)   finished: 12:04:29   wall time: 85.1s
+Config        : ledger-running-vocabulary-edited-brochures-g31lite
+Database      : dataroom_run_20261111_ledger_vocab (documents were already processed; reused)
+Code version  : git a8c19bb + uncommitted changes   python 3.14.5
+Excluded      : Biochar Summary - HyveGeo Project Assessment.pdf, CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf, Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf, Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf, Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx, Hyve geo assest bulk_.xlsx, Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm, InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf, KSA Egypt Growth v2.pdf, Research Report - HyveGeo.pdf (by request: not read, not compared)
+Documents     : 2; fully read 2, incomplete 0
+Chunks        : 33 total; sent to the LLM 33 (headings are skipped by the extractor: 0)
+Claims        : 19 recorded, 3 rejected (value not found in cited chunk or unknown chunk id)
+Pairs         : 41 candidates; 13 agreed exactly (not sent to the LLM); 28 judged; verdicts {'contextual_difference': 14, 'consistent': 14}
+Findings      : 8 saved with verified quotes; 6 rejected (quotes missing or not exact)
+LLM calls     : 7 provider attempts (0 failed, 0 retries incl. invalid-output retries), 20.1s total, avg 2871ms
+Tokens        : prompt 28,273  completion 4,197  thinking 0  cached 0  total 32,470   (cost not computed: no price per token configured)
+Context/call  : prompt tokens min 3,159  avg 4,039  max 4,292
+
+==============================================================================
+NEW OR CHANGED FILES AND CLAIM RESET
+==============================================================================
+claims deleted at the start of this run: 0 (all claims in this run are newly extracted)
+scan: discovered 13, new 1, updated 10, unchanged 1, missing 1
+      duplicates skipped (same content): ['Main Picth Deck HyveGeo .pdf']
+
+  new or changed file                                                     status     chunks  extract s  chunk ms  save ms  embed s  note
+  ----------------------------------------------------------------------  ---------  ------  ---------  --------  -------  -------  ------------------------------------------------------------
+  Biochar Summary - HyveGeo Project Assessment.pdf                        processed  20      1.3        1         65       1.5
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf  processed  18      3.7        1         57       0.6      Table detection skipped on 2 artwork-heavy pages (over 10...
+  CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short   processed  17      2.9        1         57       0.6      Table detection skipped on 5 artwork-heavy pages (over 10...
+  Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf         processed  5       0.4        0         9        0.2
+  Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf                             processed  16      3.1        1         55       0.3
+  Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.x  processed  19      0.1        1         61       0.8
+  Hyve geo assest bulk_.xlsx                                              processed  3       0.3        0         57       0.1
+  Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm           processed  757     6.4        11        312      31.8
+  InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf                processed  37      4.6        2         68       1.4
+  KSA Egypt Growth v2.pdf                                                 processed  8       1.5        1         11       0.3
+  Research Report - HyveGeo.pdf                                           processed  12      1.3        1         60       0.5
+
+==============================================================================
+CONTRADICTIONS ONLY (classification = contradiction)
+==============================================================================
+No finding was classified as a contradiction in this run.
+
+==============================================================================
+FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)
+==============================================================================
+Fields follow the Finding schema: title, description, classification, severity, confidence, evidence_status, verification_status, materiality_reasoning, business_impact, unresolved_questions; evidence rows follow the Evidence schema.
+Findings: 8   by classification: {'contextual_difference': 8}   by severity: {'informational': 8}
+
+--- FINDING 1 of 8  [fnd_936be139cfd64ce9] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : contextual difference: Power supply
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_486ed637e0754674   (chunk_index 10)
+      location : page 10
+      quote    : "400w/m² connected"
+      relevance: Light Industrial Units have a connected power load of 400w/m².
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Light Industrial Units have a connected power load of 400w/m². | subject=Light Industrial Units; metric=Power supply; value=400; unit=w/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_2d035147bb54421d   (chunk_index 14)
+      location : page 15
+      quote    : "300W/m² power supply"
+      relevance: Light Industrial Units have a 300W/m² power supply.
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Light Industrial Units have a 300W/m² power supply. | subject=Light Industrial Units; metric=Power supply; value=300; unit=W/m²
+
+--- FINDING 2 of 8  [fnd_4573016f59de4c7b] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : contextual difference: Clear height
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_486ed637e0754674   (chunk_index 10)
+      location : page 10
+      quote    : "9.5m clear height"
+      relevance: Light Industrial Units have a clear height of 9.5m.
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Light Industrial Units have a clear height of 9.5m. | subject=Light Industrial Units; metric=Clear height; value=9.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_2d035147bb54421d   (chunk_index 14)
+      location : page 15
+      quote    : "10.5m clear height"
+      relevance: Light Industrial Units have a 10.5m clear height.
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Light Industrial Units have a 10.5m clear height. | subject=Light Industrial Units; metric=Clear height; value=10.5; unit=m
+
+--- FINDING 3 of 8  [fnd_13ddbc6dae474a27] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : contextual difference: Power supply
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_486ed637e0754674   (chunk_index 10)
+      location : page 10
+      quote    : "400w/m² connected"
+      relevance: Light Industrial Units have a connected power load of 400w/m².
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Light Industrial Units have a connected power load of 400w/m². | subject=Light Industrial Units; metric=Power supply; value=400; unit=w/m²
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_8ec0f30b4e264cb7   (chunk_index 7)
+      location : page 7
+      quote    : "185w/m² connected power load"
+      relevance: Standard Warehouses have a connected power load of 185w/m².
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Standard Warehouses have a connected power load of 185w/m². | subject=Standard Warehouses; metric=Power supply; value=185; unit=w/m²
+
+--- FINDING 4 of 8  [fnd_b5bb9cb7e3f9497d] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : contextual difference: Power supply
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_486ed637e0754674   (chunk_index 10)
+      location : page 10
+      quote    : "400w/m² connected"
+      relevance: Light Industrial Units have a connected power load of 400w/m².
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Light Industrial Units have a connected power load of 400w/m². | subject=Light Industrial Units; metric=Power supply; value=400; unit=w/m²
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_d5b94726e0544c79   (chunk_index 13)
+      location : page 13
+      quote    : "300w/m² connected power load"
+      relevance: Cold Store Convertible Warehouses have a connected power load of 300w/m².
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Cold Store Convertible Warehouses have a connected power load of 300w/m². | subject=Cold Store Convertible Warehouses; metric=Power supply; value=300; unit=w/m²
+
+--- FINDING 5 of 8  [fnd_87fd57aba1b14ff5] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : contextual difference: Clear height
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_8ec0f30b4e264cb7   (chunk_index 7)
+      location : page 7
+      quote    : "8.50m eaves height"
+      relevance: Standard Warehouses have an eaves height of 8.50m.
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Standard Warehouses have an eaves height of 8.50m. | subject=Standard Warehouses; metric=Clear height; value=8.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_486ed637e0754674   (chunk_index 10)
+      location : page 10
+      quote    : "9.5m clear height"
+      relevance: Light Industrial Units have a clear height of 9.5m.
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Light Industrial Units have a clear height of 9.5m. | subject=Light Industrial Units; metric=Clear height; value=9.5; unit=m
+
+--- FINDING 6 of 8  [fnd_cc364d04580b4baf] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : contextual difference: Clear height
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_8ec0f30b4e264cb7   (chunk_index 7)
+      location : page 7
+      quote    : "8.50m eaves height"
+      relevance: Standard Warehouses have an eaves height of 8.50m.
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Standard Warehouses have an eaves height of 8.50m. | subject=Standard Warehouses; metric=Clear height; value=8.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_2d035147bb54421d   (chunk_index 14)
+      location : page 15
+      quote    : "10.5m clear height"
+      relevance: Light Industrial Units have a 10.5m clear height.
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Light Industrial Units have a 10.5m clear height. | subject=Light Industrial Units; metric=Clear height; value=10.5; unit=m
+
+--- FINDING 7 of 8  [fnd_009ef02832544f2e] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : contextual difference: Clear height
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_8ec0f30b4e264cb7   (chunk_index 7)
+      location : page 7
+      quote    : "8.50m eaves height"
+      relevance: Standard Warehouses have an eaves height of 8.50m.
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Standard Warehouses have an eaves height of 8.50m. | subject=Standard Warehouses; metric=Clear height; value=8.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_f59c55d6f57441aa   (chunk_index 6)
+      location : page 7
+      quote    : "10m clear height"
+      relevance: Flex Units have a 10m clear height.
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Flex Units have a 10m clear height. | subject=Flex Units; metric=Clear height; value=10; unit=m
+
+--- FINDING 8 of 8  [fnd_140d3a655f7a47a5] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : contextual difference: Clear height
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_6214987a8d7d4be1   (chunk_index 10)
+      location : page 11
+      quote    : "8.5m clear height"
+      relevance: Standard Warehouses have an 8.5m clear height.
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Standard Warehouses have an 8.5m clear height. | subject=Standard Warehouses; metric=Clear height; value=8.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_486ed637e0754674   (chunk_index 10)
+      location : page 10
+      quote    : "9.5m clear height"
+      relevance: Light Industrial Units have a clear height of 9.5m.
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Light Industrial Units have a clear height of 9.5m. | subject=Light Industrial Units; metric=Clear height; value=9.5; unit=m
+
+
+==============================================================================
+COVERAGE AND PER-DOCUMENT VERDICTS
+==============================================================================
+Coverage: 'read' = chunks the LLM was shown. A document counts as fully read only if every batch succeeded (all-or-nothing per document).
+
+  document                                                    chunks  read  fully read  claims  LLM calls  tokens  extract s  verdict  reason
+  ----------------------------------------------------------  ------  ----  ----------  ------  ---------  ------  ---------  -------  ---------------------------------------------
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  18      18    yes         9       1          5,802   5.9        skipped  verdicts skipped by request (--skip-verdicts)
+  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digita  15      15    yes         10      1          5,240   3.2        skipped  verdicts skipped by request (--skip-verdicts)
+
+==============================================================================
+CLAIM LEDGER
+==============================================================================
+claims recorded 19, rejected 3
+
+Per document (paired = has a comparable claim elsewhere; corroborated = same value stated elsewhere; unpaired = nothing comparable found):
+  document                                                    claims  paired  corroborated  unpaired  pairs judged  findings
+  ----------------------------------------------------------  ------  ------  ------------  --------  ------------  --------
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  9       9       6             0         21            5
+  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digita  10      10      6             0         23            8
+
+Rejected claims by reason (first 15):
+  - value '607 to 5,939' not found in cited chunk
+  - value '395 to 7,916' not found in cited chunk
+  - value '647 to 5,479' not found in cited chunk
+
+==============================================================================
+PAIR MATCHING AND JUDGING
+==============================================================================
+candidate pairs: 41
+  by relation hint : {'exact': 13, 'conflicting': 28}
+  by match route   : {'lexical': 41}
+  across documents : 25   inside one document: 16
+exact agreements (corroboration, no LLM): 13
+judged by the LLM: 28 in 5 calls (0 batches failed)
+LLM verdicts: {'contextual_difference': 14, 'consistent': 14}
+findings saved 8; rejected 6
+
+Rejected findings (first 15):
+  - contextual_difference 'contextual difference: Clear height': validation_failed: Finding not saved. evidence 1: the quote is not in chunk 'chk_486ed637e0754674' (CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024
+  - contextual_difference 'contextual difference: Clear height': validation_failed: Finding not saved. evidence 1: the quote is not in chunk 'chk_2d035147bb54421d' (CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf, page 15
+  - contextual_difference 'contextual difference: Power supply': validation_failed: Finding not saved. evidence 1: the quote is not in chunk 'chk_8ec0f30b4e264cb7' (CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024
+  - contextual_difference 'contextual difference: Floor loading capacity': validation_failed: Finding not saved. evidence 1: the quote is not in chunk 'chk_2d035147bb54421d' (CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf, page 15
+  - contextual_difference 'contextual difference: Floor loading capacity': validation_failed: Finding not saved. evidence 1: the quote is not in chunk 'chk_2d035147bb54421d' (CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf, page 15
+  - contextual_difference 'contextual difference: Floor loading capacity': validation_failed: Finding not saved. evidence 1: the quote is not in chunk 'chk_2d035147bb54421d' (CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf, page 15
+
+==============================================================================
+LLM CALLS: tokens, context size, latency, failures
+==============================================================================
+Per phase:
+  phase           attempts  failed  prompt tok  completion tok  thinking tok  avg ctx tok  max ctx tok  avg ms  p95 ms  total s
+  --------------  --------  ------  ----------  --------------  ------------  -----------  -----------  ------  ------  -------
+  extract claims  2         0       8,169       2,873           0             4,084        4,121        4527    5919    9.1
+  judge pairs     5         0       20,104      1,324           0             4,021        4,292        2209    2663    11.0
+
+Every provider attempt (context = what was sent; tokens as counted by the API):
+  #  phase           at s  result  ctx chars  ctx tokens  cached  completion  thinking  total tok  latency ms  resp chars  error
+  -  --------------  ----  ------  ---------  ----------  ------  ----------  --------  ---------  ----------  ----------  -----
+  1  extract claims  64.8  ok      13,053     4,121       0       1681        0         5,802      5919        4,666
+  2  extract claims  70.7  ok      12,593     4,048       0       1192        0         5,240      3135        3,286
+  3  judge pairs     73.9  ok      15,341     4,129       0       229         0         4,358      2117        638
+  4  judge pairs     76.1  ok      15,441     4,265       0       459         0         4,724      2663        1,457
+  5  judge pairs     78.7  ok      15,025     4,259       0       370         0         4,629      2549        1,007
+  6  judge pairs     81.4  ok      15,527     4,292       0       157         0         4,449      1872        460
+  7  judge pairs     83.2  ok      11,259     3,159       0       109         0         3,268      1844        314
+
+==============================================================================
+EMBEDDING CALLS
+==============================================================================
+calls 23, failed 0, texts 931 (claim topic texts embedded locally for matching)
+
+  #   texts  chars   latency ms  result  error
+  --  -----  ------  ----------  ------  -----
+  1   20     12,835  1479        ok
+  2   18     8,482   582         ok
+  3   17     7,290   557         ok
+  4   5      3,778   145         ok
+  5   16     4,748   224         ok
+  6   19     19,572  681         ok
+  7   3      2,764   93          ok
+  8   64     50,094  2560        ok
+  9   64     52,316  2513        ok
+  10  64     49,973  2467        ok
+  11  64     51,926  2656        ok
+  12  64     50,366  2564        ok
+  13  64     65,523  2611        ok
+  14  64     55,256  2451        ok
+  15  64     54,683  2512        ok
+  16  64     59,316  2517        ok
+  17  64     55,290  2511        ok
+  18  64     55,943  2584        ok
+  19  53     44,104  2147        ok
+  20  37     23,734  1290        ok
+  21  8      2,669   173         ok
+  22  12     9,135   431         ok
+  23  19     1,295   38          ok
+
+==============================================================================
+FAILURES
+==============================================================================
+LLM attempt failures:
+  none
+Documents not fully read:
+  none
+Pair-judging problems:
+  none
+
+==============================================================================
+TIMING
+==============================================================================
+  stage                                         duration  share of wall time
+  --------------------------------------------  --------  ------------------
+  0. scan files, process new or changed ones    64.7s     76%
+  1. read every chunk, extract claims           9.1s      11%
+  2. match claims (local embeddings)            0.0s      0%
+  3. judge pairs, verify quotes, save findings  11.2s     13%
+  4. per-document verdicts                      0.0s      0%
+
+==============================================================================
+KNOWN LIMITS OF THIS RUN
+==============================================================================
+- Reading is all-or-nothing per document: if one batch fails after all retries, that document's claims are discarded and it counts as not read.
+- Candidate matching keeps at most 5 partners per claim (an existing default), so some comparable pairs are never judged.
+- The claim-extraction prompt lists business categories (capacity, supply, pricing, ...) and is not yet domain-agnostic.
+- Claims inside one document are also paired and judged; matching quality depends on how the model labels subject/metric/unit/period.
+- Exact agreements are trusted as corroboration without an LLM check.

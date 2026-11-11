@@ -1,0 +1,1762 @@
+TEST RUN  20261111-120846  ledger-vocab-agnostic-prompt-strict-judge-g31lite
+==============================================================================
+
+HOW THIS RUN WAS ACHIEVED
+1. Reading: every chunk of every processed document except Biochar Summary - HyveGeo Project Assessment.pdf, CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf, Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf, Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf, Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx, Hyve geo assest bulk_.xlsx, Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm, InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf, KSA Egypt Growth v2.pdf, Research Report - HyveGeo.pdf (database 'dataroom_run_20261111_ledger_v2') was sent to the LLM in batches of up to 8,000 characters; each batch returns claims, kept only if their value appears in the cited chunk (existing claim extractor, no chunk or call limits).
+2. Ledger: accepted claims are stored in the claims table; claims are matched across and within documents by wording and by local embeddings (sentence-transformers/all-MiniLM-L6-v2), without a fixed number of documents or claims assumed.
+3. Judging: pairs that agree exactly count as corroboration; every other pair (conflicting, partial, contextual) goes to the LLM in batches of up to 12,000 characters with both source excerpts.
+4. Findings: a discrepancy is saved only if its two quotes are exact substrings of their chunks (checked in code); per-document verdicts were skipped by request.
+5. Model: gemini-3.1-flash-lite, temperature 0, up to 5 attempts per call honouring Google's retry delay; no step, tool-call or finding limits.
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+Run started   : 2026-11-11 12:08:46 (local)   finished: 12:10:41   wall time: 115.0s
+Config        : ledger-vocab-agnostic-prompt-strict-judge-g31lite
+Database      : dataroom_run_20261111_ledger_v2 (documents were already processed; reused)
+Code version  : git a8c19bb + uncommitted changes   python 3.14.5
+Excluded      : Biochar Summary - HyveGeo Project Assessment.pdf, CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf, Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf, Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf, Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx, Hyve geo assest bulk_.xlsx, Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm, InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf, KSA Egypt Growth v2.pdf, Research Report - HyveGeo.pdf (by request: not read, not compared)
+Documents     : 2; fully read 2, incomplete 0
+Chunks        : 33 total; sent to the LLM 33 (headings are skipped by the extractor: 0)
+Claims        : 66 recorded, 4 rejected (value not found in cited chunk or unknown chunk id)
+Pairs         : 134 candidates; 32 agreed exactly (not sent to the LLM); 102 judged; verdicts {'contextual_difference': 60, 'consistent': 14, 'insufficient_evidence': 28}
+Findings      : 58 saved with verified quotes; 2 rejected (quotes missing or not exact)
+LLM calls     : 17 provider attempts (0 failed, 0 retries incl. invalid-output retries), 48.8s total, avg 2870ms
+Tokens        : prompt 79,976  completion 15,595  thinking 0  cached 0  total 95,571   (cost not computed: no price per token configured)
+Context/call  : prompt tokens min 2,013  avg 4,704  max 5,917
+
+==============================================================================
+NEW OR CHANGED FILES AND CLAIM RESET
+==============================================================================
+claims deleted at the start of this run: 0 (all claims in this run are newly extracted)
+scan: discovered 13, new 1, updated 10, unchanged 1, missing 1
+      duplicates skipped (same content): ['Main Picth Deck HyveGeo .pdf']
+
+  new or changed file                                                     status     chunks  extract s  chunk ms  save ms  embed s  note
+  ----------------------------------------------------------------------  ---------  ------  ---------  --------  -------  -------  ------------------------------------------------------------
+  Biochar Summary - HyveGeo Project Assessment.pdf                        processed  20      1.6        1         66       1.4
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf  processed  18      3.8        1         61       0.6      Table detection skipped on 2 artwork-heavy pages (over 10...
+  CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short   processed  17      2.9        1         55       0.6      Table detection skipped on 5 artwork-heavy pages (over 10...
+  Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf         processed  5       0.4        0         9        0.2
+  Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf                             processed  16      3.1        1         57       0.3
+  Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.x  processed  19      0.1        1         65       0.7
+  Hyve geo assest bulk_.xlsx                                              processed  3       0.3        0         59       0.1
+  Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm           processed  757     6.3        13        363      32.0
+  InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf                processed  37      4.6        2         62       1.4
+  KSA Egypt Growth v2.pdf                                                 processed  8       1.4        1         12       0.3
+  Research Report - HyveGeo.pdf                                           processed  12      1.3        1         60       0.5
+
+==============================================================================
+CONTRADICTIONS ONLY (classification = contradiction)
+==============================================================================
+No finding was classified as a contradiction in this run.
+
+==============================================================================
+FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)
+==============================================================================
+Fields follow the Finding schema: title, description, classification, severity, confidence, evidence_status, verification_status, materiality_reasoning, business_impact, unresolved_questions; evidence rows follow the Evidence schema.
+Findings: 58   by classification: {'contextual_difference': 58}   by severity: {'informational': 58}
+
+--- FINDING 1 of 58  [fnd_ebe51c7f017942e6] ------------------------------
+title                 : contextual difference: Total Area
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The built-up area values differ because they refer to different developments: KEZAD Logistics Park Free Zone Phase 3 versus KEZAD Logistics Park Phase 4 Expansion.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_78f5d6dd80a644b3   (chunk_index 1)
+      location : page 2
+      quote    : "Built-up Area
+58,686m2"
+      relevance: Built-up Area 58,686m2
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Built-up Area 58,686m2 | subject=Built-up Area; metric=Total Area; value=58,686; unit=m2
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_2d6d17c6c2c64514   (chunk_index 1)
+      location : page 2
+      quote    : "Built-up Area
+19,334m2"
+      relevance: Built-up Area 19,334m2
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Built-up Area 19,334m2 | subject=Built-up Area; metric=Area; value=19,334; unit=m2
+
+--- FINDING 2 of 58  [fnd_2ad01f2ccc924a9c] ------------------------------
+title                 : contextual difference: Total Area
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The total area values differ because they refer to different developments: KEZAD Logistics Park Free Zone Phase 3 versus KEZAD Logistics Park Phase 4 Expansion.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_57dd9b56f6a541e5   (chunk_index 9)
+      location : page 9
+      quote    : "Total Area: 595 sq.m."
+      relevance: Total Area: 595 sq.m.
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Total Area: 595 sq.m. | subject=Typical Light Industrial Unit; metric=Total Area; value=595; unit=sq.m.
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_2d42c08c87a34f32   (chunk_index 16)
+      location : page 17
+      quote    : "Total Area: 647sq.m."
+      relevance: Total Area: 647sq.m.
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Total Area: 647sq.m. | subject=Typical Light Industrial Unit; metric=Total Area; value=647; unit=sq.m.
+
+--- FINDING 3 of 58  [fnd_d2bbf1f80dcf4a98] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The power supply values differ because they refer to different developments: KEZAD Logistics Park Phase 4 Expansion versus KEZAD Logistics Park Free Zone Phase 3.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "300W/m² power supply"
+      relevance: 300W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 300W/m² power supply | subject=Light Industrial Units; metric=Power supply; value=300; unit=W/m²
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_486ed637e0754674   (chunk_index 10)
+      location : page 10
+      quote    : "400w/m² connected"
+      relevance: 400w/m² connected
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 400w/m² connected | subject=Light Industrial Units; metric=Power supply; value=400; unit=w/m²
+
+--- FINDING 4 of 58  [fnd_3ceb9d30502b4554] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The clear height values differ because they refer to different developments: KEZAD Logistics Park Phase 4 Expansion versus KEZAD Logistics Park Free Zone Phase 3.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "10.5m clear height"
+      relevance: 10.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 10.5m clear height | subject=Light Industrial Units; metric=Clear height; value=10.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_486ed637e0754674   (chunk_index 10)
+      location : page 10
+      quote    : "9.5m clear height"
+      relevance: 9.5m clear height
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 9.5m clear height | subject=Light Industrial Units; metric=Clear height; value=9.5; unit=m
+
+--- FINDING 5 of 58  [fnd_edb4610f92f84b13] ------------------------------
+title                 : contextual difference: Access
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The access time conditions differ because they refer to different developments: KEZAD Logistics Park Phase 4 Expansion (90-minutes) versus KEZAD Logistics Park Free Zone Phase 3 (2-hours).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_7cc652c8ec794175   (chunk_index 3)
+      location : page 4
+      quote    : "within a 90-minutes’ drive"
+      relevance: provides access to over 75% of UAE’s population within a 90-minutes’ drive along three major highways
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: provides access to over 75% of UAE’s population within a 90-minutes’ drive along three major highways | subject=UAE population; metric=Access; value=75; unit=%; conditions=within a 90-minutes’ drive along three major highways
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_fcc6e856ee0643a4   (chunk_index 3)
+      location : page 3
+      quote    : "within a 2-hours’ drive"
+      relevance: provides access to over 75% of UAE’s population within a 2-hours’ drive along three major highways
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: provides access to over 75% of UAE’s population within a 2-hours’ drive along three major highways | subject=UAE population; metric=Access; value=75; unit=%; conditions=within a 2-hours’ drive along three major highways
+
+--- FINDING 6 of 58  [fnd_64fdb9d7b10e4443] ------------------------------
+title                 : contextual difference: Total Area
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The total area values differ because they refer to different developments: KEZAD Logistics Park Free Zone Phase 3 versus KEZAD Logistics Park Phase 4 Expansion.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_e76951eeb9684fa0   (chunk_index 6)
+      location : page 6
+      quote    : "Total Area: 595sq.m."
+      relevance: Total Area: 595sq.m.
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Total Area: 595sq.m. | subject=Typical Standard Warehouse Unit; metric=Total Area; value=595; unit=sq.m.
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_8bf174ac48fa4c8e   (chunk_index 12)
+      location : page 13
+      quote    : "Total Area: 396sq.m."
+      relevance: Total Area: 396sq.m.
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Total Area: 396sq.m. | subject=Typical Standard Warehouse Unit; metric=Total Area; value=396; unit=sq.m.
+
+--- FINDING 7 of 58  [fnd_b378b57040984f52] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The power supply values differ because they refer to different developments: KEZAD Logistics Park Phase 4 Expansion versus KEZAD Logistics Park Free Zone Phase 3.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "175W/m² power supply"
+      relevance: 175W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 175W/m² power supply | subject=Standard Warehouses; metric=Power supply; value=175; unit=W/m²
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_8ec0f30b4e264cb7   (chunk_index 7)
+      location : page 7
+      quote    : "185w/m² connected power load"
+      relevance: 185w/m² connected power load
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 185w/m² connected power load | subject=Standard Warehouses; metric=Power supply; value=185; unit=w/m²
+
+--- FINDING 8 of 58  [fnd_3344aabfff5947b2] ------------------------------
+title                 : contextual difference: Status
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The unit status values differ because they refer to different developments: KEZAD Logistics Park Free Zone Phase 3 versus KEZAD Logistics Park Phase 4 Expansion.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_78f5d6dd80a644b3   (chunk_index 1)
+      location : page 2
+      quote    : "Unit Status Free Zone"
+      relevance: Unit Status Free Zone
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Unit Status Free Zone | subject=Unit; metric=Status; value=Free Zone
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_2d6d17c6c2c64514   (chunk_index 1)
+      location : page 2
+      quote    : "Unit Status Domestic Economic Zone"
+      relevance: Unit Status Domestic Economic Zone
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Unit Status Domestic Economic Zone | subject=Unit; metric=Status; value=Domestic Economic Zone
+
+--- FINDING 9 of 58  [fnd_3601dd72c5b04cda] ------------------------------
+title                 : contextual difference: Size range
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The unit size ranges refer to different developments: KEZAD Logistics Park Phase 4 Expansion and KEZAD Logistics Park Free Zone Phase 3.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_50f3211b82fe4c66   (chunk_index 6)
+      location : page 7
+      quote    : "Units from 607 m2 scalable to up to 5,939 m2"
+      relevance: Units from 607 m2 scalable to up to 5,939 m2
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Units from 607 m2 scalable to up to 5,939 m2 | subject=Flex Units; metric=Size range; value=607 m2 scalable to up to 5,939 m2
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_78f5d6dd80a644b3   (chunk_index 1)
+      location : page 2
+      quote    : "Unit Sizes from 550m2"
+      relevance: Unit Sizes from 550m2
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Unit Sizes from 550m2 | subject=Unit; metric=Size range; value=550; unit=m2
+
+--- FINDING 10 of 58  [fnd_20254e08a6044935] ------------------------------
+title                 : contextual difference: Total Area
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The total areas refer to different unit types in different developments: a Typical Light Industrial Unit in Phase 3 and a Typical Flex Unit in Phase 4.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_57dd9b56f6a541e5   (chunk_index 9)
+      location : page 9
+      quote    : "Total Area: 595 sq.m."
+      relevance: Total Area: 595 sq.m.
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Total Area: 595 sq.m. | subject=Typical Light Industrial Unit; metric=Total Area; value=595; unit=sq.m.
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_f9a30b59ada0472e   (chunk_index 8)
+      location : page 9
+      quote    : "Total Area: 787sq.m."
+      relevance: Total Area: 787sq.m.
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Total Area: 787sq.m. | subject=Typical Flex Unit; metric=Total Area; value=787; unit=sq.m.
+
+--- FINDING 11 of 58  [fnd_bcdfad724a1a4e2d] ------------------------------
+title                 : contextual difference: Total Area
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The total areas refer to different unit types in different developments: a Typical Standard Warehouse Unit in Phase 3 and a Typical Flex Unit in Phase 4.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_e76951eeb9684fa0   (chunk_index 6)
+      location : page 6
+      quote    : "Total Area: 595sq.m."
+      relevance: Total Area: 595sq.m.
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Total Area: 595sq.m. | subject=Typical Standard Warehouse Unit; metric=Total Area; value=595; unit=sq.m.
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_f9a30b59ada0472e   (chunk_index 8)
+      location : page 9
+      quote    : "Total Area: 787sq.m."
+      relevance: Total Area: 787sq.m.
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Total Area: 787sq.m. | subject=Typical Flex Unit; metric=Total Area; value=787; unit=sq.m.
+
+--- FINDING 12 of 58  [fnd_19fb1a438d6e413b] ------------------------------
+title                 : contextual difference: Total Area
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The total areas refer to different unit types: a Typical Standard Warehouse Unit and a Typical Flex Unit.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_8bf174ac48fa4c8e   (chunk_index 12)
+      location : page 13
+      quote    : "Total Area: 396sq.m."
+      relevance: Total Area: 396sq.m.
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Total Area: 396sq.m. | subject=Typical Standard Warehouse Unit; metric=Total Area; value=396; unit=sq.m.
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_f9a30b59ada0472e   (chunk_index 8)
+      location : page 9
+      quote    : "Total Area: 787sq.m."
+      relevance: Total Area: 787sq.m.
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Total Area: 787sq.m. | subject=Typical Flex Unit; metric=Total Area; value=787; unit=sq.m.
+
+--- FINDING 13 of 58  [fnd_2b80393d6a86411f] ------------------------------
+title                 : contextual difference: Total Area
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The total areas refer to different unit types: a Typical Light Industrial Unit and a Typical Flex Unit.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_2d42c08c87a34f32   (chunk_index 16)
+      location : page 17
+      quote    : "Total Area: 647sq.m."
+      relevance: Total Area: 647sq.m.
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Total Area: 647sq.m. | subject=Typical Light Industrial Unit; metric=Total Area; value=647; unit=sq.m.
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_f9a30b59ada0472e   (chunk_index 8)
+      location : page 9
+      quote    : "Total Area: 787sq.m."
+      relevance: Total Area: 787sq.m.
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Total Area: 787sq.m. | subject=Typical Flex Unit; metric=Total Area; value=787; unit=sq.m.
+
+--- FINDING 14 of 58  [fnd_8600c02ca8394ce6] ------------------------------
+title                 : contextual difference: Total Area
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The total areas refer to different unit types in different developments: a Typical Light Industrial Unit in Phase 3 and a Typical Standard Warehouse Unit in Phase 4.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_57dd9b56f6a541e5   (chunk_index 9)
+      location : page 9
+      quote    : "Total Area: 595 sq.m."
+      relevance: Total Area: 595 sq.m.
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Total Area: 595 sq.m. | subject=Typical Light Industrial Unit; metric=Total Area; value=595; unit=sq.m.
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_8bf174ac48fa4c8e   (chunk_index 12)
+      location : page 13
+      quote    : "Total Area: 396sq.m."
+      relevance: Total Area: 396sq.m.
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Total Area: 396sq.m. | subject=Typical Standard Warehouse Unit; metric=Total Area; value=396; unit=sq.m.
+
+--- FINDING 15 of 58  [fnd_0a5716352dc64a78] ------------------------------
+title                 : contextual difference: Total Area
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The total areas refer to different unit types in different developments: a Typical Standard Warehouse Unit in Phase 3 and a Typical Light Industrial Unit in Phase 4.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_e76951eeb9684fa0   (chunk_index 6)
+      location : page 6
+      quote    : "Total Area: 595sq.m."
+      relevance: Total Area: 595sq.m.
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Total Area: 595sq.m. | subject=Typical Standard Warehouse Unit; metric=Total Area; value=595; unit=sq.m.
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_2d42c08c87a34f32   (chunk_index 16)
+      location : page 17
+      quote    : "Total Area: 647sq.m."
+      relevance: Total Area: 647sq.m.
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Total Area: 647sq.m. | subject=Typical Light Industrial Unit; metric=Total Area; value=647; unit=sq.m.
+
+--- FINDING 16 of 58  [fnd_f9d55bcd5267458c] ------------------------------
+title                 : contextual difference: Size range
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The documents refer to different projects: Phase 4 Expansion and Free Zone Phase 3.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "Units from 647m² with scalable combinations of up to 5,479m²"
+      relevance: Units from 647m² with scalable combinations of up to 5,479m²
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Units from 647m² with scalable combinations of up to 5,479m² | subject=Light Industrial Units; metric=Size range; value=647m² with scalable combinations of up to 5,479m²
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_78f5d6dd80a644b3   (chunk_index 1)
+      location : page 2
+      quote    : "Unit Sizes from 550m2"
+      relevance: Unit Sizes from 550m2
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Unit Sizes from 550m2 | subject=Unit; metric=Size range; value=550; unit=m2
+
+--- FINDING 17 of 58  [fnd_7196a411fb254fac] ------------------------------
+title                 : contextual difference: Total Area
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The claims refer to different types of units: Standard Warehouse Unit vs Light Industrial Unit.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_8bf174ac48fa4c8e   (chunk_index 12)
+      location : page 13
+      quote    : "Total Area: 396sq.m."
+      relevance: Total Area: 396sq.m.
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Total Area: 396sq.m. | subject=Typical Standard Warehouse Unit; metric=Total Area; value=396; unit=sq.m.
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_2d42c08c87a34f32   (chunk_index 16)
+      location : page 17
+      quote    : "Total Area: 647sq.m."
+      relevance: Total Area: 647sq.m.
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Total Area: 647sq.m. | subject=Typical Light Industrial Unit; metric=Total Area; value=647; unit=sq.m.
+
+--- FINDING 18 of 58  [fnd_e871c06699b44bb6] ------------------------------
+title                 : contextual difference: Total Area
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The claims refer to different types of units: Cold Store Convertible Warehouse vs Standard Warehouse Unit.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_93565739122d44ec   (chunk_index 12)
+      location : page 12
+      quote    : "Total Area: 1029 sq.m."
+      relevance: Total Area: 1029 sq.m.
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Total Area: 1029 sq.m. | subject=Typical Cold Store Convertible Warehouse; metric=Total Area; value=1029; unit=sq.m.
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_e76951eeb9684fa0   (chunk_index 6)
+      location : page 6
+      quote    : "Total Area: 595sq.m."
+      relevance: Total Area: 595sq.m.
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Total Area: 595sq.m. | subject=Typical Standard Warehouse Unit; metric=Total Area; value=595; unit=sq.m.
+
+--- FINDING 19 of 58  [fnd_7b14deab3160489c] ------------------------------
+title                 : contextual difference: Total Area
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The claims refer to different types of units: Cold Store Convertible Warehouse vs Standard Warehouse Unit.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_93565739122d44ec   (chunk_index 12)
+      location : page 12
+      quote    : "Total Area: 1029 sq.m."
+      relevance: Total Area: 1029 sq.m.
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Total Area: 1029 sq.m. | subject=Typical Cold Store Convertible Warehouse; metric=Total Area; value=1029; unit=sq.m.
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_8bf174ac48fa4c8e   (chunk_index 12)
+      location : page 13
+      quote    : "Total Area: 396sq.m."
+      relevance: Total Area: 396sq.m.
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Total Area: 396sq.m. | subject=Typical Standard Warehouse Unit; metric=Total Area; value=396; unit=sq.m.
+
+--- FINDING 20 of 58  [fnd_e15f8c531745464d] ------------------------------
+title                 : contextual difference: Floor loading capacity
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The floor loading capacity values differ because they refer to different types of units: Light Industrial Units in Phase 3 versus Flex Units in Phase 4.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_486ed637e0754674   (chunk_index 10)
+      location : page 10
+      quote    : "30kN/m² floor loading capacity / FM4 floor"
+      relevance: 30kN/m² floor loading capacity / FM4 floor
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 30kN/m² floor loading capacity / FM4 floor | subject=Light Industrial Units; metric=Floor loading capacity; value=30; unit=kN/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_50f3211b82fe4c66   (chunk_index 6)
+      location : page 7
+      quote    : "50kN/m² floor loading capacity/FM2 floor"
+      relevance: 50kN/m² floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 50kN/m² floor loading capacity/FM2 floor | subject=Flex Units; metric=Floor loading capacity; value=50; unit=kN/m²
+
+--- FINDING 21 of 58  [fnd_4ab9e3e17e0942b8] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The power supply values differ because they refer to different types of units: Flex Units in Phase 4 and Light Industrial Units in Phase 3.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_50f3211b82fe4c66   (chunk_index 6)
+      location : page 7
+      quote    : "300W/m² power supply"
+      relevance: 300W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 300W/m² power supply | subject=Flex Units; metric=Power supply; value=300; unit=W/m²
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_486ed637e0754674   (chunk_index 10)
+      location : page 10
+      quote    : "400w/m² connected"
+      relevance: 400w/m² connected
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 400w/m² connected | subject=Light Industrial Units; metric=Power supply; value=400; unit=w/m²
+
+--- FINDING 22 of 58  [fnd_2a4913dda55f43e8] ------------------------------
+title                 : contextual difference: Size range
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The values refer to different types of units: Flex Units vs Light Industrial Units.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_50f3211b82fe4c66   (chunk_index 6)
+      location : page 7
+      quote    : "Units from 607 m2 scalable to up to 5,939 m2"
+      relevance: Units from 607 m2 scalable to up to 5,939 m2
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Units from 607 m2 scalable to up to 5,939 m2 | subject=Flex Units; metric=Size range; value=607 m2 scalable to up to 5,939 m2
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "Units from 647m² with scalable combinations of up to 5,479m²"
+      relevance: Units from 647m² with scalable combinations of up to 5,479m²
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Units from 647m² with scalable combinations of up to 5,479m² | subject=Light Industrial Units; metric=Size range; value=647m² with scalable combinations of up to 5,479m²
+
+--- FINDING 23 of 58  [fnd_1dd415cdcf6b40b3] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The clear height values differ because they refer to different unit types: Light Industrial Units (10.5m) and Flex Units (10m).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "10.5m clear height"
+      relevance: 10.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 10.5m clear height | subject=Light Industrial Units; metric=Clear height; value=10.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_50f3211b82fe4c66   (chunk_index 6)
+      location : page 7
+      quote    : "10m clear height"
+      relevance: 10m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 10m clear height | subject=Flex Units; metric=Clear height; value=10; unit=m
+
+--- FINDING 24 of 58  [fnd_8d596a9d9e764bd9] ------------------------------
+title                 : contextual difference: Floor loading capacity
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The floor loading capacity values differ because they refer to different unit types: Flex Units (50kN/m²) and Light Industrial Units (30kN/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_50f3211b82fe4c66   (chunk_index 6)
+      location : page 7
+      quote    : "50kN/m² floor loading capacity/FM2 floor"
+      relevance: 50kN/m² floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 50kN/m² floor loading capacity/FM2 floor | subject=Flex Units; metric=Floor loading capacity; value=50; unit=kN/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "30kN/m² floor loading capacity/FM4 floor"
+      relevance: 30kN/m² floor loading capacity/FM4 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 30kN/m² floor loading capacity/FM4 floor | subject=Light Industrial Units; metric=Floor loading capacity; value=30; unit=kN/m²
+
+--- FINDING 25 of 58  [fnd_ef17b5719e5a4505] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The clear height values differ because they refer to different unit types: Light Industrial Units (9.5m) and Flex Units (10m).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_486ed637e0754674   (chunk_index 10)
+      location : page 10
+      quote    : "9.5m clear height"
+      relevance: 9.5m clear height
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 9.5m clear height | subject=Light Industrial Units; metric=Clear height; value=9.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_50f3211b82fe4c66   (chunk_index 6)
+      location : page 7
+      quote    : "10m clear height"
+      relevance: 10m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 10m clear height | subject=Flex Units; metric=Clear height; value=10; unit=m
+
+--- FINDING 26 of 58  [fnd_9eb95f1e2ba645e3] ------------------------------
+title                 : contextual difference: Size range
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The unit sizes refer to different developments: KEZAD Logistics Park Free Zone Phase 3 (from 550m²) and KEZAD Logistics Park Phase 4 Expansion (from 395m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_78f5d6dd80a644b3   (chunk_index 1)
+      location : page 2
+      quote    : "Unit Sizes from 550m2"
+      relevance: Unit Sizes from 550m2
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Unit Sizes from 550m2 | subject=Unit; metric=Size range; value=550; unit=m2
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_2d6d17c6c2c64514   (chunk_index 1)
+      location : page 2
+      quote    : "Unit Sizes from 395m2"
+      relevance: Unit Sizes from 395m2
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Unit Sizes from 395m2 | subject=Unit; metric=Sizes; value=395; unit=m2
+
+--- FINDING 27 of 58  [fnd_bda73934323e4b7e] ------------------------------
+title                 : contextual difference: Raised floor level
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The raised floor level values differ because they refer to different types of warehouses: Cold Store Convertible Warehouses in Excerpt A and Standard Warehouses in Excerpt B.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_d5b94726e0544c79   (chunk_index 13)
+      location : page 13
+      quote    : "1.5m raised floor level"
+      relevance: 1.5m raised floor level
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 1.5m raised floor level | subject=Cold Store Convertible Warehouses; metric=Raised floor level; value=1.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "1.3m raised floor level"
+      relevance: 1.3m raised floor level
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 1.3m raised floor level | subject=Standard Warehouses; metric=Raised floor level; value=1.3; unit=m
+
+--- FINDING 28 of 58  [fnd_e830bac283084bac] ------------------------------
+title                 : contextual difference: Raised floor level
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The raised floor level values differ because they refer to different types of warehouses: Cold Store Convertible Warehouses in Excerpt A and Standard Warehouses in Excerpt B.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_d5b94726e0544c79   (chunk_index 13)
+      location : page 13
+      quote    : "1.5m raised floor level"
+      relevance: 1.5m raised floor level
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 1.5m raised floor level | subject=Cold Store Convertible Warehouses; metric=Raised floor level; value=1.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_8ec0f30b4e264cb7   (chunk_index 7)
+      location : page 7
+      quote    : "1.3m raised floor level"
+      relevance: 1.3m raised floor level
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 1.3m raised floor level | subject=Standard Warehouses; metric=Raised floor level; value=1.3; unit=m
+
+--- FINDING 29 of 58  [fnd_b667d4ced08b46f8] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The power supply values differ because they refer to different types of warehouses: Standard Warehouses (175W/m²) and Cold Store Convertible Warehouses (300w/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "175W/m² power supply"
+      relevance: 175W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 175W/m² power supply | subject=Standard Warehouses; metric=Power supply; value=175; unit=W/m²
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_d5b94726e0544c79   (chunk_index 13)
+      location : page 13
+      quote    : "300w/m² connected power load"
+      relevance: 300w/m² connected power load
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 300w/m² connected power load | subject=Cold Store Convertible Warehouses; metric=Power supply; value=300; unit=w/m²
+
+--- FINDING 30 of 58  [fnd_d0883492e9b34429] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The power supply values differ because they refer to different types of warehouses: Standard Warehouses (185w/m²) and Cold Store Convertible Warehouses (300w/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_8ec0f30b4e264cb7   (chunk_index 7)
+      location : page 7
+      quote    : "185w/m² connected power load"
+      relevance: 185w/m² connected power load
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 185w/m² connected power load | subject=Standard Warehouses; metric=Power supply; value=185; unit=w/m²
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_d5b94726e0544c79   (chunk_index 13)
+      location : page 13
+      quote    : "300w/m² connected power load"
+      relevance: 300w/m² connected power load
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 300w/m² connected power load | subject=Cold Store Convertible Warehouses; metric=Power supply; value=300; unit=w/m²
+
+--- FINDING 31 of 58  [fnd_8dd1c20796a74bfa] ------------------------------
+title                 : contextual difference: Total Area
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The values differ because they refer to different types of warehouse units: a 'Typical Cold Store Convertible Warehouse' in document A and a 'Typical Flex Unit' in document B.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_93565739122d44ec   (chunk_index 12)
+      location : page 12
+      quote    : "Total Area: 1029 sq.m."
+      relevance: Total Area: 1029 sq.m.
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Total Area: 1029 sq.m. | subject=Typical Cold Store Convertible Warehouse; metric=Total Area; value=1029; unit=sq.m.
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_f9a30b59ada0472e   (chunk_index 8)
+      location : page 9
+      quote    : "Total Area: 787sq.m."
+      relevance: Total Area: 787sq.m.
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Total Area: 787sq.m. | subject=Typical Flex Unit; metric=Total Area; value=787; unit=sq.m.
+
+--- FINDING 32 of 58  [fnd_ec13422e21ac499a] ------------------------------
+title                 : contextual difference: Total Area
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The values differ because they refer to different types of warehouse units: a 'Typical Light Industrial Unit' in document A and a 'Typical Cold Store Convertible Warehouse' in document B.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_57dd9b56f6a541e5   (chunk_index 9)
+      location : page 9
+      quote    : "Total Area: 595 sq.m."
+      relevance: Total Area: 595 sq.m.
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Total Area: 595 sq.m. | subject=Typical Light Industrial Unit; metric=Total Area; value=595; unit=sq.m.
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_93565739122d44ec   (chunk_index 12)
+      location : page 12
+      quote    : "Total Area: 1029 sq.m."
+      relevance: Total Area: 1029 sq.m.
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Total Area: 1029 sq.m. | subject=Typical Cold Store Convertible Warehouse; metric=Total Area; value=1029; unit=sq.m.
+
+--- FINDING 33 of 58  [fnd_96d7bf1700384424] ------------------------------
+title                 : contextual difference: Total Area
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The values differ because they refer to different types of warehouse units: a 'Typical Cold Store Convertible Warehouse' in document A and a 'Typical Light Industrial Unit' in document B.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_93565739122d44ec   (chunk_index 12)
+      location : page 12
+      quote    : "Total Area: 1029 sq.m."
+      relevance: Total Area: 1029 sq.m.
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Total Area: 1029 sq.m. | subject=Typical Cold Store Convertible Warehouse; metric=Total Area; value=1029; unit=sq.m.
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_2d42c08c87a34f32   (chunk_index 16)
+      location : page 17
+      quote    : "Total Area: 647sq.m."
+      relevance: Total Area: 647sq.m.
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Total Area: 647sq.m. | subject=Typical Light Industrial Unit; metric=Total Area; value=647; unit=sq.m.
+
+--- FINDING 34 of 58  [fnd_922b917a3b674686] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The values differ because they refer to different types of warehouse units: 'Cold Store Convertible Warehouses' in document A and 'Light Industrial Units' in document B.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_d5b94726e0544c79   (chunk_index 13)
+      location : page 13
+      quote    : "Minimum clear height of 8.50m"
+      relevance: Minimum clear height of 8.50m
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Minimum clear height of 8.50m | subject=Cold Store Convertible Warehouses; metric=Clear height; value=8.50; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "10.5m clear height"
+      relevance: 10.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 10.5m clear height | subject=Light Industrial Units; metric=Clear height; value=10.5; unit=m
+
+--- FINDING 35 of 58  [fnd_68a661c53bc04471] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The values differ because they refer to different types of warehouse units: 'Cold Store Convertible Warehouses' in document A and 'Light Industrial Units' in document B.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_d5b94726e0544c79   (chunk_index 13)
+      location : page 13
+      quote    : "Minimum clear height of 8.50m"
+      relevance: Minimum clear height of 8.50m
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Minimum clear height of 8.50m | subject=Cold Store Convertible Warehouses; metric=Clear height; value=8.50; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_486ed637e0754674   (chunk_index 10)
+      location : page 10
+      quote    : "9.5m clear height"
+      relevance: 9.5m clear height
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 9.5m clear height | subject=Light Industrial Units; metric=Clear height; value=9.5; unit=m
+
+--- FINDING 36 of 58  [fnd_719935ea046e43ac] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The values differ because they refer to different types of warehouse units: 'Cold Store Convertible Warehouses' in document A and 'Flex Units' in document B.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_d5b94726e0544c79   (chunk_index 13)
+      location : page 13
+      quote    : "Minimum clear height of 8.50m"
+      relevance: Minimum clear height of 8.50m
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Minimum clear height of 8.50m | subject=Cold Store Convertible Warehouses; metric=Clear height; value=8.50; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_50f3211b82fe4c66   (chunk_index 6)
+      location : page 7
+      quote    : "10m clear height"
+      relevance: 10m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 10m clear height | subject=Flex Units; metric=Clear height; value=10; unit=m
+
+--- FINDING 37 of 58  [fnd_aca89d4201584d2a] ------------------------------
+title                 : contextual difference: Raised floor level
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The values differ because they refer to different types of warehouse units: 'Cold Store Convertible Warehouses' in document A and 'Flex Units' in document B.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_d5b94726e0544c79   (chunk_index 13)
+      location : page 13
+      quote    : "1.5m raised floor level"
+      relevance: 1.5m raised floor level
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 1.5m raised floor level | subject=Cold Store Convertible Warehouses; metric=Raised floor level; value=1.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_50f3211b82fe4c66   (chunk_index 6)
+      location : page 7
+      quote    : "1.3m raised floor level"
+      relevance: 1.3m raised floor level
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 1.3m raised floor level | subject=Flex Units; metric=Raised floor level; value=1.3; unit=m
+
+--- FINDING 38 of 58  [fnd_a359a443f0754970] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The values differ because they refer to different types of warehouse units: 'Standard Warehouses' in document A and 'Light Industrial Units' in document B.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "8.5m clear height"
+      relevance: 8.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 8.5m clear height | subject=Standard Warehouses; metric=Clear height; value=8.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "10.5m clear height"
+      relevance: 10.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 10.5m clear height | subject=Light Industrial Units; metric=Clear height; value=10.5; unit=m
+
+--- FINDING 39 of 58  [fnd_5ab8410b10ae4ffe] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The clear height values differ because they refer to different warehouse types: Standard Warehouses (8.5m) and Light Industrial Units (9.5m).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "8.5m clear height"
+      relevance: 8.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 8.5m clear height | subject=Standard Warehouses; metric=Clear height; value=8.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_486ed637e0754674   (chunk_index 10)
+      location : page 10
+      quote    : "9.5m clear height"
+      relevance: 9.5m clear height
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 9.5m clear height | subject=Light Industrial Units; metric=Clear height; value=9.5; unit=m
+
+--- FINDING 40 of 58  [fnd_40823adb20834507] ------------------------------
+title                 : contextual difference: Floor loading capacity
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The floor loading capacity values differ because they refer to different warehouse types: Light Industrial Units (30kN/m²) and Standard Warehouses (50kN/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_486ed637e0754674   (chunk_index 10)
+      location : page 10
+      quote    : "30kN/m² floor loading capacity / FM4 floor"
+      relevance: 30kN/m² floor loading capacity / FM4 floor
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 30kN/m² floor loading capacity / FM4 floor | subject=Light Industrial Units; metric=Floor loading capacity; value=30; unit=kN/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "50kN/m² floor loading capacity/FM2 floor"
+      relevance: 50kN/m² floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 50kN/m² floor loading capacity/FM2 floor | subject=Standard Warehouses; metric=Floor loading capacity; value=50; unit=kN/m²
+
+--- FINDING 41 of 58  [fnd_cdd689a59aeb47d8] ------------------------------
+title                 : contextual difference: Floor loading capacity
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The floor loading capacity values differ because they refer to different warehouse types: Light Industrial Units (30kN/m²) and Cold Store Convertible Warehouses (50kN/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_486ed637e0754674   (chunk_index 10)
+      location : page 10
+      quote    : "30kN/m² floor loading capacity / FM4 floor"
+      relevance: 30kN/m² floor loading capacity / FM4 floor
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 30kN/m² floor loading capacity / FM4 floor | subject=Light Industrial Units; metric=Floor loading capacity; value=30; unit=kN/m²
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_d5b94726e0544c79   (chunk_index 13)
+      location : page 13
+      quote    : "50kN/m² floor loading capacity/FM2 floor"
+      relevance: 50kN/m² floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 50kN/m² floor loading capacity/FM2 floor | subject=Cold Store Convertible Warehouses; metric=Floor loading capacity; value=50; unit=kN/m²
+
+--- FINDING 42 of 58  [fnd_0499edc70cf24106] ------------------------------
+title                 : contextual difference: Floor loading capacity
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The floor loading capacity values differ because they refer to different warehouse types: Light Industrial Units (30kN/m²) and Standard Warehouses (50kN/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_486ed637e0754674   (chunk_index 10)
+      location : page 10
+      quote    : "30kN/m² floor loading capacity / FM4 floor"
+      relevance: 30kN/m² floor loading capacity / FM4 floor
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 30kN/m² floor loading capacity / FM4 floor | subject=Light Industrial Units; metric=Floor loading capacity; value=30; unit=kN/m²
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_8ec0f30b4e264cb7   (chunk_index 7)
+      location : page 7
+      quote    : "50kN/m² floor loading capacity/FM2 floor"
+      relevance: 50kN/m² floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 50kN/m² floor loading capacity/FM2 floor | subject=Standard Warehouses; metric=Floor loading capacity; value=50; unit=kN/m²
+
+--- FINDING 43 of 58  [fnd_db5903c9e62e47c4] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The power supply values differ because they refer to different warehouse types: Flex Units (300W/m²) and Standard Warehouses (175W/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_50f3211b82fe4c66   (chunk_index 6)
+      location : page 7
+      quote    : "300W/m² power supply"
+      relevance: 300W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 300W/m² power supply | subject=Flex Units; metric=Power supply; value=300; unit=W/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "175W/m² power supply"
+      relevance: 175W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 175W/m² power supply | subject=Standard Warehouses; metric=Power supply; value=175; unit=W/m²
+
+--- FINDING 44 of 58  [fnd_c2dd31f65d2041f5] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The power supply values differ because they refer to different warehouse types: Flex Units (300W/m²) and Standard Warehouses (185w/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_50f3211b82fe4c66   (chunk_index 6)
+      location : page 7
+      quote    : "300W/m² power supply"
+      relevance: 300W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 300W/m² power supply | subject=Flex Units; metric=Power supply; value=300; unit=W/m²
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_8ec0f30b4e264cb7   (chunk_index 7)
+      location : page 7
+      quote    : "185w/m² connected power load"
+      relevance: 185w/m² connected power load
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 185w/m² connected power load | subject=Standard Warehouses; metric=Power supply; value=185; unit=w/m²
+
+--- FINDING 45 of 58  [fnd_c2132fc739d14a2d] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The power supply values differ because they refer to different types of units: Light Industrial Units (300W/m²) and Standard Warehouses (175W/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "300W/m² power supply"
+      relevance: 300W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 300W/m² power supply | subject=Light Industrial Units; metric=Power supply; value=300; unit=W/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "175W/m² power supply"
+      relevance: 175W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 175W/m² power supply | subject=Standard Warehouses; metric=Power supply; value=175; unit=W/m²
+
+--- FINDING 46 of 58  [fnd_60bb08f130cd4b7a] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The power supply values differ because they refer to different projects/phases: KEZAD Logistics Park Phase 4 Expansion (300W/m²) and KEZAD Logistics Park Free Zone Phase 3 (185w/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "300W/m² power supply"
+      relevance: 300W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 300W/m² power supply | subject=Light Industrial Units; metric=Power supply; value=300; unit=W/m²
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_8ec0f30b4e264cb7   (chunk_index 7)
+      location : page 7
+      quote    : "185w/m² connected power load"
+      relevance: 185w/m² connected power load
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 185w/m² connected power load | subject=Standard Warehouses; metric=Power supply; value=185; unit=w/m²
+
+--- FINDING 47 of 58  [fnd_14b32ea8592e46ef] ------------------------------
+title                 : contextual difference: Floor loading capacity
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The floor loading capacity values differ because they refer to different types of units: Standard Warehouses (50kN/m²) and Light Industrial Units (30kN/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "50kN/m² floor loading capacity/FM2 floor"
+      relevance: 50kN/m² floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 50kN/m² floor loading capacity/FM2 floor | subject=Standard Warehouses; metric=Floor loading capacity; value=50; unit=kN/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "30kN/m² floor loading capacity/FM4 floor"
+      relevance: 30kN/m² floor loading capacity/FM4 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 30kN/m² floor loading capacity/FM4 floor | subject=Light Industrial Units; metric=Floor loading capacity; value=30; unit=kN/m²
+
+--- FINDING 48 of 58  [fnd_86fa203058b24a89] ------------------------------
+title                 : contextual difference: Size range
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The size ranges differ because they refer to different types of units: Flex Units (607 m2 to 5,939 m2) and Standard Warehouses (395m² to 7,916m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_50f3211b82fe4c66   (chunk_index 6)
+      location : page 7
+      quote    : "Units from 607 m2 scalable to up to 5,939 m2"
+      relevance: Units from 607 m2 scalable to up to 5,939 m2
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Units from 607 m2 scalable to up to 5,939 m2 | subject=Flex Units; metric=Size range; value=607 m2 scalable to up to 5,939 m2
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "Units from 395m² with scalable combinations of up to 7,916m²"
+      relevance: Units from 395m² with scalable combinations of up to 7,916m²
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Units from 395m² with scalable combinations of up to 7,916m² | subject=Standard Warehouses; metric=Size range; value=395m² with scalable combinations of up to 7,916m²
+
+--- FINDING 49 of 58  [fnd_7d3d1a8036a640cd] ------------------------------
+title                 : contextual difference: Size range
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The size ranges differ because they refer to different types of units: Standard Warehouses (395m² to 7,916m²) and Light Industrial Units (647m² to 5,479m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "Units from 395m² with scalable combinations of up to 7,916m²"
+      relevance: Units from 395m² with scalable combinations of up to 7,916m²
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Units from 395m² with scalable combinations of up to 7,916m² | subject=Standard Warehouses; metric=Size range; value=395m² with scalable combinations of up to 7,916m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "Units from 647m² with scalable combinations of up to 5,479m²"
+      relevance: Units from 647m² with scalable combinations of up to 5,479m²
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Units from 647m² with scalable combinations of up to 5,479m² | subject=Light Industrial Units; metric=Size range; value=647m² with scalable combinations of up to 5,479m²
+
+--- FINDING 50 of 58  [fnd_670b7ea9604748f2] ------------------------------
+title                 : contextual difference: Size range
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The size ranges differ because they refer to different projects/phases: KEZAD Logistics Park Phase 4 Expansion (395m² to 7,916m²) and KEZAD Logistics Park Free Zone Phase 3 (from 550m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "Units from 395m² with scalable combinations of up to 7,916m²"
+      relevance: Units from 395m² with scalable combinations of up to 7,916m²
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Units from 395m² with scalable combinations of up to 7,916m² | subject=Standard Warehouses; metric=Size range; value=395m² with scalable combinations of up to 7,916m²
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_78f5d6dd80a644b3   (chunk_index 1)
+      location : page 2
+      quote    : "Unit Sizes from 550m2"
+      relevance: Unit Sizes from 550m2
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Unit Sizes from 550m2 | subject=Unit; metric=Size range; value=550; unit=m2
+
+--- FINDING 51 of 58  [fnd_6cd441655adb45b1] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The clear height values differ because they refer to different warehouse types: Light Industrial Units (10.5m) and Standard Warehouses (8.50m).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "10.5m clear height"
+      relevance: 10.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 10.5m clear height | subject=Light Industrial Units; metric=Clear height; value=10.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_8ec0f30b4e264cb7   (chunk_index 7)
+      location : page 7
+      quote    : "8.50m eaves height"
+      relevance: 8.50m eaves height
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 8.50m eaves height | subject=Standard Warehouses; metric=Clear height; value=8.50; unit=m
+
+--- FINDING 52 of 58  [fnd_3160d277c4674e32] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The power supply values differ because they refer to different warehouse types: Light Industrial Units (400w/m²) and Standard Warehouses (175W/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_486ed637e0754674   (chunk_index 10)
+      location : page 10
+      quote    : "400w/m² connected"
+      relevance: 400w/m² connected
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 400w/m² connected | subject=Light Industrial Units; metric=Power supply; value=400; unit=w/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "175W/m² power supply"
+      relevance: 175W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 175W/m² power supply | subject=Standard Warehouses; metric=Power supply; value=175; unit=W/m²
+
+--- FINDING 53 of 58  [fnd_89e41e73e0504b9f] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The power supply values differ because they refer to different warehouse types: Light Industrial Units (400w/m²) and Standard Warehouses (185w/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_486ed637e0754674   (chunk_index 10)
+      location : page 10
+      quote    : "400w/m² connected"
+      relevance: 400w/m² connected
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 400w/m² connected | subject=Light Industrial Units; metric=Power supply; value=400; unit=w/m²
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_8ec0f30b4e264cb7   (chunk_index 7)
+      location : page 7
+      quote    : "185w/m² connected power load"
+      relevance: 185w/m² connected power load
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 185w/m² connected power load | subject=Standard Warehouses; metric=Power supply; value=185; unit=w/m²
+
+--- FINDING 54 of 58  [fnd_ecba9bcecc2442e5] ------------------------------
+title                 : contextual difference: Power supply
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The power supply values differ because they refer to different warehouse types: Light Industrial Units (400w/m²) and Cold Store Convertible Warehouses (300w/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_486ed637e0754674   (chunk_index 10)
+      location : page 10
+      quote    : "400w/m² connected"
+      relevance: 400w/m² connected
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 400w/m² connected | subject=Light Industrial Units; metric=Power supply; value=400; unit=w/m²
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_d5b94726e0544c79   (chunk_index 13)
+      location : page 13
+      quote    : "300w/m² connected power load"
+      relevance: 300w/m² connected power load
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 300w/m² connected power load | subject=Cold Store Convertible Warehouses; metric=Power supply; value=300; unit=w/m²
+
+--- FINDING 55 of 58  [fnd_7525450f59634661] ------------------------------
+title                 : contextual difference: Floor loading capacity
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The floor loading capacity values differ because they refer to different warehouse types: Cold Store Convertible Warehouses (50kN/m²) and Light Industrial Units (30kN/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_d5b94726e0544c79   (chunk_index 13)
+      location : page 13
+      quote    : "50kN/m² floor loading capacity/FM2 floor"
+      relevance: 50kN/m² floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 50kN/m² floor loading capacity/FM2 floor | subject=Cold Store Convertible Warehouses; metric=Floor loading capacity; value=50; unit=kN/m²
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "30kN/m² floor loading capacity/FM4 floor"
+      relevance: 30kN/m² floor loading capacity/FM4 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 30kN/m² floor loading capacity/FM4 floor | subject=Light Industrial Units; metric=Floor loading capacity; value=30; unit=kN/m²
+
+--- FINDING 56 of 58  [fnd_1965d48f1a144941] ------------------------------
+title                 : contextual difference: Clear height
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The clear height values differ because they refer to different warehouse types: Standard Warehouses (8.50m) and Light Industrial Units (9.5m).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_8ec0f30b4e264cb7   (chunk_index 7)
+      location : page 7
+      quote    : "8.50m eaves height"
+      relevance: 8.50m eaves height
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 8.50m eaves height | subject=Standard Warehouses; metric=Clear height; value=8.50; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_486ed637e0754674   (chunk_index 10)
+      location : page 10
+      quote    : "9.5m clear height"
+      relevance: 9.5m clear height
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 9.5m clear height | subject=Light Industrial Units; metric=Clear height; value=9.5; unit=m
+
+--- FINDING 57 of 58  [fnd_08ead323037e4d34] ------------------------------
+title                 : contextual difference: Floor loading capacity
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The floor loading capacities differ because they refer to different types of units: Light Industrial Units (30kN/m²) versus Standard Warehouses (50kN/m²).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_bdc11cc8f73c4821   (chunk_index 14)
+      location : page 15
+      quote    : "30kN/m² floor loading capacity/FM4 floor"
+      relevance: 30kN/m² floor loading capacity/FM4 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 30kN/m² floor loading capacity/FM4 floor | subject=Light Industrial Units; metric=Floor loading capacity; value=30; unit=kN/m²
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_8ec0f30b4e264cb7   (chunk_index 7)
+      location : page 7
+      quote    : "50kN/m² floor loading capacity/FM2 floor"
+      relevance: 50kN/m² floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 50kN/m² floor loading capacity/FM2 floor | subject=Standard Warehouses; metric=Floor loading capacity; value=50; unit=kN/m²
+
+--- FINDING 58 of 58  [fnd_0b040593811b40cc] ------------------------------
+title                 : contextual difference: Size range
+classification        : contextual_difference
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : The unit sizes differ because they refer to different scopes: Claim A refers specifically to 'Flex Units', while Claim B refers to the overall 'Unit Sizes' available at the KEZAD Logistics Park Phase 4 Expansion, which includes multiple unit types.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_50f3211b82fe4c66   (chunk_index 6)
+      location : page 7
+      quote    : "Units from 607 m2 scalable to up to 5,939 m2"
+      relevance: Units from 607 m2 scalable to up to 5,939 m2
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Units from 607 m2 scalable to up to 5,939 m2 | subject=Flex Units; metric=Size range; value=607 m2 scalable to up to 5,939 m2
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_2d6d17c6c2c64514   (chunk_index 1)
+      location : page 2
+      quote    : "Unit Sizes from 395m2"
+      relevance: Unit Sizes from 395m2
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Unit Sizes from 395m2 | subject=Unit; metric=Sizes; value=395; unit=m2
+
+
+==============================================================================
+COVERAGE AND PER-DOCUMENT VERDICTS
+==============================================================================
+Coverage: 'read' = chunks the LLM was shown. A document counts as fully read only if every batch succeeded (all-or-nothing per document).
+
+  document                                                    chunks  read  fully read  claims  LLM calls  tokens  extract s  verdict  reason
+  ----------------------------------------------------------  ------  ----  ----------  ------  ---------  ------  ---------  -------  ---------------------------------------------
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  18      18    yes         36      1          8,238   8.4        skipped  verdicts skipped by request (--skip-verdicts)
+  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digita  15      15    yes         30      1          7,992   8.5        skipped  verdicts skipped by request (--skip-verdicts)
+
+==============================================================================
+CLAIM LEDGER
+==============================================================================
+claims recorded 66, rejected 4
+
+Per document (paired = has a comparable claim elsewhere; corroborated = same value stated elsewhere; unpaired = nothing comparable found):
+  document                                                    claims  paired  corroborated  unpaired  pairs judged  findings
+  ----------------------------------------------------------  ------  ------  ------------  --------  ------------  --------
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  36      36      23            0         92            48
+  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digita  30      30      21            0         89            45
+
+Rejected claims by reason (first 15):
+  - value '550-21,273' not found in cited chunk
+  - value 'yes' not found in cited chunk
+  - value '595-17,237' not found in cited chunk
+  - value '1,029-14,148' not found in cited chunk
+
+==============================================================================
+PAIR MATCHING AND JUDGING
+==============================================================================
+candidate pairs: 134
+  by relation hint : {'exact': 32, 'conflicting': 101, 'partial': 1}
+  by match route   : {'lexical': 130, 'embedding': 4}
+  across documents : 102   inside one document: 32
+exact agreements (corroboration, no LLM): 32
+judged by the LLM: 102 in 15 calls (0 batches failed)
+LLM verdicts: {'contextual_difference': 60, 'consistent': 14, 'insufficient_evidence': 28}
+findings saved 58; rejected 2
+
+Rejected findings (first 15):
+  - contextual_difference 'contextual difference: Total Area': invalid_arguments: evidence.0.quoted_text: String should have at least 8 characters; evidence.1.quoted_text: String should have at least 8 characters
+  - contextual_difference 'contextual difference: Area': invalid_arguments: evidence.0.quoted_text: String should have at least 8 characters; evidence.1.quoted_text: String should have at least 8 characters
+
+==============================================================================
+LLM CALLS: tokens, context size, latency, failures
+==============================================================================
+Per phase:
+  phase           attempts  failed  prompt tok  completion tok  thinking tok  avg ctx tok  max ctx tok  avg ms  p95 ms  total s
+  --------------  --------  ------  ----------  --------------  ------------  -----------  -----------  ------  ------  -------
+  extract claims  2         0       8,433       7,797           0             4,216        4,219        8364    8452    16.7
+  judge pairs     15        0       71,543      7,798           0             4,770        5,917        2138    2810    32.1
+
+Every provider attempt (context = what was sent; tokens as counted by the API):
+  #   phase           at s   result  ctx chars  ctx tokens  cached  completion  thinking  total tok  latency ms  resp chars  error
+  --  --------------  -----  ------  ---------  ----------  ------  ----------  --------  ---------  ----------  ----------  -----
+  1   extract claims  65.2   ok      13,473     4,219       0       4019        0         8,238      8277        10,712
+  2   extract claims  73.5   ok      13,321     4,214       0       3778        0         7,992      8452        9,960
+  3   judge pairs     82.3   ok      17,077     5,055       0       841         0         5,896      2810        2,899
+  4   judge pairs     85.2   ok      16,677     4,924       0       399         0         5,323      1827        1,372
+  5   judge pairs     87.0   ok      16,444     5,917       0       788         0         6,705      2524        2,583
+  6   judge pairs     89.6   ok      15,747     5,333       0       490         0         5,823      2096        1,557
+  7   judge pairs     91.7   ok      16,370     5,221       0       279         0         5,500      1637        900
+  8   judge pairs     93.4   ok      16,297     5,205       0       272         0         5,477      1856        853
+  9   judge pairs     95.3   ok      16,461     5,240       0       281         0         5,521      1677        853
+  10  judge pairs     97.0   ok      15,052     4,265       0       558         0         4,823      2282        1,910
+  11  judge pairs     99.3   ok      16,624     5,218       0       344         0         5,562      2075        1,184
+  12  judge pairs     101.4  ok      16,652     5,242       0       356         0         5,598      1833        1,117
+  13  judge pairs     103.2  ok      16,384     4,910       0       828         0         5,738      2573        2,932
+  14  judge pairs     105.9  ok      15,374     4,342       0       666         0         5,008      2356        2,192
+  15  judge pairs     108.3  ok      15,635     4,385       0       790         0         5,175      2520        2,373
+  16  judge pairs     110.9  ok      15,133     4,273       0       649         0         4,922      2383        2,117
+  17  judge pairs     113.4  ok      7,527      2,013       0       257         0         2,270      1616        871
+
+==============================================================================
+EMBEDDING CALLS
+==============================================================================
+calls 24, failed 0, texts 978 (claim topic texts embedded locally for matching)
+
+  #   texts  chars   latency ms  result  error
+  --  -----  ------  ----------  ------  -----
+  1   20     12,835  1365        ok
+  2   18     8,481   513         ok
+  3   17     7,290   533         ok
+  4   5      3,778   127         ok
+  5   16     4,748   234         ok
+  6   19     19,572  657         ok
+  7   3      2,764   95          ok
+  8   64     50,094  2531        ok
+  9   64     52,316  2584        ok
+  10  64     49,973  2569        ok
+  11  64     51,926  2608        ok
+  12  64     50,366  2578        ok
+  13  64     65,523  2637        ok
+  14  64     55,256  2561        ok
+  15  64     54,683  2565        ok
+  16  64     59,316  2577        ok
+  17  64     55,290  2539        ok
+  18  64     55,943  2533        ok
+  19  53     44,104  2101        ok
+  20  37     23,734  1331        ok
+  21  8      2,669   201         ok
+  22  12     9,135   426         ok
+  23  64     3,765   147         ok
+  24  2      155     6           ok
+
+==============================================================================
+FAILURES
+==============================================================================
+LLM attempt failures:
+  none
+Documents not fully read:
+  none
+Pair-judging problems:
+  none
+
+==============================================================================
+TIMING
+==============================================================================
+  stage                                         duration  share of wall time
+  --------------------------------------------  --------  ------------------
+  0. scan files, process new or changed ones    65.1s     57%
+  1. read every chunk, extract claims           16.9s     15%
+  2. match claims (local embeddings)            0.2s      0%
+  3. judge pairs, verify quotes, save findings  32.7s     28%
+  4. per-document verdicts                      0.0s      0%
+
+==============================================================================
+KNOWN LIMITS OF THIS RUN
+==============================================================================
+- Reading is all-or-nothing per document: if one batch fails after all retries, that document's claims are discarded and it counts as not read.
+- Candidate matching keeps at most 5 partners per claim (an existing default), so some comparable pairs are never judged.
+- The claim-extraction prompt lists business categories (capacity, supply, pricing, ...) and is not yet domain-agnostic.
+- Claims inside one document are also paired and judged; matching quality depends on how the model labels subject/metric/unit/period.
+- Exact agreements are trusted as corroboration without an LLM check.

@@ -1,0 +1,180 @@
+TEST RUN  20261111-122620  ledger-subject-gate-same-brochure-g31lite
+==============================================================================
+
+HOW THIS RUN WAS ACHIEVED
+1. Reading: every chunk of every processed document except Biochar Summary - HyveGeo Project Assessment.pdf, CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf, CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf, Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf, Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf, Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx, Hyve geo assest bulk_.xlsx, Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm, InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf, KSA Egypt Growth v2.pdf, Research Report - HyveGeo.pdf (database 'dataroom_run_20261111_ledger_subject_gate') was sent to the LLM in batches of up to 8,000 characters; each batch returns claims, kept only if their value appears in the cited chunk (existing claim extractor, no chunk or call limits).
+2. Ledger: accepted claims are stored in the claims table; claims are matched across and within documents by wording and by local embeddings (sentence-transformers/all-MiniLM-L6-v2), without a fixed number of documents or claims assumed.
+3. Judging: pairs that agree exactly count as corroboration; every other pair (conflicting, partial, contextual) goes to the LLM in batches of up to 12,000 characters with both source excerpts.
+4. Findings: a discrepancy is saved only if its two quotes are exact substrings of their chunks (checked in code); per-document verdicts were skipped by request.
+5. Model: gemini-3.1-flash-lite, temperature 0, up to 5 attempts per call honouring Google's retry delay; no step, tool-call or finding limits.
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+Run started   : 2026-11-11 12:26:20 (local)   finished: 12:26:46   wall time: 26.1s
+Config        : ledger-subject-gate-same-brochure-g31lite
+Database      : dataroom_run_20261111_ledger_subject_gate (documents were already processed; reused)
+Code version  : git a8c19bb + uncommitted changes   python 3.14.5
+Excluded      : Biochar Summary - HyveGeo Project Assessment.pdf, CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf, CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf, Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf, Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf, Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx, Hyve geo assest bulk_.xlsx, Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm, InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf, KSA Egypt Growth v2.pdf, Research Report - HyveGeo.pdf (by request: not read, not compared)
+Documents     : 2; fully read 2, incomplete 0
+Chunks        : 36 total; sent to the LLM 36 (headings are skipped by the extractor: 0)
+Claims        : 64 recorded, 6 rejected (value not found in cited chunk or unknown chunk id)
+Pairs         : 60 candidates; 31 agreed exactly (not sent to the LLM); 29 judged; verdicts {'contradiction': 1, 'consistent': 9, 'insufficient_evidence': 19}
+Findings      : 1 saved with verified quotes; 0 rejected (quotes missing or not exact)
+LLM calls     : 7 provider attempts (0 failed, 0 retries incl. invalid-output retries), 25.0s total, avg 3573ms
+Tokens        : prompt 31,021  completion 9,182  thinking 0  cached 0  total 40,203   (cost not computed: no price per token configured)
+Context/call  : prompt tokens min 2,098  avg 4,432  max 5,331
+
+==============================================================================
+NEW OR CHANGED FILES AND CLAIM RESET
+==============================================================================
+claims deleted at the start of this run: 64 (all claims in this run are newly extracted)
+scan: discovered 14, new 0, updated 0, unchanged 13, missing 0
+      duplicates skipped (same content): ['Main Picth Deck HyveGeo .pdf']
+
+no new or changed files had to be processed
+
+==============================================================================
+CONTRADICTIONS ONLY (classification = contradiction)
+==============================================================================
+1 contradiction(s). Full evidence for each is in the findings report below (search for the finding id).
+
+- [fnd_5bfd5f52834641d8] severity informational, confidence 0.5: contradiction: Power supply
+    contradiction: Power supply
+
+==============================================================================
+FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)
+==============================================================================
+Fields follow the Finding schema: title, description, classification, severity, confidence, evidence_status, verification_status, materiality_reasoning, business_impact, unresolved_questions; evidence rows follow the Evidence schema.
+Findings: 1   by classification: {'contradiction': 1}   by severity: {'informational': 1}
+
+--- FINDING 1 of 1  [fnd_5bfd5f52834641d8] ------------------------------
+title                 : contradiction: Power supply
+classification        : contradiction
+severity              : informational
+confidence            : 0.5
+evidence_status       : adequate
+verification_status   : verified
+description           : contradiction: Power supply
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eac9df5370614212   (chunk_index 10)
+      location : page 11
+      quote    : "175W/m² power supply"
+      relevance: 175W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 175W/m² power supply | subject=Standard Warehouses; metric=Power supply; value=175; unit=W/m²
+  [2] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_a8a90eef8fce4316   (chunk_index 10)
+      location : page 11
+      quote    : "185W/m² power supply"
+      relevance: 185W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 185W/m² power supply | subject=Standard Warehouses; metric=Power supply; value=185; unit=W/m²
+
+
+==============================================================================
+COVERAGE AND PER-DOCUMENT VERDICTS
+==============================================================================
+Coverage: 'read' = chunks the LLM was shown. A document counts as fully read only if every batch succeeded (all-or-nothing per document).
+
+  document                                                    chunks  read  fully read  claims  LLM calls  tokens  extract s  verdict  reason
+  ----------------------------------------------------------  ------  ----  ----------  ------  ---------  ------  ---------  -------  ---------------------------------------------
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  18      18    yes         32      1          8,230   9.1        skipped  verdicts skipped by request (--skip-verdicts)
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  18      18    yes         32      1          8,394   7.8        skipped  verdicts skipped by request (--skip-verdicts)
+
+==============================================================================
+CLAIM LEDGER
+==============================================================================
+claims recorded 64, rejected 6
+
+Per document (paired = has a comparable claim elsewhere; corroborated = same value stated elsewhere; unpaired = nothing comparable found):
+  document                                                    claims  paired  corroborated  unpaired  pairs judged  findings
+  ----------------------------------------------------------  ------  ------  ------------  --------  ------------  --------
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  32      32      31            0         29            1
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  32      32      31            0         29            1
+
+Rejected claims by reason (first 15):
+  - value '607 to 5,939' not found in cited chunk
+  - value '395 to 7,916' not found in cited chunk
+  - value '647 to 5,479' not found in cited chunk
+  - value '607-5,939' not found in cited chunk
+  - value '395-7,916' not found in cited chunk
+  - value '647-5,479' not found in cited chunk
+
+==============================================================================
+PAIR MATCHING AND JUDGING
+==============================================================================
+candidate pairs: 60
+  by relation hint : {'exact': 31, 'conflicting': 9, 'partial': 20}
+  by match route   : {'lexical': 56, 'embedding': 4}
+  across documents : 60   inside one document: 0
+exact agreements (corroboration, no LLM): 31
+judged by the LLM: 29 in 5 calls (0 batches failed)
+LLM verdicts: {'contradiction': 1, 'consistent': 9, 'insufficient_evidence': 19}
+findings saved 1; rejected 0
+
+Rejected findings (first 15):
+  none
+
+==============================================================================
+LLM CALLS: tokens, context size, latency, failures
+==============================================================================
+Per phase:
+  phase           attempts  failed  prompt tok  completion tok  thinking tok  avg ctx tok  max ctx tok  avg ms  p95 ms  total s
+  --------------  --------  ------  ----------  --------------  ------------  -----------  -----------  ------  ------  -------
+  extract claims  2         0       8,589       8,035           0             4,294        4,371        8354    9004    16.7
+  judge pairs     5         0       22,432      1,147           0             4,486        5,331        1660    2340    8.3
+
+Every provider attempt (context = what was sent; tokens as counted by the API):
+  #  phase           at s  result  ctx chars  ctx tokens  cached  completion  thinking  total tok  latency ms  resp chars  error
+  -  --------------  ----  ------  ---------  ----------  ------  ----------  --------  ---------  ----------  ----------  -----
+  1  extract claims  0.2   ok      13,484     4,218       0       4012        0         8,230      9004        10,765
+  2  extract claims  9.2   ok      14,157     4,371       0       4023        0         8,394      7705        10,749
+  3  judge pairs     17.7  ok      15,457     4,437       0       195         0         4,632      1512        545
+  4  judge pairs     19.3  ok      16,684     5,322       0       199         0         5,521      1422        599
+  5  judge pairs     20.7  ok      16,715     5,331       0       416         0         5,747      2340        1,481
+  6  judge pairs     23.0  ok      17,052     5,244       0       196         0         5,440      1646        588
+  7  judge pairs     24.7  ok      7,707      2,098       0       141         0         2,239      1381        586
+
+==============================================================================
+EMBEDDING CALLS
+==============================================================================
+calls 1, failed 0, texts 64 (claim topic texts embedded locally for matching)
+
+  #  texts  chars  latency ms  result  error
+  -  -----  -----  ----------  ------  -----
+  1  64     4,788  643         ok
+
+==============================================================================
+FAILURES
+==============================================================================
+LLM attempt failures:
+  none
+Documents not fully read:
+  none
+Pair-judging problems:
+  none
+
+==============================================================================
+TIMING
+==============================================================================
+  stage                                         duration  share of wall time
+  --------------------------------------------  --------  ------------------
+  0. scan files, process new or changed ones    0.1s      0%
+  1. read every chunk, extract claims           16.9s     65%
+  2. match claims (local embeddings)            0.7s      3%
+  3. judge pairs, verify quotes, save findings  8.3s      32%
+  4. per-document verdicts                      0.0s      0%
+
+==============================================================================
+KNOWN LIMITS OF THIS RUN
+==============================================================================
+- Reading is all-or-nothing per document: if one batch fails after all retries, that document's claims are discarded and it counts as not read.
+- Candidate matching keeps at most 5 partners per claim (an existing default), so some comparable pairs are never judged.
+- The claim-extraction prompt lists business categories (capacity, supply, pricing, ...) and is not yet domain-agnostic.
+- Claims inside one document are also paired and judged; matching quality depends on how the model labels subject/metric/unit/period.
+- Exact agreements are trusted as corroboration without an LLM check.

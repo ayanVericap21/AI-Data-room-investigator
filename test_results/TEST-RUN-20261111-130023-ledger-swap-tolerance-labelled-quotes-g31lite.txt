@@ -1,0 +1,388 @@
+TEST RUN  20261111-130023  ledger-swap-tolerance-labelled-quotes-g31lite
+==============================================================================
+
+HOW THIS RUN WAS ACHIEVED
+1. Reading: every chunk of every processed document except Biochar Summary - HyveGeo Project Assessment.pdf, CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf, CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf, Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf, Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf, Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx, Hyve geo assest bulk_.xlsx, Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm, InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf, KSA Egypt Growth v2.pdf, Research Report - HyveGeo.pdf (database 'dataroom_run_20261111_ledger_judge_fix2') was sent to the LLM in batches of up to 8,000 characters; each batch returns claims, kept only if their value appears in the cited chunk (existing claim extractor, no chunk or call limits).
+2. Ledger: accepted claims are stored in the claims table; claims are matched across and within documents by wording and by local embeddings (sentence-transformers/all-MiniLM-L6-v2), without a fixed number of documents or claims assumed.
+3. Judging: pairs that agree exactly count as corroboration; every other pair (conflicting, partial, contextual) goes to the LLM in batches of up to 12,000 characters with both source excerpts.
+4. Findings: a discrepancy is saved only if its two quotes are exact substrings of their chunks (checked in code); per-document verdicts were skipped by request.
+5. Model: gemini-3.1-flash-lite, temperature 0, up to 5 attempts per call honouring Google's retry delay; no step, tool-call or finding limits.
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+Run started   : 2026-11-11 13:00:23 (local)   finished: 13:02:16   wall time: 113.0s
+Config        : ledger-swap-tolerance-labelled-quotes-g31lite
+Database      : dataroom_run_20261111_ledger_judge_fix2 (documents were already processed; reused)
+Code version  : git a8c19bb + uncommitted changes   python 3.14.5
+Excluded      : Biochar Summary - HyveGeo Project Assessment.pdf, CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf, CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf, Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf, Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf, Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx, Hyve geo assest bulk_.xlsx, Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm, InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf, KSA Egypt Growth v2.pdf, Research Report - HyveGeo.pdf (by request: not read, not compared)
+Documents     : 2; fully read 2, incomplete 0
+Chunks        : 36 total; sent to the LLM 36 (headings are skipped by the extractor: 0)
+Claims        : 70 recorded, 0 rejected (value not found in cited chunk or unknown chunk id)
+Pairs         : 87 candidates; 28 agreed exactly (not sent to the LLM); 59 judged; verdicts {'contradiction': 12, 'consistent': 39, 'contextual_difference': 8}
+Findings      : 8 saved with verified quotes; 12 rejected (quotes missing or not exact)
+LLM calls     : 13 provider attempts (1 failed, 1 retries incl. invalid-output retries), 110.6s total, avg 9047ms
+Tokens        : prompt 55,373  completion 12,909  thinking 0  cached 0  total 68,282   (cost not computed: no price per token configured)
+Context/call  : prompt tokens min 1,650  avg 4,614  max 5,531
+
+==============================================================================
+NEW OR CHANGED FILES AND CLAIM RESET
+==============================================================================
+claims deleted at the start of this run: 67 (all claims in this run are newly extracted)
+scan: discovered 14, new 0, updated 0, unchanged 13, missing 0
+      duplicates skipped (same content): ['Main Picth Deck HyveGeo .pdf']
+
+no new or changed files had to be processed
+
+==============================================================================
+CONTRADICTIONS ONLY (classification = contradiction)
+==============================================================================
+4 contradiction(s). Full evidence for each is in the findings report below (search for the finding id).
+
+- [fnd_0a4d609779074384] severity medium, confidence 1.0: Flex Units clear height discrepancy
+    Document A states a clear height of 10m, while Document B states 12m for the same Flex Units.
+- [fnd_55e2d6359bdb40e6] severity medium, confidence 1.0: Standard Warehouses clear height discrepancy
+    Document A states a clear height of 8.5m, while Document B states 9.5m for the same Standard Warehouses.
+- [fnd_494f1557b15a4ff2] severity medium, confidence 1.0: Standard Warehouses power supply discrepancy
+    Document A states a power supply of 175W/m², while Document B states 185W/m² for the same Standard Warehouses.
+- [fnd_60918c9b1db7445a] severity medium, confidence 1.0: Standard Warehouses raised floor level discrepancy
+    The documents provide different values for the raised floor level of Standard Warehouses: 1.5m in the V3 Short (2) document and 1.3m in the V3 Short (2) - Original document.
+
+==============================================================================
+FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)
+==============================================================================
+Fields follow the Finding schema: title, description, classification, severity, confidence, evidence_status, verification_status, materiality_reasoning, business_impact, unresolved_questions; evidence rows follow the Evidence schema.
+Findings: 8   by classification: {'contradiction': 4, 'contextual_difference': 4}   by severity: {'medium': 4, 'low': 2, 'informational': 2}
+
+--- FINDING 1 of 8  [fnd_0a4d609779074384] ------------------------------
+title                 : Flex Units clear height discrepancy
+classification        : contradiction
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Document A states a clear height of 10m, while Document B states 12m for the same Flex Units.
+materiality_reasoning : Clear height is a critical specification for warehouse utility and storage capacity.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_e7622c75649b41b9   (chunk_index 6)
+      location : page 7
+      quote    : "10m clear height"
+      relevance: 10m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 10m clear height | subject=Flex Units; metric=Clear height; value=10; unit=m
+  [2] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_055db6f150ea414c   (chunk_index 6)
+      location : page 7
+      quote    : "12m clear height"
+      relevance: 12m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 12m clear height | subject=Flex Units; metric=Clear height; value=12; unit=m
+
+--- FINDING 2 of 8  [fnd_55e2d6359bdb40e6] ------------------------------
+title                 : Standard Warehouses clear height discrepancy
+classification        : contradiction
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Document A states a clear height of 8.5m, while Document B states 9.5m for the same Standard Warehouses.
+materiality_reasoning : Clear height is a critical specification for warehouse utility and storage capacity.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_a8a90eef8fce4316   (chunk_index 10)
+      location : page 11
+      quote    : "8.5m clear height"
+      relevance: 8.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 8.5m clear height | subject=Standard Warehouses; metric=Clear height; value=8.5; unit=m
+  [2] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_57c073f90d054108   (chunk_index 10)
+      location : page 11
+      quote    : "9.5m clear height"
+      relevance: 9.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 9.5m clear height | subject=Standard Warehouses; metric=Clear height; value=9.5; unit=m
+
+--- FINDING 3 of 8  [fnd_494f1557b15a4ff2] ------------------------------
+title                 : Standard Warehouses power supply discrepancy
+classification        : contradiction
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Document A states a power supply of 175W/m², while Document B states 185W/m² for the same Standard Warehouses.
+materiality_reasoning : Power supply capacity is a critical factor for industrial tenants planning their machinery and operations.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_57c073f90d054108   (chunk_index 10)
+      location : page 11
+      quote    : "175W/m² power supply"
+      relevance: 175W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 175W/m² power supply | subject=Standard Warehouses; metric=Power supply; value=175; unit=W/m²
+  [2] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_a8a90eef8fce4316   (chunk_index 10)
+      location : page 11
+      quote    : "185W/m² power supply"
+      relevance: 185W/m² power supply
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 185W/m² power supply | subject=Standard Warehouses; metric=Power supply; value=185; unit=W/m²
+
+--- FINDING 4 of 8  [fnd_60918c9b1db7445a] ------------------------------
+title                 : Standard Warehouses raised floor level discrepancy
+classification        : contradiction
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : The documents provide different values for the raised floor level of Standard Warehouses: 1.5m in the V3 Short (2) document and 1.3m in the V3 Short (2) - Original document.
+materiality_reasoning : The raised floor level is a key technical specification for warehouse facilities, and a discrepancy could impact operational planning.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_57c073f90d054108   (chunk_index 10)
+      location : page 11
+      quote    : "1.5m raised floor level"
+      relevance: 1.5m raised floor level
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 1.5m raised floor level | subject=Standard Warehouses; metric=Raised floor level; value=1.5; unit=m
+  [2] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_a8a90eef8fce4316   (chunk_index 10)
+      location : page 11
+      quote    : "1.3m raised floor level"
+      relevance: 1.3m raised floor level
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 1.3m raised floor level | subject=Standard Warehouses; metric=Raised floor level; value=1.3; unit=m
+
+--- FINDING 5 of 8  [fnd_922fd91f1b8047a0] ------------------------------
+title                 : Difference in unit size scope
+classification        : contextual_difference
+severity              : low
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Document A refers to the general range of all unit types (Flex, Standard, Light Industrial) starting from 395m2, whereas Document B specifies the size range specifically for 'Flex Units' as 607m2 to 5,939m2.
+materiality_reasoning : The difference is explained by the scope: one refers to the entire park's unit offerings, while the other refers specifically to the Flex Unit category.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_319907cd80414e56   (chunk_index 1)
+      location : page 2
+      quote    : "Unit Sizes from 395m2"
+      relevance: Unit sizes from 395m2
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Unit sizes from 395m2 | subject=Unit; metric=Size range; value=395; unit=m2
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_e7622c75649b41b9   (chunk_index 6)
+      location : page 7
+      quote    : "Units from 607 m2 scalable to up to 5,939 m2"
+      relevance: Units from 607 m2 scalable to up to 5,939 m2
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: Units from 607 m2 scalable to up to 5,939 m2 | subject=Flex Units; metric=Size range; value=607 to 5,939; unit=m2
+
+--- FINDING 6 of 8  [fnd_090d9178c0684560] ------------------------------
+title                 : Difference in unit size scope
+classification        : contextual_difference
+severity              : low
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Document A refers to the general range of all unit types (Flex, Standard, Light Industrial) starting from 395m2, whereas Document B specifies the size range specifically for 'Flex Units' as 607m2 to 5,939m2.
+materiality_reasoning : The difference is explained by the scope: one refers to the entire park's unit offerings, while the other refers specifically to the Flex Unit category.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_319907cd80414e56   (chunk_index 1)
+      location : page 2
+      quote    : "Unit Sizes from 395m2"
+      relevance: Unit sizes from 395m2
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Unit sizes from 395m2 | subject=Unit; metric=Size range; value=395; unit=m2
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_055db6f150ea414c   (chunk_index 6)
+      location : page 7
+      quote    : "Units from 607 m2 scalable to up to 5,939 m2"
+      relevance: Units from 607 m2 scalable to up to 5,939 m2
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Units from 607 m2 scalable to up to 5,939 m2 | subject=Flex Units; metric=Size range; value=607-5,939; unit=m2
+
+--- FINDING 7 of 8  [fnd_9d20b2c6a2d44812] ------------------------------
+title                 : Different metrics for Al Maktoum Airport
+classification        : contextual_difference
+severity              : informational
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to the travel time (27 MIN) while Claim B refers to the distance (52 KM) from KEZAD Logistics Park Phase 4 to Al Maktoum Airport.
+materiality_reasoning : The claims describe different metrics (time vs distance) for the same location.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_9bd97bcf9ea24d20   (chunk_index 3)
+      location : page 4
+      quote    : "27 MIN/52 KM AL MAKTOUM AIRPORT"
+      relevance: 27 MIN/52 KM AL MAKTOUM AIRPORT
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 27 MIN/52 KM AL MAKTOUM AIRPORT | subject=Al Maktoum Airport; metric=Travel time from KEZAD Logistics Park Phase 4; value=27; unit=MIN
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_cce064cc49cc482f   (chunk_index 3)
+      location : page 4
+      quote    : "27 MIN/52 KM AL MAKTOUM AIRPORT"
+      relevance: 27 MIN/52 KM AL MAKTOUM AIRPORT
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 27 MIN/52 KM AL MAKTOUM AIRPORT | subject=Al Maktoum Airport; metric=Distance from KEZAD Logistics Park Phase 4; value=52; unit=KM
+
+--- FINDING 8 of 8  [fnd_8dd587a1529a469a] ------------------------------
+title                 : Different metrics for Abu Dhabi Airport
+classification        : contextual_difference
+severity              : informational
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to the distance (35 KM) while Claim B refers to the travel time (20 MIN) from KEZAD Logistics Park Phase 4 to Abu Dhabi Airport.
+materiality_reasoning : The claims describe different metrics (distance vs time) for the same location.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_cce064cc49cc482f   (chunk_index 3)
+      location : page 4
+      quote    : "20 MIN/35 KM ABU DHABI AIRPORT"
+      relevance: 20 MIN/35 KM ABU DHABI AIRPORT
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 20 MIN/35 KM ABU DHABI AIRPORT | subject=Abu Dhabi Airport; metric=Distance from KEZAD Logistics Park Phase 4; value=35; unit=KM
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_9bd97bcf9ea24d20   (chunk_index 3)
+      location : page 4
+      quote    : "20 MIN/35 KM ABU DHABI AIRPORT"
+      relevance: 20 MIN/35 KM ABU DHABI AIRPORT
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 20 MIN/35 KM ABU DHABI AIRPORT | subject=Abu Dhabi Airport; metric=Travel time from KEZAD Logistics Park Phase 4; value=20; unit=MIN
+
+
+==============================================================================
+COVERAGE AND PER-DOCUMENT VERDICTS
+==============================================================================
+Coverage: 'read' = chunks the LLM was shown. A document counts as fully read only if every batch succeeded (all-or-nothing per document).
+
+  document                                                    chunks  read  fully read  claims  LLM calls  tokens  extract s  verdict  reason
+  ----------------------------------------------------------  ------  ----  ----------  ------  ---------  ------  ---------  -------  ---------------------------------------------
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  18      18    yes         35      1          8,230   20.3       skipped  verdicts skipped by request (--skip-verdicts)
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  18      18    yes         35      1          8,376   19.0       skipped  verdicts skipped by request (--skip-verdicts)
+
+==============================================================================
+CLAIM LEDGER
+==============================================================================
+claims recorded 70, rejected 0
+
+Per document (paired = has a comparable claim elsewhere; corroborated = same value stated elsewhere; unpaired = nothing comparable found):
+  document                                                    claims  paired  corroborated  unpaired  pairs judged  findings
+  ----------------------------------------------------------  ------  ------  ------------  --------  ------------  --------
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  35      35      28            0         46            7
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  35      35      28            0         46            8
+
+Rejected claims by reason (first 15):
+  none
+
+==============================================================================
+PAIR MATCHING AND JUDGING
+==============================================================================
+candidate pairs: 87
+  by relation hint : {'exact': 28, 'conflicting': 25, 'partial': 34}
+  by match route   : {'lexical': 79, 'embedding': 8}
+  across documents : 61   inside one document: 26
+exact agreements (corroboration, no LLM): 28
+judged by the LLM: 59 in 10 calls (0 batches failed)
+LLM verdicts: {'contradiction': 12, 'consistent': 39, 'contextual_difference': 8}
+findings saved 8; rejected 12
+
+Rejected findings (first 15):
+  - contradiction pair 3: the quotes do not show the claims' values ('647 to 5,479' and '647-5,479')
+  - contradiction pair 4: the quotes do not show the claims' values ('9.5' and '1.3')
+  - contradiction pair 0: the quotes do not show the claims' values ('10' and '1.3')
+  - contradiction pair 1: the quotes do not show the claims' values ('12' and '1.3')
+  - contextual_difference 'Different metrics for Al Maktoum Airport': validation_failed: Finding not saved. a contextual_difference compares statements, so at least two different quoted passages are required
+  - contextual_difference 'Different metrics for Abu Dhabi Airport': validation_failed: Finding not saved. a contextual_difference compares statements, so at least two different quoted passages are required
+  - contradiction pair 4: the quotes do not show the claims' values ('1.3' and '50')
+  - contradiction pair 5: the quotes do not show the claims' values ('1.3' and '50')
+  - contradiction pair 1: the quotes do not show the claims' values ('1.5' and '50')
+  - contradiction pair 4: the quotes do not show the claims' values ('1.3' and '50')
+  - contextual_difference 'Difference in unit size scope': validation_failed: Finding not saved. evidence 2: the quote is not in chunk 'chk_9abb3aebfb544dbd' (CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.p
+  - contextual_difference pair 0: the quotes do not show the claims' values ('395' and '607-5,939')
+
+==============================================================================
+LLM CALLS: tokens, context size, latency, failures
+==============================================================================
+Per phase:
+  phase           attempts  failed  prompt tok  completion tok  thinking tok  avg ctx tok  max ctx tok  avg ms  p95 ms  total s
+  --------------  --------  ------  ----------  --------------  ------------  -----------  -----------  ------  ------  -------
+  extract claims  2         0       8,582       8,024           0             4,291        4,364        19570   20206   39.1
+  judge pairs     11        1       46,791      4,885           0             4,679        5,531        6942    28640   71.4
+
+Every provider attempt (context = what was sent; tokens as counted by the API):
+  #   phase           at s   result  ctx chars  ctx tokens  cached  completion  thinking  total tok  latency ms  resp chars  error
+  --  --------------  -----  ------  ---------  ----------  ------  ----------  --------  ---------  ----------  ----------  ------------------------------------------------------------
+  1   extract claims  0.2    ok      13,484     4,218       0       4012        0         8,230      20206       10,765
+  2   extract claims  20.5   ok      14,169     4,364       0       4012        0         8,376      18934       10,773
+  3   judge pairs     40.4   ok      16,564     4,641       0       675         0         5,316      3112        2,355
+  4   judge pairs     43.6   ok      16,316     4,605       0       480         0         5,085      5720        1,650
+  5   judge pairs     49.3   ok      16,465     4,481       0       825         0         5,306      5014        2,854
+  6   judge pairs     54.3   ok      17,518     5,510       0       293         0         5,803      28640       827
+  7   judge pairs     83.0   ok      17,596     5,531       0       781         0         6,312      4666        2,593
+  8   judge pairs     87.7   ok      17,522     5,516       0       181         0         5,697      3142        533
+  9   judge pairs     90.8   ok      17,557     5,519       0       307         0         5,826      5023        953
+  10  judge pairs     95.9   ok      16,414     4,745       0       455         0         5,200      3163        1,532
+  11  judge pairs     99.0   FAIL    16,495     0           0       0           0         0          1992        0           Google API 503: { "error": { "code": 503, "message": "Thi...
+  12  judge pairs     102.0  ok      16,495     4,593       0       673         0         5,266      8244        2,282
+  13  judge pairs     110.3  ok      6,448      1,650       0       215         0         1,865      2701        820
+
+==============================================================================
+EMBEDDING CALLS
+==============================================================================
+calls 2, failed 0, texts 70 (claim topic texts embedded locally for matching)
+
+  #  texts  chars  latency ms  result  error
+  -  -----  -----  ----------  ------  -----
+  1  64     4,704  723         ok
+  2  6      426    21          ok
+
+==============================================================================
+FAILURES
+==============================================================================
+LLM attempt failures:
+  judge pairs: 1992ms Google API 503: { "error": { "code": 503, "message": "This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try ag...
+Documents not fully read:
+  none
+Pair-judging problems:
+  none
+
+==============================================================================
+TIMING
+==============================================================================
+  stage                                         duration  share of wall time
+  --------------------------------------------  --------  ------------------
+  0. scan files, process new or changed ones    0.2s      0%
+  1. read every chunk, extract claims           39.4s     35%
+  2. match claims (local embeddings)            0.9s      1%
+  3. judge pairs, verify quotes, save findings  72.6s     64%
+  4. per-document verdicts                      0.0s      0%
+
+==============================================================================
+KNOWN LIMITS OF THIS RUN
+==============================================================================
+- Reading is all-or-nothing per document: if one batch fails after all retries, that document's claims are discarded and it counts as not read.
+- Candidate matching keeps at most 5 partners per claim (an existing default), so some comparable pairs are never judged.
+- The claim-extraction prompt lists business categories (capacity, supply, pricing, ...) and is not yet domain-agnostic.
+- Claims inside one document are also paired and judged; matching quality depends on how the model labels subject/metric/unit/period.
+- Exact agreements are trusted as corroboration without an LLM check.

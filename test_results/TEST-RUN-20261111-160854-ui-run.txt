@@ -1,0 +1,970 @@
+TEST RUN  20261111-160854  ui-run
+==============================================================================
+
+HOW THIS RUN WAS ACHIEVED
+1. Reading: every chunk of every processed document except Biochar Summary - HyveGeo Project Assessment.pdf, Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf, Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf, Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx, Hyve geo assest bulk_.xlsx, Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm, InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf, KSA Egypt Growth v2.pdf, Research Report - HyveGeo.pdf (database 'data_room') was sent to the LLM in batches of up to 8,000 characters; each batch returns claims, kept only if their value appears in the cited chunk (existing claim extractor, no chunk or call limits).
+2. Ledger: accepted claims are stored in the claims table; the claims are sorted by label and sent to the LLM in batches of up to 12,000 characters, which groups the ones that state the same attribute of the same subject (no code pairing, no fixed number of documents or claims assumed).
+3. Judging: pairs that agree exactly count as corroboration; every other pair (conflicting, partial, contextual) goes to the LLM in batches of up to 12,000 characters with both source excerpts.
+4. Findings: a discrepancy is saved only if its two quotes are exact substrings of their chunks (checked in code); per-document verdicts were skipped by request.
+5. Model: gemini-3.1-flash-lite, temperature 0, up to 5 attempts per call honouring Google's retry delay; no step, tool-call or finding limits.
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+Run started   : 2026-11-11 16:08:54 (local)   finished: 16:11:33   wall time: 159.0s
+Config        : ui-run
+Database      : data_room (documents were already processed; reused)
+Code version  : git a8c19bb + uncommitted changes   python 3.14.5
+Excluded      : Biochar Summary - HyveGeo Project Assessment.pdf, Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf, Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf, Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx, Hyve geo assest bulk_.xlsx, Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm, InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf, KSA Egypt Growth v2.pdf, Research Report - HyveGeo.pdf (by request: not read, not compared)
+Documents     : 4; fully read 4, incomplete 0
+Chunks        : 68 total; sent to the LLM 68 (headings are skipped by the extractor: 0)
+Claims        : 155 recorded, 1 rejected (value not found in cited chunk or unknown chunk id)
+Extraction    : up to any number of chunks per call (and 8,000 characters); running vocabulary off; coverage check off
+Pairs         : 89 candidates; 62 agreed exactly (not sent to the LLM); 27 judged; verdicts {'contextual_difference': 20, 'contradiction': 7}
+Findings      : 27 saved with verified quotes; 0 rejected (quotes missing or not exact)
+LLM calls     : 12 provider attempts (0 failed, 0 retries incl. invalid-output retries), 71.4s total, avg 5953ms
+Tokens        : prompt 50,040  completion 24,760  thinking 0  cached 0  total 74,800   (cost not computed: no price per token configured)
+Context/call  : prompt tokens min 2,470  avg 4,170  max 4,786
+
+==============================================================================
+NEW OR CHANGED FILES AND CLAIM RESET
+==============================================================================
+claims deleted at the start of this run: 0 (all claims in this run are newly extracted)
+scan: discovered 14, new 0, updated 0, unchanged 13, missing 0
+      duplicates skipped (same content): ['Main Picth Deck HyveGeo .pdf']
+
+  new or changed file                                                     status     chunks  extract s  chunk ms  save ms  embed s  note
+  ----------------------------------------------------------------------  ---------  ------  ---------  --------  -------  -------  ------------------------------------------------------------
+  Biochar Summary - HyveGeo Project Assessment.pdf                        processed  20      1.4        0         62       1.8
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - O  processed  18      4.2        1         60       0.7      Table detection skipped on 2 artwork-heavy pages (over 10...
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf  processed  18      3.9        2         63       0.8      Table detection skipped on 2 artwork-heavy pages (over 10...
+  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version -   processed  15      5.1        1         58       0.7      Table detection skipped on 1 artwork-heavy pages (over 10...
+  CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short   processed  17      3.3        1         64       0.7      Table detection skipped on 5 artwork-heavy pages (over 10...
+  Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf         processed  5       0.5        0         11       0.2
+  Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf                             processed  16      3.6        2         60       0.3
+  Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.x  processed  19      0.1        1         57       0.9
+  Hyve geo assest bulk_.xlsx                                              processed  3       0.4        0         57       0.2
+  Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm           processed  757     7.8        14        1128     37.1
+  InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf                processed  37      5.2        2         65       1.7
+  KSA Egypt Growth v2.pdf                                                 processed  8       1.6        1         10       0.3
+  Research Report - HyveGeo.pdf                                           processed  12      1.5        1         56       0.7
+
+==============================================================================
+CONTRADICTIONS ONLY (classification = contradiction)
+==============================================================================
+7 contradiction(s). Each lists its evidence (document, location, exact quote); the full detail is in the findings report below (search for the finding id).
+Locations: 'page N' is the PDF page number (the first page of the file is 1), which can differ from a page number printed on the page itself.
+
+- [fnd_d9f3fda9150345aa] severity high, confidence 0.9: Conflicting floor loading capacity for Cold Store Convertible Warehouses
+    Claim A states a floor loading capacity of 30kN/m2 for Cold Store Convertible Warehouses in Musaffah 1, while Claim B states 50kN/m2 for the same type of warehouse in Free Zone Phase 3. While the locations differ, the...
+    evidence: CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf | page 16 | chunk chk_9761cf29f3d9474e | "30kN/m2 floor loading capacity/FM2 floor"
+    evidence: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf | page 13 | chunk chk_33338345f8ee462e | "50kN/m² floor loading capacity/FM2 floor"
+- [fnd_7e7c10d617b94ff5] severity high, confidence 0.9: Conflicting floor loading capacity for Light Industrial Units
+    Claim A states a floor loading capacity of 30kN/m2 for Light Industrial Units in Phase 4 Expansion, while Claim B states 50/kN m2 for the same type of unit in Musaffah 1. This represents a direct conflict in the techn...
+    evidence: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf | page 15 | chunk chk_bb322114be2945b0 | "30kN/m² floor loading capacity/FM4 floor"
+    evidence: CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf | page 13 | chunk chk_8b13df5a386b47a6 | "50/kN m2 floor loading capacity / FM4 floor"
+- [fnd_170264e05df4480e] severity high, confidence 0.9: Conflicting floor loading capacity for Light Industrial Units
+    Claim A states a floor loading capacity of 30kN/m2 for Light Industrial Units in Phase 4 Expansion, while Claim B states 50/kN m2 for the same type of unit in Musaffah 1. This represents a direct conflict in the techn...
+    evidence: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf | page 15 | chunk chk_eeb74201fd8a455e | "30kN/m² floor loading capacity/FM4 floor"
+    evidence: CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf | page 13 | chunk chk_8b13df5a386b47a6 | "50/kN m2 floor loading capacity / FM4 floor"
+- [fnd_22c10a52d6484e40] severity high, confidence 0.9: Conflicting floor loading capacity for Light Industrial Units
+    Claim A states a floor loading capacity of 50/kN m2 for Light Industrial Units in Musaffah 1, while Claim B states 30kN/m2 for the same type of unit in Free Zone Phase 3. This represents a direct conflict in the techn...
+    evidence: CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf | page 13 | chunk chk_8b13df5a386b47a6 | "50/kN m2 floor loading capacity / FM4 floor"
+    evidence: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf | page 10 | chunk chk_40374ee826e3428f | "30kN/m² floor loading capacity / FM4 floor"
+- [fnd_094c206aaed94fdc] severity medium, confidence 1.0: Contradictory clear height for Flex Units
+    The same document (KEZAD Logistics Park Phase 4 Expansion V3) states the clear height for Flex Units as 10m on page 7 and 12m on page 7.
+    evidence: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf | page 7 | chunk chk_de096ef8451e404c | "10m clear height"
+    evidence: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf | page 7 | chunk chk_408ff877557b4594 | "12m clear height"
+- [fnd_fa866d2ce13446e1] severity medium, confidence 1.0: Conflicting clear height for Standard Warehouses in KEZAD Logistics Park Phase 4 Expansion
+    Claim A states a 9.5m clear height for Standard Warehouses in KEZAD Logistics Park Phase 4 Expansion, while Claim B states an 8.5m clear height for the same facility type in the same location.
+    evidence: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf | page 11 | chunk chk_f2a9cbb0888c411e | "9.5m clear height"
+    evidence: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf | page 11 | chunk chk_edb66dd64c50433d | "8.5m clear height"
+- [fnd_27d8f01d6c7d49f1] severity medium, confidence 1.0: Contradictory raised floor level for KEZAD Logistics Park Phase 4 Expansion
+    Claim A states a 1.3m raised floor level for the KEZAD Logistics Park Phase 4 Expansion, while Claim B states a 1.5m raised floor level for the same facility.
+    evidence: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf | page 11 | chunk chk_edb66dd64c50433d | "1.3m raised floor level"
+    evidence: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf | page 11 | chunk chk_f2a9cbb0888c411e | "1.5m raised floor level"
+
+==============================================================================
+FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)
+==============================================================================
+Fields follow the Finding schema: title, description, classification, severity, confidence, evidence_status, verification_status, materiality_reasoning, business_impact, unresolved_questions; evidence rows follow the Evidence schema.
+Findings: 27   by classification: {'contextual_difference': 20, 'contradiction': 7}   by severity: {'medium': 16, 'low': 7, 'high': 4}
+
+--- FINDING 1 of 27  [fnd_8bd5227254dc464e] ------------------------------
+title                 : Different drive time conditions for population access
+classification        : contextual_difference
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A states access to over 75% of the UAE population within a 90-minute drive, while Claim B states access to over 75% of the UAE population within a 2-hour drive. The difference is explained by the different drive time conditions specified in each document.
+materiality_reasoning : The difference in drive time significantly changes the scope of the market access claim.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_649d508ac6f74b4e   (chunk_index 3)
+      location : page 4
+      quote    : "access to over 75% of UAE’s population within a 90-minutes’ drive"
+      relevance: provides access to over 75% of UAE’s population within a 90-minutes’ drive along three major highways
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: provides access to over 75% of UAE’s population within a 90-minutes’ drive along three major highways | subject=UAE population; metric=Access; value=75; unit=%; conditions=within a 90-minutes’ drive along three major highways
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_22da1052a22345a8   (chunk_index 3)
+      location : page 3
+      quote    : "access to over 75% of UAE’s population within a 2-hours’ drive"
+      relevance: provides access to over 75% of UAE’s population within a 2-hours’ drive
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: provides access to over 75% of UAE’s population within a 2-hours’ drive | subject=UAE population; metric=access; value=75; unit=%; conditions=within a 2-hours’ drive
+
+--- FINDING 2 of 27  [fnd_679e9ee71f424127] ------------------------------
+title                 : Different built-up areas for different logistics parks
+classification        : contextual_difference
+severity              : low
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to KEZAD Logistics Park Musaffah 1 with a built-up area of 143,567m2, while Claim B refers to KEZAD Logistics Park Phase 4 Expansion with a built-up area of 19,334m2. These are distinct facilities.
+materiality_reasoning : The values refer to different physical locations.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf
+      chunk    : chk_be6c92d9a97c4bf7   (chunk_index 1)
+      location : page 2
+      quote    : "Built-up Area
+143,567m2"
+      relevance: Built-up Area 143,567m2
+      assessment: CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf states: Built-up Area 143,567m2 | subject=Built-up Area; metric=Area; value=143,567; unit=m2
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_a884db0abe5943c5   (chunk_index 1)
+      location : page 2
+      quote    : "Built-up Area
+19,334m2"
+      relevance: Built-up Area 19,334m2
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: Built-up Area 19,334m2 | subject=Built-up Area; metric=Area; value=19,334; unit=m2
+
+--- FINDING 3 of 27  [fnd_dd8b5fc5783b4688] ------------------------------
+title                 : Different built-up areas for different logistics parks
+classification        : contextual_difference
+severity              : low
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to KEZAD Logistics Park Free Zone Phase 3 with a built-up area of 58,686m2, while Claim B refers to KEZAD Logistics Park Phase 4 Expansion with a built-up area of 19,334m2. These are distinct facilities.
+materiality_reasoning : The values refer to different physical locations.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_0ba90ffc66014cda   (chunk_index 2)
+      location : page 2
+      quote    : "Built-up Area
+58,686m2"
+      relevance: Built-up Area 58,686m2
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Built-up Area 58,686m2 | subject=Built-up Area; metric=total area; value=58686; unit=m2
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_a884db0abe5943c5   (chunk_index 1)
+      location : page 2
+      quote    : "Built-up Area
+19,334m2"
+      relevance: Built-up Area 19,334m2
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: Built-up Area 19,334m2 | subject=Built-up Area; metric=Area; value=19,334; unit=m2
+
+--- FINDING 4 of 27  [fnd_317c9face7fd43ed] ------------------------------
+title                 : Different built-up areas for different logistics parks
+classification        : contextual_difference
+severity              : low
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to KEZAD Logistics Park Phase 4 Expansion with a built-up area of 19,334m2, while Claim B refers to KEZAD Logistics Park Free Zone Phase 3 with a built-up area of 58,686m2. These are distinct facilities.
+materiality_reasoning : The values refer to different physical locations.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_a884db0abe5943c5   (chunk_index 1)
+      location : page 2
+      quote    : "Built-up Area
+19,334m2"
+      relevance: Built-up Area 19,334m2
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: Built-up Area 19,334m2 | subject=Built-up Area; metric=Area; value=19,334; unit=m2
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_07ccefdf87e34ba7   (chunk_index 1)
+      location : page 2
+      quote    : "Built-up Area
+58,686m2"
+      relevance: Built-up Area 58,686m2
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Built-up Area 58,686m2 | subject=Built-up Area; metric=total area; value=58686; unit=m2
+
+--- FINDING 5 of 27  [fnd_acd8a2bbc2d0465d] ------------------------------
+title                 : Different built-up areas for different logistics parks
+classification        : contextual_difference
+severity              : low
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to KEZAD Logistics Park Musaffah 1 with a built-up area of 143,567m2, while Claim B refers to KEZAD Logistics Park Phase 4 Expansion with a built-up area of 19,334m2. These are distinct facilities.
+materiality_reasoning : The values refer to different physical locations.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf
+      chunk    : chk_be6c92d9a97c4bf7   (chunk_index 1)
+      location : page 2
+      quote    : "Built-up Area
+143,567m2"
+      relevance: Built-up Area 143,567m2
+      assessment: CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf states: Built-up Area 143,567m2 | subject=Built-up Area; metric=Area; value=143,567; unit=m2
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_3b9e89fe312e4e89   (chunk_index 1)
+      location : page 2
+      quote    : "Built-up Area
+19,334m2"
+      relevance: Built-up Area 19,334m2
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Built-up Area 19,334m2 | subject=Built-up Area; metric=Area; value=19,334; unit=m2
+
+--- FINDING 6 of 27  [fnd_f537f7fa09f9406c] ------------------------------
+title                 : Different built-up areas for different logistics parks
+classification        : contextual_difference
+severity              : low
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to KEZAD Logistics Park Musaffah 1 with a built-up area of 143,567m2, while Claim B refers to KEZAD Logistics Park Free Zone Phase 3 with a built-up area of 58,686m2. These are distinct facilities.
+materiality_reasoning : The values refer to different physical locations.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf
+      chunk    : chk_be6c92d9a97c4bf7   (chunk_index 1)
+      location : page 2
+      quote    : "Built-up Area
+143,567m2"
+      relevance: Built-up Area 143,567m2
+      assessment: CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf states: Built-up Area 143,567m2 | subject=Built-up Area; metric=Area; value=143,567; unit=m2
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_0ba90ffc66014cda   (chunk_index 2)
+      location : page 2
+      quote    : "Built-up Area
+58,686m2"
+      relevance: Built-up Area 58,686m2
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Built-up Area 58,686m2 | subject=Built-up Area; metric=total area; value=58686; unit=m2
+
+--- FINDING 7 of 27  [fnd_2fcace16e44241fc] ------------------------------
+title                 : Different built-up areas for different logistics parks
+classification        : contextual_difference
+severity              : low
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to KEZAD Logistics Park Musaffah 1 with a built-up area of 143,567m2, while Claim B refers to KEZAD Logistics Park Free Zone Phase 3 with a built-up area of 58,686m2. These are distinct facilities.
+materiality_reasoning : The values refer to different physical locations.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf
+      chunk    : chk_be6c92d9a97c4bf7   (chunk_index 1)
+      location : page 2
+      quote    : "Built-up Area
+143,567m2"
+      relevance: Built-up Area 143,567m2
+      assessment: CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf states: Built-up Area 143,567m2 | subject=Built-up Area; metric=Area; value=143,567; unit=m2
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_07ccefdf87e34ba7   (chunk_index 1)
+      location : page 2
+      quote    : "Built-up Area
+58,686m2"
+      relevance: Built-up Area 58,686m2
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Built-up Area 58,686m2 | subject=Built-up Area; metric=total area; value=58686; unit=m2
+
+--- FINDING 8 of 27  [fnd_7f6a7b6e6fd14227] ------------------------------
+title                 : Different built-up area for different logistics park phases
+classification        : contextual_difference
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A states a built-up area of 58,686m2 for KEZAD Logistics Park Free Zone Phase 3, while Claim B states a built-up area of 19,334m2 for KEZAD Logistics Park Phase 4 Expansion. The difference is explained by the fact that they refer to two distinct development projects.
+materiality_reasoning : The values are correct for their respective projects, so there is no contradiction.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_0ba90ffc66014cda   (chunk_index 2)
+      location : page 2
+      quote    : "Built-up Area
+58,686m2"
+      relevance: Built-up Area 58,686m2
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Built-up Area 58,686m2 | subject=Built-up Area; metric=total area; value=58686; unit=m2
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_3b9e89fe312e4e89   (chunk_index 1)
+      location : page 2
+      quote    : "Built-up Area
+19,334m2"
+      relevance: Built-up Area 19,334m2
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Built-up Area 19,334m2 | subject=Built-up Area; metric=Area; value=19,334; unit=m2
+
+--- FINDING 9 of 27  [fnd_b1bdfc5438844dff] ------------------------------
+title                 : Different built-up area for different logistics park phases
+classification        : contextual_difference
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A states a built-up area of 19,334m2 for KEZAD Logistics Park Phase 4 Expansion, while Claim B states a built-up area of 58,686m2 for KEZAD Logistics Park Free Zone Phase 3. The difference is explained by the fact that they refer to two distinct development projects.
+materiality_reasoning : The values are correct for their respective projects, so there is no contradiction.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_3b9e89fe312e4e89   (chunk_index 1)
+      location : page 2
+      quote    : "Built-up Area
+19,334m2"
+      relevance: Built-up Area 19,334m2
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: Built-up Area 19,334m2 | subject=Built-up Area; metric=Area; value=19,334; unit=m2
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_07ccefdf87e34ba7   (chunk_index 1)
+      location : page 2
+      quote    : "Built-up Area
+58,686m2"
+      relevance: Built-up Area 58,686m2
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: Built-up Area 58,686m2 | subject=Built-up Area; metric=total area; value=58686; unit=m2
+
+--- FINDING 10 of 27  [fnd_d9f3fda9150345aa] ------------------------------
+title                 : Conflicting floor loading capacity for Cold Store Convertible Warehouses
+classification        : contradiction
+severity              : high
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A states a floor loading capacity of 30kN/m2 for Cold Store Convertible Warehouses in Musaffah 1, while Claim B states 50kN/m2 for the same type of warehouse in Free Zone Phase 3. While the locations differ, the claim is presented as a general specification for the warehouse type, creating a contradiction in the technical standards provided for the same product category.
+materiality_reasoning : Floor loading capacity is a critical technical specification for industrial warehouse tenants.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf
+      chunk    : chk_9761cf29f3d9474e   (chunk_index 15)
+      location : page 16
+      quote    : "30kN/m2 floor loading capacity/FM2 floor"
+      relevance: 30kN/m2 floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf states: 30kN/m2 floor loading capacity/FM2 floor | subject=Cold Store Convertible Warehouses; metric=Floor loading capacity; value=30; unit=kN/m2
+  [2] role=contradicting
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_33338345f8ee462e   (chunk_index 13)
+      location : page 13
+      quote    : "50kN/m² floor loading capacity/FM2 floor"
+      relevance: 50kN/m² floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 50kN/m² floor loading capacity/FM2 floor | subject=Cold Store Convertible Warehouses; metric=floor loading capacity; value=50; unit=kN/m²
+
+--- FINDING 11 of 27  [fnd_7e7c10d617b94ff5] ------------------------------
+title                 : Conflicting floor loading capacity for Light Industrial Units
+classification        : contradiction
+severity              : high
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A states a floor loading capacity of 30kN/m2 for Light Industrial Units in Phase 4 Expansion, while Claim B states 50/kN m2 for the same type of unit in Musaffah 1. This represents a direct conflict in the technical specifications for the same product category.
+materiality_reasoning : Floor loading capacity is a critical technical specification for industrial warehouse tenants.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_bb322114be2945b0   (chunk_index 14)
+      location : page 15
+      quote    : "30kN/m² floor loading capacity/FM4 floor"
+      relevance: 30kN/m² floor loading capacity/FM4 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 30kN/m² floor loading capacity/FM4 floor | subject=Light Industrial Units; metric=Floor loading capacity; value=30; unit=kN/m²
+  [2] role=contradicting
+      document : CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf
+      chunk    : chk_8b13df5a386b47a6   (chunk_index 12)
+      location : page 13
+      quote    : "50/kN m2 floor loading capacity / FM4 floor"
+      relevance: 50/kN m2 floor loading capacity / FM4 floor
+      assessment: CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf states: 50/kN m2 floor loading capacity / FM4 floor | subject=Light Industrial Units; metric=Floor loading capacity; value=50; unit=kN/m2
+
+--- FINDING 12 of 27  [fnd_170264e05df4480e] ------------------------------
+title                 : Conflicting floor loading capacity for Light Industrial Units
+classification        : contradiction
+severity              : high
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A states a floor loading capacity of 30kN/m2 for Light Industrial Units in Phase 4 Expansion, while Claim B states 50/kN m2 for the same type of unit in Musaffah 1. This represents a direct conflict in the technical specifications for the same product category.
+materiality_reasoning : Floor loading capacity is a critical technical specification for industrial warehouse tenants.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eeb74201fd8a455e   (chunk_index 14)
+      location : page 15
+      quote    : "30kN/m² floor loading capacity/FM4 floor"
+      relevance: 30kN/m² floor loading capacity/FM4 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 30kN/m² floor loading capacity/FM4 floor | subject=Light Industrial Units; metric=Floor loading capacity; value=30; unit=kN/m²
+  [2] role=contradicting
+      document : CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf
+      chunk    : chk_8b13df5a386b47a6   (chunk_index 12)
+      location : page 13
+      quote    : "50/kN m2 floor loading capacity / FM4 floor"
+      relevance: 50/kN m2 floor loading capacity / FM4 floor
+      assessment: CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf states: 50/kN m2 floor loading capacity / FM4 floor | subject=Light Industrial Units; metric=Floor loading capacity; value=50; unit=kN/m2
+
+--- FINDING 13 of 27  [fnd_22c10a52d6484e40] ------------------------------
+title                 : Conflicting floor loading capacity for Light Industrial Units
+classification        : contradiction
+severity              : high
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A states a floor loading capacity of 50/kN m2 for Light Industrial Units in Musaffah 1, while Claim B states 30kN/m2 for the same type of unit in Free Zone Phase 3. This represents a direct conflict in the technical specifications for the same product category.
+materiality_reasoning : Floor loading capacity is a critical technical specification for industrial warehouse tenants.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf
+      chunk    : chk_8b13df5a386b47a6   (chunk_index 12)
+      location : page 13
+      quote    : "50/kN m2 floor loading capacity / FM4 floor"
+      relevance: 50/kN m2 floor loading capacity / FM4 floor
+      assessment: CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf states: 50/kN m2 floor loading capacity / FM4 floor | subject=Light Industrial Units; metric=Floor loading capacity; value=50; unit=kN/m2
+  [2] role=contradicting
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_40374ee826e3428f   (chunk_index 10)
+      location : page 10
+      quote    : "30kN/m² floor loading capacity / FM4 floor"
+      relevance: 30kN/m² floor loading capacity / FM4 floor
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 30kN/m² floor loading capacity / FM4 floor | subject=Light Industrial Units; metric=floor loading capacity; value=30; unit=kN/m²
+
+--- FINDING 14 of 27  [fnd_43f766a4b9994adf] ------------------------------
+title                 : Different floor loading capacity for standard warehouses
+classification        : contextual_difference
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : The floor loading capacity is 50kN/m² for KEZAD Logistics Park Free Zone Phase 3 (Claim A) and 30kN/m² for KEZAD Logistics Park Musaffah 1 (Claim B).
+materiality_reasoning : The difference in floor loading capacity is significant for potential tenants depending on their storage requirements.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_cb4f33f4a5d541d0   (chunk_index 7)
+      location : page 7
+      quote    : "50kN/m² floor loading capacity/FM2 floor"
+      relevance: 50kN/m² floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 50kN/m² floor loading capacity/FM2 floor | subject=Standard Warehouse Units; metric=floor loading capacity; value=50; unit=kN/m²
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf
+      chunk    : chk_245e6baef9dc4893   (chunk_index 8)
+      location : page 9
+      quote    : "30kN/m2 floor loading capacity/FM2 floor"
+      relevance: 30kN/m2 floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf states: 30kN/m2 floor loading capacity/FM2 floor | subject=Standard Warehouses; metric=Floor loading capacity; value=30; unit=kN/m2
+
+--- FINDING 15 of 27  [fnd_3d87ff55e2044c32] ------------------------------
+title                 : Different floor loading capacity for standard warehouses
+classification        : contextual_difference
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : The floor loading capacity is 30kN/m² for KEZAD Logistics Park Musaffah 1 (Claim A) and 50kN/m² for KEZAD Logistics Park Phase 4 Expansion (Claim B).
+materiality_reasoning : The difference in floor loading capacity is significant for potential tenants depending on their storage requirements.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf
+      chunk    : chk_245e6baef9dc4893   (chunk_index 8)
+      location : page 9
+      quote    : "30kN/m2 floor loading capacity/FM2 floor"
+      relevance: 30kN/m2 floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf states: 30kN/m2 floor loading capacity/FM2 floor | subject=Standard Warehouses; metric=Floor loading capacity; value=30; unit=kN/m2
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_edb66dd64c50433d   (chunk_index 10)
+      location : page 11
+      quote    : "50kN/m² floor loading capacity/FM2 floor"
+      relevance: 50kN/m² floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 50kN/m² floor loading capacity/FM2 floor | subject=Standard Warehouses; metric=Floor loading capacity; value=50; unit=kN/m²
+
+--- FINDING 16 of 27  [fnd_d9fba5b6437a40bb] ------------------------------
+title                 : Different floor loading capacity for standard warehouses
+classification        : contextual_difference
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : The floor loading capacity is 30kN/m² for KEZAD Logistics Park Musaffah 1 (Claim A) and 50kN/m² for KEZAD Logistics Park Phase 4 Expansion (Claim B).
+materiality_reasoning : The difference in floor loading capacity is significant for potential tenants depending on their storage requirements.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf
+      chunk    : chk_245e6baef9dc4893   (chunk_index 8)
+      location : page 9
+      quote    : "30kN/m2 floor loading capacity/FM2 floor"
+      relevance: 30kN/m2 floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf states: 30kN/m2 floor loading capacity/FM2 floor | subject=Standard Warehouses; metric=Floor loading capacity; value=30; unit=kN/m2
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_f2a9cbb0888c411e   (chunk_index 10)
+      location : page 11
+      quote    : "50kN/m² floor loading capacity/FM2 floor"
+      relevance: 50kN/m² floor loading capacity/FM2 floor
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 50kN/m² floor loading capacity/FM2 floor | subject=Standard Warehouses; metric=Floor loading capacity; value=50; unit=kN/m²
+
+--- FINDING 17 of 27  [fnd_094c206aaed94fdc] ------------------------------
+title                 : Contradictory clear height for Flex Units
+classification        : contradiction
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : The same document (KEZAD Logistics Park Phase 4 Expansion V3) states the clear height for Flex Units as 10m on page 7 and 12m on page 7.
+materiality_reasoning : Clear height is a critical specification for warehouse utility and storage capacity.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_de096ef8451e404c   (chunk_index 6)
+      location : page 7
+      quote    : "10m clear height"
+      relevance: 10m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 10m clear height | subject=Flex Units; metric=Clear height; value=10; unit=m
+  [2] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_408ff877557b4594   (chunk_index 6)
+      location : page 7
+      quote    : "12m clear height"
+      relevance: 12m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 12m clear height | subject=Flex Units; metric=Clear height; value=12; unit=m
+
+--- FINDING 18 of 27  [fnd_460fc87c53ed4fd8] ------------------------------
+title                 : Different clear height for Light Industrial Units
+classification        : contextual_difference
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : The clear height is 10.5m for KEZAD Logistics Park Phase 4 Expansion (Claim A) and 8m for KEZAD Logistics Park Musaffah 1 (Claim B).
+materiality_reasoning : Clear height is a critical specification for warehouse utility and storage capacity.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_bb322114be2945b0   (chunk_index 14)
+      location : page 15
+      quote    : "10.5m clear height"
+      relevance: 10.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 10.5m clear height | subject=Light Industrial Units; metric=Clear height; value=10.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf
+      chunk    : chk_8b13df5a386b47a6   (chunk_index 12)
+      location : page 13
+      quote    : "8m clear height"
+      relevance: 8m clear height
+      assessment: CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf states: 8m clear height | subject=Light Industrial Units; metric=Clear height; value=8; unit=m
+
+--- FINDING 19 of 27  [fnd_04b744e81f074e3d] ------------------------------
+title                 : Different clear height for Light Industrial Units
+classification        : contextual_difference
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : The clear height is 10.5m for KEZAD Logistics Park Phase 4 Expansion (Claim A) and 9.5m for KEZAD Logistics Park Free Zone Phase 3 (Claim B).
+materiality_reasoning : Clear height is a critical specification for warehouse utility and storage capacity.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_bb322114be2945b0   (chunk_index 14)
+      location : page 15
+      quote    : "10.5m clear height"
+      relevance: 10.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 10.5m clear height | subject=Light Industrial Units; metric=Clear height; value=10.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_40374ee826e3428f   (chunk_index 10)
+      location : page 10
+      quote    : "9.5m clear height"
+      relevance: 9.5m clear height
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 9.5m clear height | subject=Light Industrial Units; metric=clear height; value=9.5; unit=m
+
+--- FINDING 20 of 27  [fnd_8423f43f78dd415d] ------------------------------
+title                 : Different clear height for Light Industrial Units in different locations
+classification        : contextual_difference
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A states an 8m clear height for KEZAD Logistics Park Musaffah 1, while Claim B states a 10.5m clear height for KEZAD Logistics Park Phase 4 Expansion.
+materiality_reasoning : Clear height is a critical specification for warehouse storage capacity and equipment usage.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf
+      chunk    : chk_8b13df5a386b47a6   (chunk_index 12)
+      location : page 13
+      quote    : "8m clear height"
+      relevance: 8m clear height
+      assessment: CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf states: 8m clear height | subject=Light Industrial Units; metric=Clear height; value=8; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eeb74201fd8a455e   (chunk_index 14)
+      location : page 15
+      quote    : "10.5m clear height"
+      relevance: 10.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 10.5m clear height | subject=Light Industrial Units; metric=Clear height; value=10.5; unit=m
+
+--- FINDING 21 of 27  [fnd_e74a1436448d4c3e] ------------------------------
+title                 : Different clear height for Light Industrial Units in different locations
+classification        : contextual_difference
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A states an 8m clear height for KEZAD Logistics Park Musaffah 1, while Claim B states a 9.5m clear height for KEZAD Logistics Park Free Zone Phase 3.
+materiality_reasoning : Clear height is a critical specification for warehouse storage capacity and equipment usage.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf
+      chunk    : chk_8b13df5a386b47a6   (chunk_index 12)
+      location : page 13
+      quote    : "8m clear height"
+      relevance: 8m clear height
+      assessment: CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf states: 8m clear height | subject=Light Industrial Units; metric=Clear height; value=8; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_40374ee826e3428f   (chunk_index 10)
+      location : page 10
+      quote    : "9.5m clear height"
+      relevance: 9.5m clear height
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 9.5m clear height | subject=Light Industrial Units; metric=clear height; value=9.5; unit=m
+
+--- FINDING 22 of 27  [fnd_5ce7eb41a7c14941] ------------------------------
+title                 : Different clear height for Light Industrial Units in different locations
+classification        : contextual_difference
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A states a 10.5m clear height for KEZAD Logistics Park Phase 4 Expansion, while Claim B states a 9.5m clear height for KEZAD Logistics Park Free Zone Phase 3.
+materiality_reasoning : Clear height is a critical specification for warehouse storage capacity and equipment usage.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_eeb74201fd8a455e   (chunk_index 14)
+      location : page 15
+      quote    : "10.5m clear height"
+      relevance: 10.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 10.5m clear height | subject=Light Industrial Units; metric=Clear height; value=10.5; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf
+      chunk    : chk_40374ee826e3428f   (chunk_index 10)
+      location : page 10
+      quote    : "9.5m clear height"
+      relevance: 9.5m clear height
+      assessment: CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf states: 9.5m clear height | subject=Light Industrial Units; metric=clear height; value=9.5; unit=m
+
+--- FINDING 23 of 27  [fnd_385ce509da4a43d1] ------------------------------
+title                 : Different clear height for Standard Warehouses in different locations
+classification        : contextual_difference
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A states an 8m clear height for KEZAD Logistics Park Musaffah 1, while Claim B states an 8.5m clear height for KEZAD Logistics Park Phase 4 Expansion.
+materiality_reasoning : Clear height is a critical specification for warehouse storage capacity and equipment usage.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf
+      chunk    : chk_245e6baef9dc4893   (chunk_index 8)
+      location : page 9
+      quote    : "8m clear height"
+      relevance: 8m clear height
+      assessment: CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf states: 8m clear height | subject=Standard Warehouses; metric=Clear height; value=8; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_edb66dd64c50433d   (chunk_index 10)
+      location : page 11
+      quote    : "8.5m clear height"
+      relevance: 8.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 8.5m clear height | subject=Standard Warehouses; metric=Clear height; value=8.5; unit=m
+
+--- FINDING 24 of 27  [fnd_fa866d2ce13446e1] ------------------------------
+title                 : Conflicting clear height for Standard Warehouses in KEZAD Logistics Park Phase 4 Expansion
+classification        : contradiction
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A states a 9.5m clear height for Standard Warehouses in KEZAD Logistics Park Phase 4 Expansion, while Claim B states an 8.5m clear height for the same facility type in the same location.
+materiality_reasoning : Clear height is a critical specification for warehouse storage capacity and equipment usage.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_f2a9cbb0888c411e   (chunk_index 10)
+      location : page 11
+      quote    : "9.5m clear height"
+      relevance: 9.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 9.5m clear height | subject=Standard Warehouses; metric=Clear height; value=9.5; unit=m
+  [2] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_edb66dd64c50433d   (chunk_index 10)
+      location : page 11
+      quote    : "8.5m clear height"
+      relevance: 8.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 8.5m clear height | subject=Standard Warehouses; metric=Clear height; value=8.5; unit=m
+
+--- FINDING 25 of 27  [fnd_3f2cd90ad5204e32] ------------------------------
+title                 : Different clear height for Standard Warehouses in different locations
+classification        : contextual_difference
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A states an 8m clear height for KEZAD Logistics Park Musaffah 1, while Claim B states a 9.5m clear height for KEZAD Logistics Park Phase 4 Expansion.
+materiality_reasoning : Clear height is a critical specification for warehouse storage capacity and equipment usage.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf
+      chunk    : chk_245e6baef9dc4893   (chunk_index 8)
+      location : page 9
+      quote    : "8m clear height"
+      relevance: 8m clear height
+      assessment: CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf states: 8m clear height | subject=Standard Warehouses; metric=Clear height; value=8; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_f2a9cbb0888c411e   (chunk_index 10)
+      location : page 11
+      quote    : "9.5m clear height"
+      relevance: 9.5m clear height
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 9.5m clear height | subject=Standard Warehouses; metric=Clear height; value=9.5; unit=m
+
+--- FINDING 26 of 27  [fnd_27d8f01d6c7d49f1] ------------------------------
+title                 : Contradictory raised floor level for KEZAD Logistics Park Phase 4 Expansion
+classification        : contradiction
+severity              : medium
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A states a 1.3m raised floor level for the KEZAD Logistics Park Phase 4 Expansion, while Claim B states a 1.5m raised floor level for the same facility.
+materiality_reasoning : The raised floor level is a key technical specification for warehouse loading and operations.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf
+      chunk    : chk_edb66dd64c50433d   (chunk_index 10)
+      location : page 11
+      quote    : "1.3m raised floor level"
+      relevance: 1.3m raised floor level
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2) - Original.pdf states: 1.3m raised floor level | subject=Standard Warehouses; metric=Raised floor level; value=1.3; unit=m
+  [2] role=contradicting
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_f2a9cbb0888c411e   (chunk_index 10)
+      location : page 11
+      quote    : "1.5m raised floor level"
+      relevance: 1.5m raised floor level
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 1.5m raised floor level | subject=Standard Warehouses; metric=Raised floor level; value=1.5; unit=m
+
+--- FINDING 27 of 27  [fnd_19d925b478c64072] ------------------------------
+title                 : Different raised floor levels for different warehouse locations
+classification        : contextual_difference
+severity              : low
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim A refers to the KEZAD Logistics Park Musaffah 1 (1.3m raised floor level), while Claim B refers to the KEZAD Logistics Park Phase 4 Expansion (1.5m raised floor level).
+materiality_reasoning : The difference is explained by the fact that the claims refer to two distinct warehouse projects.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf
+      chunk    : chk_245e6baef9dc4893   (chunk_index 8)
+      location : page 9
+      quote    : "1.3m raised floor level"
+      relevance: 1.3m raised floor level
+      assessment: CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf states: 1.3m raised floor level | subject=Standard Warehouses; metric=Raised floor level; value=1.3; unit=m
+  [2] role=contextual
+      document : CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf
+      chunk    : chk_f2a9cbb0888c411e   (chunk_index 10)
+      location : page 11
+      quote    : "1.5m raised floor level"
+      relevance: 1.5m raised floor level
+      assessment: CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf states: 1.5m raised floor level | subject=Standard Warehouses; metric=Raised floor level; value=1.5; unit=m
+
+
+==============================================================================
+COVERAGE AND PER-DOCUMENT VERDICTS
+==============================================================================
+Coverage: 'read' = chunks the LLM was shown. A document counts as fully read only if every batch succeeded (all-or-nothing per document).
+
+  document                                                    chunks  read  fully read  claims  LLM calls  tokens  extract s  verdict  reason
+  ----------------------------------------------------------  ------  ----  ----------  ------  ---------  ------  ---------  -------  ---------------------------------------------
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  18      18    yes         31      1          7,683   7.7        skipped  verdicts skipped by request (--skip-verdicts)
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  18      18    yes         36      1          8,295   12.1       skipped  verdicts skipped by request (--skip-verdicts)
+  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digita  15      15    yes         60      1          10,782  16.0       skipped  verdicts skipped by request (--skip-verdicts)
+  CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version  17      17    yes         28      1          7,184   8.0        skipped  verdicts skipped by request (--skip-verdicts)
+
+==============================================================================
+CLAIM LEDGER
+==============================================================================
+claims recorded 155, rejected 1
+
+Per document (paired = has a comparable claim elsewhere; corroborated = same value stated elsewhere; unpaired = nothing comparable found):
+  document                                                    claims  paired  corroborated  unpaired  pairs judged  findings
+  ----------------------------------------------------------  ------  ------  ------------  --------  ------------  --------
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  31      30      28            1         11            11
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 S  36      31      27            5         13            13
+  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digita  60      31      28            29        13            13
+  CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version  28      8       2             20        17            17
+
+Rejected claims by reason (first 15):
+  - value 'Domestic Economic Zone (Mainland)' not found in cited chunk
+
+==============================================================================
+PAIR MATCHING AND JUDGING
+==============================================================================
+pairing mode: LLM grouping of sorted claims: 155 claims in 3 batch(es), 3 call(s) (0 failed), 39 groups covering 100 claims, 89 pairs, 0 unknown refs ignored
+  note: claims in different batches are never grouped together (more than one batch in this run)
+candidate pairs: 89
+  by relation hint : {'partial': 8, 'conflicting': 19, 'exact': 62}
+  by match route   : {'llm': 89}
+  across documents : 82   inside one document: 7
+exact agreements (corroboration, no LLM): 62
+judged by the LLM: 27 in 5 calls (0 batches failed)
+LLM verdicts: {'contextual_difference': 20, 'contradiction': 7}
+findings saved 27; rejected 0
+
+Rejected findings (first 15):
+  none
+
+==============================================================================
+LLM CALLS: tokens, context size, latency, failures
+==============================================================================
+Per phase:
+  phase               attempts  failed  prompt tok  completion tok  thinking tok  avg ctx tok  max ctx tok  avg ms  p95 ms  total s
+  ------------------  --------  ------  ----------  --------------  ------------  -----------  -----------  ------  ------  -------
+  extract claims      4         0       16,553      17,391          0             4,138        4,269        10850   15968   43.4
+  group claims (LLM)  3         0       12,380      1,427           0             4,127        4,523        2588    3000    7.8
+  judge pairs         5         0       21,107      5,942           0             4,221        4,786        4054    5019    20.3
+
+Every provider attempt (context = what was sent; tokens as counted by the API):
+  #   phase               at s   result  ctx chars  ctx tokens  cached  completion  thinking  total tok  latency ms  resp chars  error
+  --  ------------------  -----  ------  ---------  ----------  ------  ----------  --------  ---------  ----------  ----------  -----
+  1   extract claims      86.8   ok      13,703     4,269       0       3414        0         7,683      7560        8,776
+  2   extract claims      94.5   ok      13,692     4,267       0       4028        0         8,295      11990       10,669
+  3   extract claims      106.6  ok      12,962     4,125       0       6657        0         10,782     15968       17,501
+  4   extract claims      122.6  ok      12,399     3,892       0       3292        0         7,184      7883        9,030
+  5   group claims (LLM)  130.6  ok      13,570     4,522       0       530         0         5,052      3000        1,416
+  6   group claims (LLM)  133.6  ok      13,519     4,523       0       431         0         4,954      2039        1,138
+  7   group claims (LLM)  135.6  ok      9,947      3,335       0       466         0         3,801      2726        1,222
+  8   judge pairs         138.4  ok      18,162     4,786       0       1653        0         6,439      5019        5,515
+  9   judge pairs         143.5  ok      17,023     4,496       0       1446        0         5,942      4129        5,457
+  10  judge pairs         147.7  ok      17,052     4,732       0       1230        0         5,962      4313        4,441
+  11  judge pairs         152.1  ok      16,696     4,623       0       1196        0         5,819      4816        4,502
+  12  judge pairs         157.0  ok      9,123      2,470       0       417         0         2,887      1992        1,537
+
+==============================================================================
+EMBEDDING CALLS
+==============================================================================
+calls 24, failed 0, texts 945 (claim topic texts embedded locally for matching)
+
+  #   texts  chars   latency ms  result  error
+  --  -----  ------  ----------  ------  -----
+  1   20     12,835  1788        ok
+  2   18     8,679   678         ok
+  3   18     8,481   691         ok
+  4   15     8,002   660         ok
+  5   17     7,290   675         ok
+  6   5      3,778   162         ok
+  7   16     4,748   272         ok
+  8   19     19,572  802         ok
+  9   3      2,764   112         ok
+  10  64     50,094  2836        ok
+  11  64     52,316  2940        ok
+  12  64     49,973  2812        ok
+  13  64     51,926  2818        ok
+  14  64     50,366  2955        ok
+  15  64     65,523  3080        ok
+  16  64     55,256  3047        ok
+  17  64     54,683  3162        ok
+  18  64     59,316  3143        ok
+  19  64     55,290  2989        ok
+  20  64     55,943  3022        ok
+  21  53     44,104  2561        ok
+  22  37     23,734  1619        ok
+  23  8      2,669   238         ok
+  24  12     9,135   601         ok
+
+==============================================================================
+FAILURES
+==============================================================================
+LLM attempt failures:
+  none
+Documents not fully read:
+  none
+Pair-judging problems:
+  none
+
+==============================================================================
+TIMING
+==============================================================================
+  stage                                            duration  share of wall time
+  -----------------------------------------------  --------  ------------------
+  0. scan files, process new or changed ones       86.8s     55%
+  1. read every chunk, extract claims              43.7s     28%
+  2. match claims (LLM grouping of sorted claims)  7.8s      5%
+  3. judge pairs, verify quotes, save findings     20.6s     13%
+  4. per-document verdicts                         0.0s      0%
+
+==============================================================================
+KNOWN LIMITS OF THIS RUN
+==============================================================================
+- Reading is all-or-nothing per document: if one batch fails after all retries, that document's claims are discarded and it counts as not read.
+- Candidate matching keeps at most 5 partners per claim (an existing default), so some comparable pairs are never judged.
+- The claim-extraction prompt lists business categories (capacity, supply, pricing, ...) and is not yet domain-agnostic.
+- Claims inside one document are also paired and judged; matching quality depends on how the model labels subject/metric/unit/period.
+- Exact agreements are trusted as corroboration without an LLM check.

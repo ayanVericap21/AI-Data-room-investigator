@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import threading
 import time
 from abc import ABC, abstractmethod
 from typing import Callable, TypeVar
@@ -60,6 +61,8 @@ class LLMClient(ABC):
         self._usage = TokenUsage()
         self.retry_count = 0  # total retries performed (for run metadata)
         self.call_metrics: list[CallMetric] = []  # one entry per provider attempt
+        self._lock = threading.Lock()  # counters are shared by every thread that calls this client
+        self._tls = threading.local()  # what belongs to one call (its size and start time) is per thread
 
     # -- provider hooks ------------------------------------------------------
     @abstractmethod
@@ -91,7 +94,8 @@ class LLMClient(ABC):
                 return schema.model_validate(extract_json(response.text))
             except (ValueError, ValidationError) as exc:  # JSONDecodeError is a ValueError
                 last_error = exc
-                self.retry_count += 1
+                with self._lock:
+                    self.retry_count += 1
                 logger.warning("Invalid structured output", extra={"attempt": attempt, "schema": schema.__name__})
                 full_prompt += f"\n\nYour previous reply was invalid ({str(exc)[:300]}). Return valid JSON only."
         raise LLMInvalidOutputError(
@@ -101,17 +105,18 @@ class LLMClient(ABC):
     # -- internals -----------------------------------------------------------
     def _call(self, prompt: str, system: str | None, json_mode: bool) -> RawResponse:
         """Provider call with bounded exponential backoff for transient errors only."""
-        self._prompt_chars = len(prompt) + len(system or "")
+        self._tls.prompt_chars = len(prompt) + len(system or "")
         for attempt in range(1, self.max_attempts + 1):
             started = time.perf_counter()
-            self._attempt_wall = time.time()
+            self._tls.attempt_wall = time.time()
             try:
                 response = self._raw_generate(prompt, system, json_mode)
             except LLMTransientError as exc:
                 self._record(started, None, exc)
                 if attempt == self.max_attempts:
                     raise
-                self.retry_count += 1
+                with self._lock:
+                    self.retry_count += 1
                 delay = exc.retry_after if exc.retry_after is not None else self.base_delay * (2 ** (attempt - 1))
                 logger.warning("Transient LLM error, retrying", extra={"attempt": attempt, "delay": delay, "error": str(exc)})
                 self._sleep(min(delay, 60))
@@ -122,7 +127,8 @@ class LLMClient(ABC):
             self._record(started, response.usage, None, len(response.text))
             usage = response.usage.model_copy()
             usage.calls = 1
-            self._usage.add(usage)
+            with self._lock:
+                self._usage.add(usage)
             return response
         raise AssertionError("unreachable")
 
@@ -133,6 +139,6 @@ class LLMClient(ABC):
             error=str(error)[:200] if error else None,
             prompt_tokens=usage.prompt_tokens if usage else 0, completion_tokens=usage.completion_tokens if usage else 0,
             thinking_tokens=usage.thinking_tokens if usage else 0, total_tokens=usage.total_tokens if usage else 0,
-            cached_tokens=usage.cached_tokens if usage else 0, prompt_chars=getattr(self, "_prompt_chars", 0),
-            response_chars=response_chars, started_at=getattr(self, "_attempt_wall", 0.0),
+            cached_tokens=usage.cached_tokens if usage else 0, prompt_chars=getattr(self._tls, "prompt_chars", 0),
+            response_chars=response_chars, started_at=getattr(self._tls, "attempt_wall", 0.0),
         ))

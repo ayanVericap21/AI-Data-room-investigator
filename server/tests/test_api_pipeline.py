@@ -73,11 +73,11 @@ def test_duplicate_job_start_conflicts(ctx):
 
 def test_missing_llm_key_gives_clear_api_error(session_factory, settings):
     app = create_app()
-    app.dependency_overrides[get_settings] = lambda: settings  # default settings: google, no key
+    app.dependency_overrides[get_settings] = lambda: settings  # default settings: LlamaExtract, no key
     app.dependency_overrides[get_session] = lambda: iter([None])
     r = TestClient(app).post("/api/claims/extract")
     assert r.status_code == 503 and r.json()["error"] == "llm_not_configured"
-    assert "LLM_API_KEY" in r.json()["message"]
+    assert "LLAMA_CLOUD_API_KEY" in r.json()["message"]
 
 
 def test_failed_job_is_reported(ctx):

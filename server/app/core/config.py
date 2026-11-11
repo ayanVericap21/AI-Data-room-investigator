@@ -1,4 +1,5 @@
-"""Application settings, loaded from environment variables (and an optional .env file).
+"""Application settings. Keys, the database URL and paths come from environment variables (and an optional .env file);
+model names, providers and their options are fixed in code (see CODE_DEFINED).
 
 Settings are a plain Pydantic model populated from ``os.environ`` so no extra
 dependency is needed. Secrets (LLM_API_KEY) are only ever read here, server-side.
@@ -33,12 +34,18 @@ class Settings(BaseModel):
     app_port: int = 8000
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/data_room"
 
-    llm_provider: str = "google"
-    llm_model: str = ""
+    llm_provider: str = "llamaextract"  # llamaextract | google | ollama (a model on this machine) | mock
+    llm_model: str = "cost_effective"  # for llamaextract this is the tier; for the others a model name
+    llm_base_url: str = "http://localhost:11434"  # where Ollama listens
+    llm_context_tokens: int = Field(default=16384, ge=2048)  # context window requested from Ollama for every call
+    # Set to false to refuse every hosted API (Google, LlamaExtract) and keep a run entirely on this machine.
+    allow_third_party_apis: bool = True
     llm_api_key: str = Field(default="", repr=False)
+    llama_cloud_api_key: str = Field(default="", repr=False)  # LlamaExtract (only used with --extractor llamaextract)
+    llama_cloud_project_id: str = ""  # optional
 
-    embedding_provider: str = ""
-    embedding_model: str = ""
+    embedding_provider: str = "local"  # runs on this machine
+    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     # Must match the vector(N) column on document_chunks.embedding (see migration 0002).
     embedding_dimensions: int = 384
 
@@ -58,10 +65,18 @@ class Settings(BaseModel):
         return (p if p.is_absolute() else SERVER_DIR / p).resolve()
 
 
+# Chosen in code, never from the environment, so a stale .env line cannot change them. Everything else (keys, the
+# database URL, paths) is still read from the environment.
+CODE_DEFINED = {"llm_provider", "llm_model", "llm_base_url", "llm_context_tokens", "allow_third_party_apis",
+                "embedding_provider", "embedding_model", "embedding_dimensions"}
+
+
 def load_settings() -> Settings:
     _load_dotenv()
     values = {}
     for name in Settings.model_fields:
+        if name in CODE_DEFINED:
+            continue
         env = os.environ.get(name.upper())
         if env not in (None, ""):
             values[name] = env
