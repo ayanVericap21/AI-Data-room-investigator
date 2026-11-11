@@ -1,0 +1,391 @@
+TEST RUN  20261111-113749  agent-two-brochures-strict-gate-g31lite
+==============================================================================
+
+HOW THIS RUN WAS ACHIEVED
+1. Documents: every supported file in server/data_room was scanned (SHA-256 identity, duplicates skipped) and parsed locally, 1 documents at a time (PyMuPDF, python-docx, openpyxl; .xlsm read like .xlsx); scanned PDFs are skipped automatically.
+2. Chunking: merged: small neighbouring units of the same page/sheet/heading joined up to 1000 chars; hard maximum 1000 chars; embedding text is prefixed with file name and heading.
+3. Embeddings: sentence-transformers/all-MiniLM-L6-v2 at 384 dims, run locally on this machine (fastembed, no API), batches of up to 64, stored with each chunk in Postgres/pgvector (HNSW cosine) in database 'dataroom_run_20261111_agent_two_brochures'.
+4. Investigation: a tool-using agent loop (gemini-3.1-flash-lite, temperature 0, JSON action protocol, 7 tools, no step limit, no tool-call limit); the agent must open every document before it may finish; no claim extraction or candidate pairs were used.
+5. Safeguards: every finding quote is checked in code as an exact substring of its stored chunk before saving; arithmetic only through the calculate tool; provider retries up to 5 attempts honouring Google's retry delay.
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+Run started   : 2026-11-11 11:37:49 (local)   finished: 11:40:20   wall time: 150.8s
+Config        : agent-two-brochures-strict-gate-g31lite
+Database      : dataroom_run_20261111_agent_two_brochures (reused: processing was skipped if already done)
+Code version  : git a8c19bb + uncommitted changes   python 3.14.5   Windows
+Documents     : 14 registered, 1 duplicates skipped; processing result: {'missing': 12, 'processed': 2}
+Excluded      : 10 documents hidden from the agent by request: Hyve geo assest bulk_.xlsx, Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm, InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf, KSA Egypt Growth v2.pdf, Research Report - HyveGeo.pdf, Biochar Summary - HyveGeo Project Assessment.pdf, CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf, Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf, Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf, Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx
+Chunks        : 33 total, 13,510 characters
+Embedding     : 0 calls (0 failed), 0 texts embedded, 0.0s total
+Investigation : finished, 38 agent steps, 0 findings saved
+LLM calls     : 39 provider attempts (1 failed, 1 retries incl. invalid-output retries), 117.9s total, avg 3086ms
+Tokens        : prompt 189,460  completion 3,432  thinking 0  cached 30,208  total 192,892   (cost not computed: no price per token configured)
+Tool calls    : 37 (1 failed), 0.2s total
+Coverage      : 2 of 2 documents fully read by the agent; finish refused 0x
+
+==============================================================================
+FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)
+==============================================================================
+No findings were saved in this run.
+(termination: finished; see the agent trace and failures sections for why)
+
+==============================================================================
+CONFIGURATION
+==============================================================================
+llm provider/model         : google / gemini-3.1-flash-lite (temperature 0, JSON mime type for structured output)
+embedding provider/model   : local / sentence-transformers/all-MiniLM-L6-v2, 384 dims (reads at most 256 word pieces, about 1,000 characters; longer text is cut by the model)
+retry attempts (llm+embed) : 5 (backoff 1s, 2s, 4s...; Google retryDelay honoured; cap 60s per wait)
+chunking                   : merge=ON, target 1000, hard max 1000 chars
+parsing                    : 1 parallel worker processes; PDF table detection skipped on pages with more than 10,000 vector paths
+scanned-PDF rule           : picture-only page = under 20 chars and image covers >= 50%; PDF skipped when >= 50% of pages are picture-only
+agent limits               : max steps none, tool budget none, max findings none; finishing is refused (up to 2 times) while documents are unopened
+agent history window       : last 3 tool results in full, older ones shortened; each result capped at 12,000 chars
+tool limits                : search top_k <= 10; read_section <= 40 chunks / 12,000 chars; quotes >= 8 chars
+focus given to the agent   : Review the whole data room for discrepancies between documents. Prioritise figures that appear in more than one document (capacities, quantities, costs, revenues, prices, dates, timelines, locations, counts) and statements that one document makes and another contradicts or does not support. Compare like with like (same metric, unit, period, scope). Submit a finding for each material discrepancy with exact quotes from both sides, and use missing_information or insufficient_evidence where something is claimed but not evidenced.
+
+==============================================================================
+DATA ROOM AND DOCUMENT PROCESSING
+==============================================================================
+scan: discovered 13, added 0, unchanged 2, missing 0
+      duplicates skipped (same content): ['Main Picth Deck HyveGeo .pdf']
+      unsupported types ignored        : none
+
+  file                                                                                        type  KB      pages/sheets  status     chunks  chars  median  max
+  ------------------------------------------------------------------------------------------  ----  ------  ------------  ---------  ------  -----  ------  ---
+  Biochar Summary - HyveGeo Project Assessment.pdf                                            pdf   214     3             missing    0       0      0       0
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf                      pdf   14,963  18            processed  18      7,023  279     833
+  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf  pdf   8,180   14            processed  15      6,487  235     825
+  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf  pdf   7,855   14            missing    0       0      0       0
+  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024.pdf         pdf   7,563   -             missing    0       0      0       0
+  CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf               pdf   4,824   17            missing    0       0      0       0
+  Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf                             pdf   425     2             missing    0       0      0       0
+  Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf                                                 pdf   11,829  16            missing    0       0      0       0
+  Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx                   xlsx  26      1             missing    0       0      0       0
+  Hyve geo assest bulk_.xlsx                                                                  xlsx  55      1             missing    0       0      0       0
+  Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm                               xlsx  2,662   19            missing    0       0      0       0
+  InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf                                    pdf   1,628   25            missing    0       0      0       0
+  KSA Egypt Growth v2.pdf                                                                     pdf   1,447   8             missing    0       0      0       0
+  Research Report - HyveGeo.pdf                                                               pdf   220     7             missing    0       0      0       0
+
+LATENCY OF EACH PART, PER DOCUMENT (the old single 'process' time was all four parts added together):
+  extract = read the file into text (local, PyMuPDF/openpyxl)      chunk = split text into chunks (local pure Python)
+  save    = write chunks to Postgres (local)                       embed = Google embedding API calls (network)
+
+  file                                                                                        extract s  chunk ms  save ms  embed s  embed calls (failed)  total s
+  ------------------------------------------------------------------------------------------  ---------  --------  -------  -------  --------------------  -------
+  Biochar Summary - HyveGeo Project Assessment.pdf                                            -          -         -        -        0 (0)                 0.0
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf                      -          -         -        -        0 (0)                 0.0
+  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf  -          -         -        -        0 (0)                 0.0
+  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf  -          -         -        -        0 (0)                 0.0
+  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024.pdf         -          -         -        -        0 (0)                 0.0
+  CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf               -          -         -        -        0 (0)                 0.0
+  Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf                             -          -         -        -        0 (0)                 0.0
+  Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf                                                 -          -         -        -        0 (0)                 0.0
+  Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx                   -          -         -        -        0 (0)                 0.0
+  Hyve geo assest bulk_.xlsx                                                                  -          -         -        -        0 (0)                 0.0
+  Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm                               -          -         -        -        0 (0)                 0.0
+  InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf                                    -          -         -        -        0 (0)                 0.0
+  KSA Egypt Growth v2.pdf                                                                     -          -         -        -        0 (0)                 0.0
+  Research Report - HyveGeo.pdf                                                               -          -         -        -        0 (0)                 0.0
+
+Where the extract time goes (seconds):
+  Biochar Summary - HyveGeo Project Assessment.pdf: 
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf: 
+  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf: 
+  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf: 
+  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024.pdf: 
+  CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf: 
+  Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf: 
+  Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf: 
+  Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx: 
+  Hyve geo assest bulk_.xlsx: 
+  Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm: 
+  InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf: 
+  KSA Egypt Growth v2.pdf: 
+  Research Report - HyveGeo.pdf: 
+
+
+==============================================================================
+CHUNKING
+==============================================================================
+Strategy used in this run: merged to 1000 chars; chunk size in characters (about 4 chars per token).
+
+  type  chunks  chars   mean  median  p90  max  under 100 chars
+  ----  ------  ------  ----  ------  ---  ---  ---------------
+  pdf   33      13,510  409   270     813  833  6%
+  all   33      13,510  409   270     813  833  6%
+
+Chunking strategies compared (measured locally earlier today on these same files, not part of this run):
+  strategy               type  chunks  median  mean  p90   max   under 100ch
+  ---------------------  ----  ------  ------  ----  ----  ----  -----------
+  per-unit, old default  pdf   1300    27      53    92    1218  92%
+  per-unit, old default  xlsx  1594    190     383   1174  1500  18%
+  merge to 600           pdf   192     324     367   590   1218  8%
+  merge to 600           xlsx  894     532     683   1500  1500  2%
+  merge to 1000          pdf   143     428     494   977   1218  6%
+  merge to 1000          xlsx  651     922     939   1500  1500  2%
+  merge to 1500          pdf   126     460     560   1193  1490  4%
+  merge to 1500          xlsx  521     1345    1173  1500  1500  2%
+
+Reading: the old default turns every PDF text box into its own chunk (median 27 chars), which is too small to embed or quote well.
+Merging to 1000 keeps a slide or page together (PDF median 428) and groups spreadsheet rows (median 922) without crossing a page, sheet or heading.
+
+==============================================================================
+EMBEDDING CALLS
+==============================================================================
+calls: 0 (0 indexing, 0 agent searches), failed 0
+texts embedded: 0, characters sent: 0
+
+  #  phase  texts  chars sent  latency ms  result  error
+  -  -----  -----  ----------  ----------  ------  -----
+
+==============================================================================
+LLM CALLS: tokens, context size, latency, failures
+==============================================================================
+provider attempts      : 39  (ok 38, failed 1)
+retries                : 1 (transient errors and invalid-output retries)
+tokens (successful)    : prompt 189,460 | completion 3,432 | thinking 0 | cached 30,208 | total 192,892
+thinking share         : 0% of all tokens
+latency (ok calls)     : avg 3086ms  median 1933ms  p95 9967ms  max 26363ms  total 117.9s
+
+CONTEXT SIZE of each API call (what was sent: system + prompt):
+  characters : min 10,018  avg 17,663  max 23,523
+  tokens     : min 2,470  avg 4,986  max 6,804   (as counted by the API)
+  chars per token (measured): 3.54
+
+Every provider attempt, in order (context = prompt chars / prompt tokens; thinking tokens are hidden reasoning):
+  #   step  at s   result  ctx chars  ctx tokens  cached  completion  thinking  total tok  latency ms  resp chars  error
+  --  ----  -----  ------  ---------  ----------  ------  ----------  --------  ---------  ----------  ----------  ----------------------------------------------------------------------
+  1   1     0.0    ok      10,018     2,470       0       48          0         2,518      3138        157
+  2   2     3.2    ok      10,521     2,639       0       82          0         2,721      1834        227
+  3   3     5.1    ok      13,093     3,595       0       91          0         3,686      2100        243
+  4   4     7.2    ok      13,772     3,824       0       94          0         3,918      2052        258
+  5   5     9.2    ok      14,726     4,060       0       91          0         4,151      1650        258
+  6   6     10.9   ok      13,788     3,766       0       91          0         3,857      1733        258
+  7   7     12.7   ok      14,737     4,098       0       91          0         4,189      1611        258
+  8   8     14.3   ok      14,556     4,093       0       91          0         4,184      2416        258
+  9   9     16.7   ok      14,289     3,864       0       91          0         3,955      1474        258
+  10  10    18.2   ok      14,728     3,934       0       92          0         4,026      2189        255
+  11  11    20.4   ok      15,065     4,029       0       92          0         4,121      1476        255
+  12  12    22.0   ok      15,437     4,234       0       93          0         4,327      1751        256
+  13  13    23.7   ok      15,053     4,141       1,999   93          0         4,234      2355        248
+  14  14    26.1   ok      15,847     4,412       0       93          0         4,505      1613        251
+  15  15    27.7   ok      16,217     4,425       0       93          0         4,518      26363       248
+  16  16    54.1   ok      16,707     4,727       2,005   93          0         4,820      1933        251
+  17  17    56.1   ok      16,388     4,624       0       93          0         4,717      2099        248
+  18  18    58.2   ok      17,135     4,853       0       93          0         4,946      1600        248
+  19  19    59.8   ok      17,362     4,761       0       99          0         4,860      1751        287
+  20  20    61.6   ok      17,769     4,969       0       98          0         5,067      1533        271
+  21  21    63.1   ok      17,447     4,924       0       81          0         5,005      1820        219
+  22  22    65.0   ok      17,097     4,841       0       60          0         4,901      2302        203
+  23  23    67.3   ok      17,127     4,770       0       78          0         4,848      8794        219
+  24  24    76.1   ok      18,679     5,338       0       91          0         5,429      1867        274
+  25  25    78.0   ok      19,400     5,585       0       91          0         5,676      1694        276
+  26  26    79.7   ok      21,297     6,078       0       95          0         6,173      1709        306
+  27  27    81.5   ok      20,920     5,910       0       91          0         6,001      1871        282
+  28  28    83.4   ok      22,041     6,563       0       91          0         6,654      2002        282
+  29  29    85.4   ok      20,937     6,311       4,031   91          0         6,402      4379        282
+  30  30    89.8   ok      20,836     6,309       4,031   91          0         6,400      1830        282
+  31  31    91.6   ok      21,059     6,075       4,029   94          0         6,169      2201        293
+  32  32    93.8   FAIL    21,417     0           0       0           0         0          584         0           Google API 429: { "error": { "code": 429, "message": "You exceeded ...
+  33  32    125.4  ok      21,417     6,181       2,015   94          0         6,275      2175        290
+  34  33    127.6  ok      21,716     6,242       0       95          0         6,337      1729        294
+  35  34    129.4  ok      22,062     6,323       4,031   90          0         6,413      2358        253
+  36  35    131.8  ok      22,391     6,437       4,032   94          0         6,531      2925        289
+  37  36    134.7  ok      22,770     6,553       0       94          0         6,647      9967        289
+  38  37    144.7  ok      23,250     6,698       4,035   93          0         6,791      1810        272
+  39  38    146.5  ok      23,523     6,804       0       116         0         6,920      3172        468
+
+==============================================================================
+TOOL CALLS: counts, targets, latency, failures
+==============================================================================
+tool calls: 37  ok 36  failed 1  total 0.2s  (limit none)
+
+Per tool:
+  tool            calls  ok  failed  avg ms  max ms  total ms
+  --------------  -----  --  ------  ------  ------  --------
+  list_documents  2      2   0       4       5       9
+  get_outline     3      2   1       10      13      30
+  read_section    32     32  0       4       6       137
+
+Tool calls that name a specific document (get_outline, read_section, get_chunk), by document:
+  document                                                                                    calls
+  ------------------------------------------------------------------------------------------  -----
+  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf                      19
+  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf  15
+
+Every tool call, in order (target = the item the call was about):
+  #   step  tool            target                                                                            result  error      ms  result summary
+  --  ----  --------------  --------------------------------------------------------------------------------  ------  ---------  --  ----------------------------------------------------------------------
+  1   1     list_documents  all documents                                                                     ok                 4   2 documents
+  2   2     get_outline     CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf            ok                 13  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2)....
+  3   3     read_section    CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page_n...  ok                 6   CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2)....
+  4   4     read_section    CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page_n...  ok                 4   CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2)....
+  5   5     read_section    CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page_n...  ok                 3   CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2)....
+  6   6     read_section    CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page_n...  ok                 6   CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2)....
+  7   7     read_section    CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page_n...  ok                 3   CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2)....
+  8   8     read_section    CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page_n...  ok                 4   CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2)....
+  9   9     read_section    CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page_n...  ok                 4   CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2)....
+  10  10    read_section    CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page_n...  ok                 5   CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2)....
+  11  11    read_section    CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page_n...  ok                 5   CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2)....
+  12  12    read_section    CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page_n...  ok                 5   CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2)....
+  13  13    read_section    CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page_n...  ok                 6   CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2)....
+  14  14    read_section    CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page_n...  ok                 3   CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2)....
+  15  15    read_section    CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page_n...  ok                 6   CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2)....
+  16  16    read_section    CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page_n...  ok                 3   CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2)....
+  17  17    read_section    CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page_n...  ok                 3   CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2)....
+  18  18    read_section    CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page_n...  ok                 3   CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2)....
+  19  19    read_section    CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page_n...  ok                 5   CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2)....
+  20  20    read_section    CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page_n...  ok                 5   CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2)....
+  21  21    get_outline     doc_7777777777777777                                                              FAIL    not_found  5   not_found: Document 'doc_7777777777777777' not found
+  22  22    list_documents  all documents                                                                     ok                 5   2 documents
+  23  23    get_outline     CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 20...  ok                 12  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version...
+  24  24    read_section    CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 20...  ok                 4   CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version...
+  25  25    read_section    CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 20...  ok                 4   CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version...
+  26  26    read_section    CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 20...  ok                 3   CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version...
+  27  27    read_section    CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 20...  ok                 5   CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version...
+  28  28    read_section    CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 20...  ok                 2   CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version...
+  29  29    read_section    CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 20...  ok                 4   CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version...
+  30  30    read_section    CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 20...  ok                 4   CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version...
+  31  31    read_section    CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 20...  ok                 5   CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version...
+  32  32    read_section    CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 20...  ok                 5   CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version...
+  33  33    read_section    CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 20...  ok                 4   CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version...
+  34  34    read_section    CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 20...  ok                 4   CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version...
+  35  35    read_section    CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 20...  ok                 5   CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version...
+  36  36    read_section    CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 20...  ok                 5   CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version...
+  37  37    read_section    CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 20...  ok                 4   CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version...
+
+==============================================================================
+FAILURES
+==============================================================================
+LLM attempt failures:
+  step 32: 584ms  Google API 429: { "error": { "code": 429, "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://aistud
+Tool call failures:
+  call 21 get_outline: not_found: not_found: Document 'doc_7777777777777777' not found
+Embedding failures:
+  none
+Documents not processed:
+  Biochar Summary - HyveGeo Project Assessment.pdf: missing 
+  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf: missing 
+  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024.pdf: missing 
+  CAD warehouses/KZD-KLP Musaffah 1-Brochure-Digital-Version V4 - Short (2).pdf: missing 
+  Carbon Lender Non-Payment Insurance Brochure - AUGUST DRAFT.pdf: missing 
+  Hvegeo Phase 1/Main Picth Deck HyveGeo .pdf: missing 
+  Hvegeo Phase 1/Vericap_Hyve_Geo_Project_Financials_Form_3_5e68c6b328.xlsx: missing 
+  Hyve geo assest bulk_.xlsx: missing 
+  Hyve_GEO_Financial_Model_and_TEA_2024_07_05_1_3b5b818483.xlsm: missing 
+  InfraBlocks Afro-Asia Decarb Fund Teaser August 2024.pdf: missing 
+  KSA Egypt Growth v2.pdf: missing 
+  Research Report - HyveGeo.pdf: missing 
+
+==============================================================================
+TIMING
+==============================================================================
+  stage                                           duration  share of wall time
+  ----------------------------------------------  --------  ------------------
+  scan files                                      0.2s      0%
+  process documents (parse, chunk, save, embed)   0.0s      0%
+     of which: parsing all documents in parallel  0.0s      0%
+  investigation (agent loop)                      149.7s    99%
+
+Investigation phase 149.7s split:
+  LLM provider time   117.9s (79%)
+  tool time           0.2s (0%), of which query embeddings 0.0s
+  waiting/overhead    31.7s (21%), mostly retry backoff sleeps
+
+==============================================================================
+PROMPT CACHING
+==============================================================================
+Facts (Google docs, fetched 2026-11-11): implicit caching is on by default for Gemini 2.5 and newer; the minimum for gemini-3.6-flash is 4,096 tokens;
+  stable content should come first in the prompt; cached tokens are reported by the API (usageMetadata.cachedContentTokenCount).
+Our prompt layout: system instruction + task + tool list (stable) -> history (grows; older results get shortened as new ones arrive) -> step counter -> JSON schema.
+  Shortening an old result changes the middle of the prompt, so only the prefix before the first change can be a cache hit.
+
+Estimated stable prefix: about 8,157 chars = about 2,303 tokens (using the measured 3.54 chars per token); minimum needed: 4,096.
+Calls whose whole prompt reached 4,096 tokens: 28 of 38.
+Measured: cached tokens 30,208 of 189,460 prompt tokens (16%); calls with any cache hit: 9 of 38.
+Verdict: implicit caching is working and saved prompt tokens in this run.
+
+==============================================================================
+AGENT TRACE (operational summaries only)
+==============================================================================
+termination: finished   agent summary: I conducted a comprehensive review of 'KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf' and 'KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy.pdf'. No material discrepancies were identified between the documents.
+
+step  1 [list_documents] ok  2 documents
+        why: I need to list the documents to begin the investigation process.
+step  2 [get_outline] ok  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf: 18 sections, 18...
+        why: I need to understand the structure of the first document to begin reading it systematically.
+step  3 [read_section] ok  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page 1: 1 of 1 c...
+        why: I am starting to read the first document to identify key figures and project details.
+step  4 [read_section] ok  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page 2: 1 of 1 c...
+        why: I am continuing to read the first document page by page to identify key project details and figures.
+step  5 [read_section] ok  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page 3: 1 of 1 c...
+        why: I am continuing to read the document systematically to identify further project details and figures.
+step  6 [read_section] ok  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page 4: 1 of 1 c...
+        why: I am continuing to read the document systematically to identify further project details and figures.
+step  7 [read_section] ok  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page 5: 1 of 1 c...
+        why: I am continuing to read the document systematically to identify further project details and figures.
+step  8 [read_section] ok  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page 6: 1 of 1 c...
+        why: I am continuing to read the document systematically to identify further project details and figures.
+step  9 [read_section] ok  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page 7: 1 of 1 c...
+        why: I am continuing to read the document systematically to identify further project details and figures.
+step 10 [read_section] ok  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page 8: 1 of 1 c...
+        why: I am continuing to read the document systematically to complete the review of the first document.
+step 11 [read_section] ok  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page 9: 1 of 1 c...
+        why: I am continuing to read the document systematically to complete the review of the first document.
+step 12 [read_section] ok  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page 10: 1 of 1 ...
+        why: I am continuing to read the document systematically to complete the review of the first document.
+step 13 [read_section] ok  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page 11: 1 of 1 ...
+        why: I am continuing to read the remaining pages of the first document to complete its review.
+step 14 [read_section] ok  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page 12: 1 of 1 ...
+        why: I need to continue reading the remaining pages of the first document to complete its review.
+step 15 [read_section] ok  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page 13: 1 of 1 ...
+        why: I am continuing to read the remaining pages of the first document to complete its review.
+step 16 [read_section] ok  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page 14: 1 of 1 ...
+        why: I need to continue reading the remaining pages of the first document to complete its review.
+step 17 [read_section] ok  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page 15: 1 of 1 ...
+        why: I am continuing to read the remaining pages of the first document to complete its review.
+step 18 [read_section] ok  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page 16: 1 of 1 ...
+        why: I am continuing to read the remaining pages of the first document to complete its review.
+step 19 [read_section] ok  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page 17: 1 of 1 ...
+        why: I need to finish reading the remaining pages of the first document to ensure full coverage before moving to the second document.
+step 20 [read_section] ok  CAD warehouses/KEZAD Logistics Park Phase 4 Expansion V3 Short (2).pdf page 18: 1 of 1 ...
+        why: I need to read the final page of the first document to complete its review before moving to the second document.
+step 21 [get_outline] FAIL not_found  not_found: Document 'doc_7777777777777777' not found
+        why: I need to understand the structure of the second document to read it systematically.
+step 22 [list_documents] ok  2 documents
+        why: I need to re-list the documents to get the correct ID for the second document, as the previous attempt failed.
+step 23 [get_outline] ok  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy....
+        why: I need to understand the structure of the second document to read it systematically.
+step 24 [read_section] ok  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy....
+        why: I am starting to read the second document systematically to identify key project details and figures for comparison.
+step 25 [read_section] ok  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy....
+        why: I am continuing to read the second document systematically to identify key project details and figures for comparison.
+step 26 [read_section] ok  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy....
+        why: I am continuing to read the second document systematically to ensure full coverage and identify any potential discrepancies with the first document.
+step 27 [read_section] ok  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy....
+        why: I am continuing to read the second document systematically to ensure full coverage and identify any potential discrepancies.
+step 28 [read_section] ok  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy....
+        why: I am continuing to read the second document systematically to ensure full coverage and identify any potential discrepancies.
+step 29 [read_section] ok  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy....
+        why: I am continuing to read the second document systematically to ensure full coverage and identify any potential discrepancies.
+step 30 [read_section] ok  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy....
+        why: I am continuing to read the second document systematically to ensure full coverage and identify any potential discrepancies.
+step 31 [read_section] ok  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy....
+        why: I need to continue reading the remaining pages of the second document to ensure full coverage and identify any potential discrepancies.
+step 32 [read_section] ok  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy....
+        why: I am continuing to read the remaining pages of the second document to ensure full coverage and identify any potential discrepancies.
+step 33 [read_section] ok  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy....
+        why: I need to continue reading the remaining pages of the second document to ensure full coverage and identify any potential discrepancies.
+step 34 [read_section] ok  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy....
+        why: I need to continue reading the remaining pages of the second document to ensure full coverage.
+step 35 [read_section] ok  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy....
+        why: I need to continue reading the remaining pages of the second document to ensure full coverage before concluding the investigation.
+step 36 [read_section] ok  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy....
+        why: I need to continue reading the remaining pages of the second document to ensure full coverage before concluding the investigation.
+step 37 [read_section] ok  CAD warehouses/KZD-KLP FZ Phase3-Warehouse-Brochure-Digital-Version - July 2024 - Copy....
+        why: I need to read the final page of the second document to ensure full coverage before concluding the investigation.
+step 38 [finish] ok  
+        why: I have reviewed both documents in their entirety and found no material discrepancies between them regarding project specifications, capacities, or other key metrics.

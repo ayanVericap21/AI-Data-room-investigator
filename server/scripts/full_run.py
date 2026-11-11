@@ -11,6 +11,7 @@ Real documents are sent to the configured provider (embeddings, and tool results
 from __future__ import annotations
 
 import argparse
+import fnmatch
 import inspect
 import platform
 import re
@@ -40,6 +41,7 @@ from app.core.config import get_settings  # noqa: E402
 from app.llm.factory import get_embedding_provider, get_llm_client
 from app.llm.local import DEFAULT_LOCAL_MODEL  # noqa: E402
 from app.models import Document, DocumentChunk, Evidence, Finding  # noqa: E402
+from app.models.base import ProcessingStatus  # noqa: E402
 from app.services import chunking  # noqa: E402
 from app.services.document_service import DocumentService  # noqa: E402
 from app.services.extraction_service import unit_count  # noqa: E402
@@ -155,6 +157,8 @@ def sec_glance(R) -> list[str]:
         counts = Counter(d["status"] for d in R.doc_rows)
         out.append(f"Documents     : {len(R.docs)} registered, {R.scan.skipped_duplicates and len(R.scan.skipped_duplicates) or 0} duplicates skipped; "
                    f"processing result: {dict(counts)}")
+    if R.excluded:
+        out.append(f"Excluded      : {len(R.excluded)} documents hidden from the agent by request: {', '.join(R.excluded)}")
     out.append(f"Chunks        : {R.chunk_total} total, {R.chunk_chars:,} characters")
     ec = [m for m in R.embedder.call_metrics]
     out.append(f"Embedding     : {len(ec)} calls ({sum(not m.ok for m in ec)} failed), {sum(m.items for m in ec)} texts embedded, "
@@ -167,8 +171,14 @@ def sec_glance(R) -> list[str]:
                 f"Tokens        : prompt {t.prompt_tokens:,}  completion {t.completion_tokens:,}  thinking {t.thinking_tokens:,}  "
                 f"cached {t.cached_tokens:,}  total {t.total_tokens:,}   (cost not computed: no price per token configured)",
                 f"Tool calls    : {len(res.tool_calls)} ({sum(not c.ok for c in res.tool_calls)} failed), {res.tool_latency.total_ms / 1000:.1f}s total"]
-        out.append(f"Coverage      : {res.documents_opened} of {res.documents_total} documents opened by the agent; finish refused {res.finish_refusals}x"
-                   + (f"; NOT opened: {', '.join(res.documents_not_opened)}" if res.documents_not_opened else ""))
+        out.append(f"Coverage      : {res.documents_fully_read} of {res.documents_total} documents fully read by the agent; finish refused {res.finish_refusals}x"
+                   + (f"; NOT fully read: {', '.join(res.documents_not_fully_read)}" if res.documents_not_fully_read else ""))
+        m = res.matching
+        out.append(f"Fact memory   : {len(res.facts)} facts recorded"
+                   + (f"; matching step: {m.batches} batch(es), {m.llm_calls} LLM call(s), {m.groups_returned} groups returned, "
+                      f"{m.findings_saved} findings saved, {m.findings_rejected} rejected" if m else "; matching step did not run"))
+        for line in (m.rejections + m.errors) if m else []:
+            out.append(f"  matching problem: {line}")
         if res.error:
             out.append(f"Stopped early : {res.error[:300]}")
     return out
@@ -467,6 +477,8 @@ def main() -> None:
     ap.add_argument("--db-name", default=None)
     ap.add_argument("--merge-chunks", action=argparse.BooleanOptionalAction, default=True,
                     help="merge small neighbouring units into chunks of up to 1000 characters (default on)")
+    ap.add_argument("--exclude", action="append", default=[],
+                    help="hide documents whose file name matches this glob (case-insensitive) from the agent; repeatable")
     ap.add_argument("--embedding", choices=["local", "google"], default="local",
                     help="local = all-MiniLM-L6-v2 on this machine via fastembed (default); google = the configured API")
     ap.add_argument("--llm-model", default=None, help="override LLM_MODEL for this run (e.g. a model with free quota left)")
@@ -485,7 +497,7 @@ def main() -> None:
     stamp = started.strftime("%Y%m%d-%H%M%S")
     config = re.sub(r"[^A-Za-z0-9._-]+", "-", args.config or f"agent-{settings.llm_model}-embed-{args.embedding}-{'merged1000' if args.merge_chunks else 'perunit'}-steps{args.max_steps or 'unlimited'}")
     R = SimpleNamespace(args=args, settings=settings, started=started, config=config, error=None, result=None, docs=[], doc_rows=[],
-                        stage={}, chunk_total=0, chunk_chars=0, chunk_sizes=[], embed_calls_processing=0, agent_start=0.0, db_created=False)
+                        stage={}, excluded=[], chunk_total=0, chunk_chars=0, chunk_sizes=[], embed_calls_processing=0, agent_start=0.0, db_created=False)
     out_dir = REPO_DIR / "test_results"
     out_dir.mkdir(exist_ok=True)
     path = out_dir / f"TEST-RUN-{stamp}-{config}.txt"
@@ -507,6 +519,13 @@ def main() -> None:
         t = time.perf_counter()
         R.scan = svc.scan()
         R.stage["scan files"] = ms(time.perf_counter() - t)
+        if args.exclude:  # hidden documents are marked missing, so the tools, search and the coverage gate ignore them
+            for d in session.scalars(select(Document)):
+                if any(fnmatch.fnmatch(d.filename.lower(), p.lower()) for p in args.exclude):
+                    d.processing_status = ProcessingStatus.missing.value
+                    R.excluded.append(d.filename)
+            session.commit()
+            print(f"[scan] hidden from the agent by request: {len(R.excluded)} documents", flush=True)
         R.docs = list(session.scalars(select(Document).order_by(Document.filename)))
         print(f"[scan] {R.scan.discovered} files, {len(R.docs)} documents, duplicates skipped: {len(R.scan.skipped_duplicates)}", flush=True)
 
@@ -524,7 +543,9 @@ def main() -> None:
         R.stage["   of which: parsing all documents in parallel"] = processing.extract_phase_ms
         R.embed_calls_processing = len(embedder.call_metrics)
 
-        chunk_rows = session.execute(select(DocumentChunk.document_id, func.length(DocumentChunk.content))).all()
+        chunk_rows = session.execute(select(DocumentChunk.document_id, func.length(DocumentChunk.content))
+                                     .join(Document, Document.id == DocumentChunk.document_id)
+                                     .where(Document.processing_status != ProcessingStatus.missing.value)).all()
         by_doc: dict[str, list[int]] = {}
         for doc_id, n in chunk_rows:
             by_doc.setdefault(doc_id, []).append(n)

@@ -20,7 +20,8 @@ def search(ctx: ToolContext, inp: SearchInput) -> SearchOutput:
     except LLMError as exc:
         raise ToolError("embedding_failed", f"Could not embed the query: {exc}") from exc
     ctx.recent_queries.append(inp.query)
-    ctx.searched_documents.update(h.document_id for h in hits)
+    for h in hits:
+        ctx.mark_read(h.document_id, [h.chunk_id])  # a hit shows the chunk's full text
     return SearchOutput(query=inp.query, hits=[
         ChunkView(
             chunk_id=h.chunk_id, document_id=h.document_id, filename=h.filename, locator=locator_text(h),

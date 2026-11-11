@@ -10,7 +10,7 @@ from app.models.base import ProcessingStatus
 from app.services.outline_service import DocumentOutline, build_outline
 from app.services.retrieval_service import RetrievedChunk
 from app.tools.base import ToolContext, ToolError
-from app.tools.schemas import (ChunkView, Coverage, DocumentSummary, GetChunkInput, GetChunkOutput, GetOutlineInput,
+from app.tools.schemas import (ChunkView, Coverage, DocumentCoverage, DocumentSummary, GetChunkInput, GetChunkOutput, GetOutlineInput,
                                ListDocumentsInput, ListDocumentsOutput, ReadSectionInput, ReadSectionOutput)
 
 MAX_SECTION_CHARS = 12_000  # one read_section reply never exceeds this much source text
@@ -45,7 +45,7 @@ def list_documents(ctx: ToolContext, _: ListDocumentsInput) -> ListDocumentsOutp
     ).all()
     return ListDocumentsOutput(documents=[
         DocumentSummary(document_id=d.id, filename=d.filename, file_type=d.file_type,
-                        status=d.processing_status, chunk_count=count, opened=d.id in ctx.opened_documents)
+                        status=d.processing_status, chunk_count=count, chunks_read=len(ctx.chunks_read.get(d.id, ())))
         for d, count in rows
     ])
 
@@ -55,19 +55,43 @@ def get_outline(ctx: ToolContext, inp: GetOutlineInput) -> DocumentOutline:
         outline = build_outline(ctx.session, inp.document_id)
     except Exception as exc:  # NotFoundError and friends
         raise ToolError("not_found", str(exc)) from exc
-    ctx.opened_documents.add(inp.document_id)
     return outline
 
 
+def _section_title(chunk_row) -> str:
+    _, page, sheet, heading = chunk_row
+    if sheet:
+        return f"Sheet: {sheet}"
+    if heading:
+        return str(heading)
+    return f"Page {page}" if page is not None else "Start of document"
+
+
 def coverage(ctx: ToolContext) -> Coverage:
-    """Readable documents (those with chunks) the agent has not yet opened."""
+    """How much of each readable document (one with chunks) the agent has read so far."""
     rows = ctx.session.execute(
-        select(Document.id, Document.filename).join(DocumentChunk, DocumentChunk.document_id == Document.id)
+        select(Document.id, Document.filename, func.count(DocumentChunk.id))
+        .join(DocumentChunk, DocumentChunk.document_id == Document.id)
         .where(Document.processing_status != ProcessingStatus.missing.value)
         .group_by(Document.id, Document.filename).order_by(Document.filename)
     ).all()
-    not_opened = [name for doc_id, name in rows if doc_id not in ctx.opened_documents]
-    return Coverage(total=len(rows), opened=len(rows) - len(not_opened), not_opened=not_opened)
+    not_fully_read: list[DocumentCoverage] = []
+    for doc_id, filename, total in rows:
+        read = ctx.chunks_read.get(doc_id, set())
+        if len(read) >= total:
+            continue
+        chunk_rows = ctx.session.execute(
+            select(DocumentChunk.id, DocumentChunk.page_number, DocumentChunk.sheet_name, DocumentChunk.heading)
+            .where(DocumentChunk.document_id == doc_id).order_by(DocumentChunk.chunk_index)
+        ).all()
+        sections: list[str] = []
+        for row in chunk_rows:
+            if row[0] not in read:
+                title = _section_title(row)
+                if title not in sections:
+                    sections.append(title)
+        not_fully_read.append(DocumentCoverage(filename=filename, chunks=total, chunks_read=len(read), unread_sections=sections))
+    return Coverage(total=len(rows), fully_read=len(rows) - len(not_fully_read), not_fully_read=not_fully_read)
 
 
 def get_chunk(ctx: ToolContext, inp: GetChunkInput) -> GetChunkOutput:
@@ -78,7 +102,6 @@ def get_chunk(ctx: ToolContext, inp: GetChunkInput) -> GetChunkOutput:
     if row is None:
         raise ToolError("not_found", f"Chunk '{inp.chunk_id}' does not exist. Use ids returned by search or read_section.")
     chunk, filename = row
-    ctx.opened_documents.add(chunk.document_id)
     before: list[ChunkView] = []
     after: list[ChunkView] = []
     if inp.neighbors:
@@ -91,6 +114,7 @@ def get_chunk(ctx: ToolContext, inp: GetChunkInput) -> GetChunkOutput:
         ).all()
         before = [chunk_view(c, filename) for c in near if c.chunk_index < chunk.chunk_index]
         after = [chunk_view(c, filename) for c in near if c.chunk_index > chunk.chunk_index]
+    ctx.mark_read(chunk.document_id, [chunk.id] + [c.chunk_id for c in before + after])
     return GetChunkOutput(chunk=chunk_view(chunk, filename), before=before, after=after)
 
 
@@ -98,7 +122,6 @@ def read_section(ctx: ToolContext, inp: ReadSectionInput) -> ReadSectionOutput:
     document = ctx.session.get(Document, inp.document_id)
     if document is None:
         raise ToolError("not_found", f"Document '{inp.document_id}' does not exist. Use list_documents.")
-    ctx.opened_documents.add(document.id)
     stmt = select(DocumentChunk).where(DocumentChunk.document_id == document.id)
     column, wanted = None, ""
     if inp.page_number is not None:
@@ -128,6 +151,7 @@ def read_section(ctx: ToolContext, inp: ReadSectionInput) -> ReadSectionOutput:
             break
         shown.append(chunk)
         used += len(chunk.content)
+    ctx.mark_read(document.id, [c.id for c in shown])
     return ReadSectionOutput(
         document_id=document.id, filename=document.filename, selector=selector, total_chunks=len(chunks),
         truncated=len(shown) < len(chunks), chunks=[chunk_view(c, document.filename) for c in shown],

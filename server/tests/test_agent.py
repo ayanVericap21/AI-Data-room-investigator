@@ -181,36 +181,65 @@ def test_finish_sent_as_a_tool_name_means_finish(session, room):
 
 
 # ---- fix: the agent must open every document before it may finish --------------
-def test_finishing_is_refused_until_every_document_is_opened(session, room):
-    llm = MockLLMClient([finish(), call("get_outline", {"document_id": room.deck.id}),
-                         call("get_outline", {"document_id": room.capex.id}),
-                         call("read_section", {"document_id": room.lease.id, "heading": "Rent"}), finish("covered all")])
+
+def read_everything(room):
+    """Scripted actions that show the agent every chunk of the three documents."""
+    return [call("read_section", {"document_id": room.deck.id, "page_number": 1}),
+            call("read_section", {"document_id": room.deck.id, "page_number": 2}),
+            call("read_section", {"document_id": room.capex.id, "sheet_name": "Current"}),
+            call("read_section", {"document_id": room.capex.id, "sheet_name": "Expansion"}),
+            call("read_section", {"document_id": room.lease.id, "heading": "Rent"}),
+            call("read_section", {"document_id": room.lease.id, "heading": "Term"})]
+
+
+def test_finishing_is_refused_until_every_chunk_is_read(session, room):
+    llm = MockLLMClient([finish(), *read_everything(room), finish("covered all")])
     result = _run_investigation(session, llm, None, name="coverage gate", max_steps=10)
-    assert [s.action for s in result.steps] == ["finish_refused", "call_tool", "call_tool", "call_tool", "finish"]
+    assert [s.action for s in result.steps] == ["finish_refused"] + ["call_tool"] * 6 + ["finish"]
     assert result.termination == "finished" and result.finish_refusals == 1
-    assert (result.documents_total, result.documents_opened, result.documents_not_opened) == (3, 3, [])
-    assert "You cannot finish yet: 3 of 3 documents have not been opened" in llm.prompts[1]  # the model is told why
-    assert "capex.xlsx" in llm.prompts[1] and "lease.docx" in llm.prompts[1]
+    assert (result.documents_total, result.documents_fully_read, result.documents_not_fully_read) == (3, 3, [])
+    assert "You cannot finish yet: 3 of 3 documents are not fully read" in llm.prompts[1]  # the model is told why
+    assert "capex.xlsx (read 0 of 2 chunks; unread: Sheet: Current, Sheet: Expansion)" in llm.prompts[1]
+
+
+def test_an_outline_alone_no_longer_counts_as_reading(session, room):
+    llm = MockLLMClient([call("get_outline", {"document_id": room.deck.id}), call("get_outline", {"document_id": room.capex.id}),
+                         call("get_outline", {"document_id": room.lease.id}), finish(), finish(), finish("outlines only")])
+    result = _run_investigation(session, llm, None, name="outlines", max_steps=10)
+    assert result.finish_refusals == 2 and result.documents_fully_read == 0 and len(result.documents_not_fully_read) == 3
+
+
+def test_the_agent_may_be_refused_many_times_while_it_keeps_reading(session, room):
+    deck_p1, deck_p2, *rest = read_everything(room)
+    llm = MockLLMClient([finish(), deck_p1, finish(), deck_p2, finish(), *rest, finish("done")])
+    result = _run_investigation(session, llm, None, name="patience resets", max_steps=20)
+    assert result.finish_refusals == 3 and result.termination == "finished" and result.documents_fully_read == 3
+
 
 
 def test_refusing_to_finish_is_bounded_so_a_stubborn_model_still_ends(session, room):
     llm = MockLLMClient([finish(), finish(), finish("giving up on the rest")])
     result = _run_investigation(session, llm, None, name="bounded gate", max_steps=10)
     assert result.termination == "finished" and result.finish_refusals == 2 and result.summary == "giving up on the rest"
-    assert sorted(result.documents_not_opened) == ["capex.xlsx", "deck.pdf", "lease.docx"]  # the report can show what was skipped
+    assert sorted(d.split(" (")[0] for d in result.documents_not_fully_read) == ["capex.xlsx", "deck.pdf", "lease.docx"]
+    assert "(read 0 of 2 chunks)" in " ".join(result.documents_not_fully_read)  # the report can show what was skipped
 
 
-def test_every_prompt_shows_which_documents_are_still_unopened(session, room):
-    llm = MockLLMClient([call("get_outline", {"document_id": room.deck.id}), finish()])
+
+def test_every_prompt_shows_which_chunks_are_still_unread(session, room):
+    llm = MockLLMClient([call("read_section", {"document_id": room.deck.id, "page_number": 1}), finish()])
     run_agent(session, llm, None, name="coverage line", max_steps=5)
-    assert "Documents opened: 0 of 3. Not yet opened: capex.xlsx, deck.pdf, lease.docx." in llm.prompts[0]
-    assert "Documents opened: 1 of 3. Not yet opened: capex.xlsx, lease.docx." in llm.prompts[1]
+    assert "Documents fully read: 0 of 3." in llm.prompts[0]
+    assert "deck.pdf (read 0 of 2 chunks; unread: Page 1, Page 2)" in llm.prompts[0]
+    assert "deck.pdf (read 1 of 2 chunks; unread: Page 2)" in llm.prompts[1]
 
 
-def test_the_prompt_tells_the_model_finish_is_an_action_and_documents_must_be_covered():
+
+def test_the_prompt_tells_the_model_finish_is_an_action_and_every_chunk_must_be_read():
     from app.agent.prompts import SYSTEM
 
-    assert "finish is an action, not a tool" in SYSTEM and "Cover every document" in SYSTEM
+    assert "finish is an action, not a tool" in SYSTEM and "Read every document completely" in SYSTEM
+    assert "an outline does not count" in SYSTEM
 
 
 # ---- no limits by default: a run lasts as long as the data room needs -------------

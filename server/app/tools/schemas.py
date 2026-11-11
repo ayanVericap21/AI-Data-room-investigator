@@ -38,19 +38,26 @@ class DocumentSummary(BaseModel):
     file_type: str
     status: str
     chunk_count: int
-    opened: bool = False  # has the agent opened it (outline, read_section or get_chunk) yet
+    chunks_read: int = 0  # chunks of this document whose text has been shown to the agent so far
 
 
 class ListDocumentsOutput(BaseModel):
     documents: list[DocumentSummary]
 
 
-class Coverage(BaseModel):
-    """How many readable documents the agent has opened. Search hits alone do not count as opened."""
+class DocumentCoverage(BaseModel):
+    filename: str
+    chunks: int
+    chunks_read: int
+    unread_sections: list[str]  # pages, sheets or headings that still have unread chunks, in reading order
 
-    total: int
-    opened: int
-    not_opened: list[str]  # file names
+
+class Coverage(BaseModel):
+    """How much of the data room the agent has read. A chunk counts once a tool has shown its text."""
+
+    total: int  # readable documents (those with chunks)
+    fully_read: int
+    not_fully_read: list[DocumentCoverage]
 
 
 # ---- get_outline --------------------------------------------------------------
@@ -118,6 +125,41 @@ class CalculateInput(ToolInput):
 class CalculateOutput(BaseModel):
     expression: str
     result: str  # exact decimal arithmetic, shown as text
+
+
+# ---- record_fact --------------------------------------------------------------
+class FactInput(BaseModel):
+    label: str = Field(min_length=1, max_length=200, description="What the fact is about, in plain words.")
+    value: str = Field(min_length=1, max_length=200, description="The stated value, as written (number, date, name, yes/no ...).")
+    unit: str | None = Field(None, max_length=50, description="Unit of the value, if any.")
+    qualifier: str | None = Field(None, max_length=200,
+                                  description="What the value applies to: scope, period, condition, item. Leave out if none.")
+    chunk_id: str = Field(description="Chunk the fact comes from.")
+    quoted_text: str = Field(min_length=8, description="Text copied exactly from that chunk's content that states the fact.")
+
+
+class RecordFactInput(ToolInput):
+    facts: list[FactInput] = Field(min_length=1, max_length=30, description="One or more facts from chunks you have just read.")
+
+
+class RecordedFact(BaseModel):
+    """A verified fact in the run's memory."""
+
+    fact_id: str
+    label: str
+    value: str
+    unit: str | None = None
+    qualifier: str | None = None
+    document_id: str
+    filename: str
+    chunk_id: str
+    locator: str
+    quoted_text: str  # exact source text
+
+
+class RecordFactOutput(BaseModel):
+    recorded: list[str]
+    total_facts: int
 
 
 # ---- submit_finding -----------------------------------------------------------

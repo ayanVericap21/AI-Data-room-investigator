@@ -17,9 +17,10 @@ from app.llm.metrics import CallMetric, LatencySummary, summarize
 from app.tools.base import (SearchBackend, ToolBudget, ToolCallRecord, ToolContext, ToolDescription, ToolError,
                             ToolErrorInfo, ToolResult, ToolSpec)
 from app.tools.calculate import calculate
+from app.tools.facts import record_fact
 from app.tools.reading import coverage, get_chunk, get_outline, list_documents, read_section
 from app.tools.schemas import (CalculateInput, Coverage, GetChunkInput, GetOutlineInput, ListDocumentsInput, ReadSectionInput,
-                               SearchInput, SubmitFindingInput)
+                               RecordFactInput, SearchInput, SubmitFindingInput)
 from app.tools.search import search
 from app.tools.submit import submit_finding
 
@@ -60,6 +61,14 @@ TOOLS: list[ToolSpec] = [
         "Exact arithmetic on plain numbers (+ - * / % ** and parentheses). Always use this for differences, "
         "ratios and percentages instead of computing them yourself.",
         CalculateInput, calculate, lambda o: f"{o.expression} = {o.result}",
+    ),
+    ToolSpec(
+        "record_fact",
+        "Save facts you have just read into your running memory: what it is about (label), the stated value, its unit, "
+        "what it applies to (qualifier), and the exact quote with its chunk id. Quotes are verified; if any is not "
+        "found exactly, none of the batch is saved. Record every value, date, name, quantity, condition and "
+        "commitment as you read, so they can be compared across documents afterwards.",
+        RecordFactInput, record_fact, lambda o: f"recorded {len(o.recorded)} facts, {o.total_facts} in memory",
     ),
     ToolSpec(
         "submit_finding",

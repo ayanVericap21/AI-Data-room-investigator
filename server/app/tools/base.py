@@ -8,13 +8,16 @@ code: call budgets, the call log, and exact-quote verification in ``submit_findi
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Protocol
+from typing import TYPE_CHECKING, Any, Callable, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, SerializeAsAny
 from sqlalchemy.orm import Session
 
 from app.llm.metrics import CallMetric
 from app.services.retrieval_service import RetrievedChunk
+
+if TYPE_CHECKING:
+    from app.tools.schemas import RecordedFact
 
 
 class ToolInput(BaseModel):
@@ -93,8 +96,14 @@ class ToolContext:
     tool_calls_used: int = 0
     finding_ids: list[str] = field(default_factory=list)
     recent_queries: list[str] = field(default_factory=list)  # searches since the last saved finding
-    opened_documents: set[str] = field(default_factory=set)  # via get_outline, read_section or get_chunk
-    searched_documents: set[str] = field(default_factory=set)  # documents that appeared in search hits
+    # chunk ids whose text a tool has shown to the agent, by document (search hits, read_section, get_chunk).
+    # An outline shows no chunk text, so it does not count as reading.
+    chunks_read: dict[str, set[str]] = field(default_factory=dict)
+    # the agent's running memory: verified facts it has recorded this run (in memory only, not stored)
+    facts: list[RecordedFact] = field(default_factory=list)
+
+    def mark_read(self, document_id: str, chunk_ids) -> None:
+        self.chunks_read.setdefault(document_id, set()).update(chunk_ids)
 
 
 @dataclass(frozen=True)

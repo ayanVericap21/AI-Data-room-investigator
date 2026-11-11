@@ -29,10 +29,14 @@ or read_section.
 8. Take as many steps as the data room needs. Start with list_documents, work on what matters most (money, dates, \
 quantities, headline figures, obligations), and finish when you have covered the focus or run out of useful \
 leads. Do not invent leads.
-9. Cover every document. The Coverage line each turn shows which documents you have not opened yet (a document \
-counts as opened after get_outline, read_section or get_chunk; search hits alone do not count). Open each one, \
-starting with get_outline, before you finish. You will be refused if you try to finish with documents unopened.
+9. Read every document completely. The Coverage line each turn shows which chunks you have not read yet. A chunk \
+counts as read once a tool has shown you its text (read_section, get_chunk or a search hit); an outline does not \
+count. Use get_outline to see the sections, then read_section for each unread page, sheet or heading. You will be \
+refused if you try to finish while any chunk is unread.
 10. To end the investigation answer with action "finish". finish is an action, not a tool.
+11. After reading a section, call record_fact for the facts it states (values, dates, names, quantities, conditions, \
+commitments), copying the quote exactly. Your recorded facts are kept in memory for the whole run so they can be \
+compared across documents later; what you do not record you will forget.
 
 Each turn, answer with a single JSON action. rationale is one or two sentences about why you chose the \
 action, not a long explanation."""

@@ -149,6 +149,47 @@ def test_calculate_rejects_anything_but_arithmetic(registry, expression):
     assert not result.ok and result.error.code == "invalid_expression"
 
 
+# ---- record_fact --------------------------------------------------------------
+def fact_args(room, **overrides):
+    fact = dict(label="Plant capacity", value="120,000", unit="tonnes per year", qualifier="Pune plant",
+                chunk_id=room.deck_p1, quoted_text="capacity is 120,000 tonnes per year")
+    fact.update(overrides)
+    return {"facts": [fact]}
+
+
+def test_record_fact_keeps_verified_facts_in_memory_with_their_source(registry, room):
+    result = registry.execute("record_fact", {"facts": fact_args(room)["facts"] + fact_args(
+        room, label="Current capacity", value="100,000", chunk_id=room.capex_current,
+        quoted_text="Capacity | 100,000 tonnes")["facts"]})
+    assert result.ok, result.error
+    assert result.output.recorded == ["fact_1", "fact_2"] and result.output.total_facts == 2
+    first, second = registry.context.facts
+    assert (first.filename, first.locator, first.value, first.qualifier) == ("deck.pdf", "page 1", "120,000", "Pune plant")
+    assert second.filename == "capex.xlsx" and second.quoted_text == "Capacity | 100,000 tonnes"
+    registry.execute("record_fact", fact_args(room, chunk_id=room.deck_p2, quoted_text="EBITDA margin for 2024 was 18%"))
+    assert registry.context.facts[-1].fact_id == "fact_3"
+
+
+def test_record_fact_rejects_the_whole_batch_when_one_quote_is_wrong(registry, room):
+    good = fact_args(room)["facts"][0]
+    bad = fact_args(room, quoted_text="capacity is 130,000 tonnes")["facts"][0]
+    result = registry.execute("record_fact", {"facts": [good, bad]})
+    assert not result.ok and result.error.code == "validation_failed" and "fact 2" in result.error.message
+    assert registry.context.facts == []  # nothing from the batch was kept
+
+
+def test_record_fact_rejects_unknown_chunks_and_empty_batches(registry, room):
+    result = registry.execute("record_fact", fact_args(room, chunk_id="chunk_nope"))
+    assert not result.ok and "does not exist" in result.error.message
+    assert registry.execute("record_fact", {"facts": []}).error.code == "invalid_arguments"
+
+
+def test_record_fact_stores_the_exact_source_text(registry, room):
+    registry.execute("record_fact", fact_args(room, chunk_id=room.rent_1,
+                                              quoted_text="Annual rent is INR 1.2 crore. Payable quarterly"))
+    assert registry.context.facts[0].quoted_text == "Annual rent is INR 1.2 crore.\nPayable quarterly"
+
+
 # ---- submit_finding -----------------------------------------------------------
 def test_submit_finding_saves_verified_finding_and_evidence(registry, room, session):
     result = registry.execute("submit_finding", finding_args(room))
@@ -316,7 +357,8 @@ def test_a_crashing_tool_returns_an_error_instead_of_raising(session):
 
 def test_describe_lists_every_tool_with_its_input_schema(registry):
     described = {d.name: d for d in registry.describe()}
-    assert set(described) == {"list_documents", "get_outline", "search", "get_chunk", "read_section", "calculate", "submit_finding"}
+    assert set(described) == {"list_documents", "get_outline", "search", "get_chunk", "read_section", "calculate",
+                              "record_fact", "submit_finding"}
     assert "document_id" in described["get_outline"].input_schema["properties"]
     schema = str(described["submit_finding"].input_schema)
     assert "contradiction" in schema and "missing_information" in schema
@@ -347,30 +389,41 @@ def test_a_wrong_sheet_name_gets_close_suggestions(session, room, registry):
 
 
 # ---- fix: coverage tracking -----------------------------------------------------
-def test_documents_count_as_opened_only_by_outline_read_section_or_get_chunk(session, room, registry):
+
+def test_a_chunk_counts_as_read_once_its_text_was_shown(session, room, registry):
     class Stub:
         def search(self, query, **kwargs):
             return [RetrievedChunk(chunk_id=room.deck_p1, document_id=room.deck.id, filename="deck.pdf", score=0.9,
                                    content="x", content_type="paragraph", page_number=1)]
 
     registry.context.retrieval = Stub()
-    names = lambda: registry.coverage().not_opened
-    assert names() == ["capex.xlsx", "deck.pdf", "lease.docx"]  # the missing document is not counted
-
-    registry.execute("search", {"query": "capacity"})
-    assert registry.context.searched_documents == {room.deck.id} and len(names()) == 3  # search hits do not count
+    state = lambda: {d.filename: (d.chunks_read, d.chunks, d.unread_sections) for d in registry.coverage().not_fully_read}
+    assert state() == {"capex.xlsx": (0, 2, ["Sheet: Current", "Sheet: Expansion"]), "deck.pdf": (0, 2, ["Page 1", "Page 2"]),
+                       "lease.docx": (0, 3, ["Rent", "Term"])}  # the missing document is not counted
 
     registry.execute("get_outline", {"document_id": room.deck.id})
-    registry.execute("get_chunk", {"chunk_id": room.capex_current})
+    assert state()["deck.pdf"][0] == 0  # an outline shows no chunk text
+
+    registry.execute("search", {"query": "capacity"})  # a search hit shows the whole chunk
+    assert state()["deck.pdf"] == (1, 2, ["Page 2"])
+
+    registry.execute("get_chunk", {"chunk_id": room.capex_current, "neighbors": 1})  # neighbours are shown too
+    assert "capex.xlsx" not in state()
+
+    registry.execute("read_section", {"document_id": room.lease.id, "heading": "Rent"})
+    assert state()["lease.docx"] == (2, 3, ["Term"])
+
     registry.execute("read_section", {"document_id": room.lease.id, "heading": "Term"})
+    registry.execute("read_section", {"document_id": room.deck.id, "page_number": 2})
     cov = registry.coverage()
-    assert (cov.total, cov.opened, cov.not_opened) == (3, 3, [])
+    assert (cov.total, cov.fully_read, cov.not_fully_read) == (3, 3, [])
 
 
-def test_list_documents_shows_which_documents_are_opened(registry, room):
-    registry.execute("get_outline", {"document_id": room.capex.id})
-    docs = {d.filename: d.opened for d in registry.execute("list_documents").output.documents}
-    assert docs == {"capex.xlsx": True, "deck.pdf": False, "lease.docx": False}
+
+def test_list_documents_shows_how_many_chunks_were_read(registry, room):
+    registry.execute("read_section", {"document_id": room.capex.id, "sheet_name": "Current"})
+    docs = {d.filename: d.chunks_read for d in registry.execute("list_documents").output.documents}
+    assert docs == {"capex.xlsx": 1, "deck.pdf": 0, "lease.docx": 0}
 
 
 def test_a_document_without_chunks_is_not_expected_to_be_opened(session, room, registry):

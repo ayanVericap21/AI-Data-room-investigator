@@ -5,9 +5,11 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
+from app.agent.matcher import MatchStats
 from app.llm.base import TokenUsage
 from app.llm.metrics import CallMetric, LatencySummary
 from app.tools.base import ToolCallRecord
+from app.tools.schemas import RecordedFact
 
 Termination = Literal["finished", "max_steps", "tool_budget", "stopped", "llm_error"]
 
@@ -71,6 +73,8 @@ class AgentRunResult(BaseModel):
     tool_calls: list[ToolCallRecord] = Field(default_factory=list)
     tool_latency_by_tool: dict[str, LatencySummary] = Field(default_factory=dict)
     documents_total: int = 0  # readable documents in the data room
-    documents_opened: int = 0  # opened by the agent (outline, read_section or get_chunk)
-    documents_not_opened: list[str] = Field(default_factory=list)
-    finish_refusals: int = 0  # times finishing was refused because documents were still unopened
+    documents_fully_read: int = 0  # every chunk's text was shown to the agent
+    documents_not_fully_read: list[str] = Field(default_factory=list)  # "file name (read a of b chunks)"
+    finish_refusals: int = 0  # times finishing was refused because chunks were still unread
+    matching: MatchStats | None = None  # the fact-matching step after the agent finished
+    facts: list[RecordedFact] = Field(default_factory=list)  # the running memory at the end of the run
