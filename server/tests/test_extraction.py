@@ -61,3 +61,13 @@ def test_unsupported_type(tmp_path):
     f.write_text("x")
     with pytest.raises(UnsupportedDocumentError):
         extract_document(f, "doc_1", "a.txt")
+
+
+def test_xlsm_is_read_like_xlsx(tmp_path):
+    from app.services.extraction_service import file_type_for
+
+    p = make_xlsx(tmp_path / "model.xlsx").rename(tmp_path / "model.xlsm")
+    assert file_type_for(p) == "xlsx"  # same stored type, so nothing else needs to change
+    units = extract_document(p, "doc_1", "model.xlsm")
+    assert {u.locator.sheet_name for u in units} == {"Revenue", "Notes"}
+    assert unit_count(p, "xlsx") == 2

@@ -42,6 +42,13 @@ class ExtractionError(AppError):
     code = "extraction_failed"
 
 
+class ScannedDocumentError(ExtractionError):
+    """A PDF with no usable text layer (a scan). It is left out of the run, not treated as a failure,
+    because the system has no OCR."""
+
+    code = "scanned_document"
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     from app.llm.errors import LLMConfigError, LLMError
 

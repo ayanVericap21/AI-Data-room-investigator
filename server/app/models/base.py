@@ -22,9 +22,9 @@ from sqlalchemy.orm import DeclarativeBase
 JsonType = JSON().with_variant(JSONB(), "postgresql")
 
 
-# Width of document_chunks.embedding. pgvector cannot index `vector` columns wider than
-# 2000 dims, so providers are asked for this size (see EMBEDDING_DIMENSIONS).
-EMBEDDING_DIM = 1536
+# Width of document_chunks.embedding: the output size of the embedding model (all-MiniLM-L6-v2 = 384).
+# Must equal EMBEDDING_DIMENSIONS; changing it needs a migration and re-embedding (see migration 0003).
+EMBEDDING_DIM = 384
 
 
 def utcnow() -> datetime:
@@ -54,6 +54,7 @@ class ProcessingStatus(_StrEnum):
     processed = "processed"
     failed = "failed"
     missing = "missing"  # row exists but the file is no longer in the data room
+    skipped = "skipped"  # left out on purpose, e.g. a scanned PDF (no OCR); never retried
 
 
 class InvestigationStatus(_StrEnum):

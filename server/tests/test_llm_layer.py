@@ -89,3 +89,21 @@ def test_embedding_retries_transient_failures():
 
     emb = Flaky(max_attempts=3, sleep=lambda _s: None)
     assert len(emb.embed(["x"])) == 1 and len(calls) == 3
+
+
+# ---- Google rate-limit handling ----------------------------------------------
+def test_google_429_wait_time_is_read_from_the_json_body_or_header():
+    import httpx
+
+    from app.llm.google import _check, retry_delay_seconds
+
+    body = {"error": {"code": 429, "details": [
+        {"@type": "type.googleapis.com/google.rpc.QuotaFailure"},
+        {"@type": "type.googleapis.com/google.rpc.RetryInfo", "retryDelay": "27s"}]}}
+    assert retry_delay_seconds(httpx.Response(429, json=body)) == 27.0
+    assert retry_delay_seconds(httpx.Response(429, headers={"retry-after": "5"}, json=body)) == 5.0  # header wins
+    assert retry_delay_seconds(httpx.Response(429, text="not json")) is None
+    assert retry_delay_seconds(httpx.Response(429, json={"error": {"details": "odd"}})) is None
+    with pytest.raises(LLMTransientError) as info:
+        _check(httpx.Response(429, json=body))
+    assert info.value.retry_after == 27.0

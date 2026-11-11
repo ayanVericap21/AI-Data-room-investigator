@@ -45,8 +45,11 @@ def process_documents(
     def run(progress):
         started = time.perf_counter()
         with factory() as session:
-            results = ProcessingService(session, DocumentService(session, settings), embedder, progress).process_pending()
+            processing = ProcessingService(session, DocumentService(session, settings), embedder, progress,
+                                           extract_workers=settings.extract_workers)
+            results = processing.process_pending()
             return {"results": [asdict(r) for r in results],
+                    "extract_phase_ms": processing.extract_phase_ms,
                     "embedding_latency": embedder.latency_summary().model_dump(),
                     "duration_ms": round((time.perf_counter() - started) * 1000)}
 

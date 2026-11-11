@@ -7,6 +7,7 @@ from app.llm.base import LLMClient
 from app.llm.embeddings import EmbeddingProvider, MockEmbeddingProvider
 from app.llm.errors import LLMConfigError
 from app.llm.google import GoogleEmbeddingProvider, GoogleLLMClient
+from app.llm.local import DEFAULT_LOCAL_MODEL, LocalEmbeddingProvider
 from app.llm.mock import MockLLMClient
 
 
@@ -29,6 +30,9 @@ def get_embedding_provider(settings: Settings) -> EmbeddingProvider:
     provider = (settings.embedding_provider or settings.llm_provider).strip().lower()
     if provider == "mock":
         return MockEmbeddingProvider(dimensions=settings.embedding_dimensions)
+    if provider == "local":  # runs on this machine, no API key and no quota
+        return LocalEmbeddingProvider(model=settings.embedding_model or DEFAULT_LOCAL_MODEL,
+                                      dimensions=settings.embedding_dimensions)
     if provider == "google":
         if not settings.llm_api_key:
             raise LLMConfigError("LLM_API_KEY is not set (required for Google embeddings)")

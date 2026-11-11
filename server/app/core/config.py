@@ -40,7 +40,7 @@ class Settings(BaseModel):
     embedding_provider: str = ""
     embedding_model: str = ""
     # Must match the vector(N) column on document_chunks.embedding (see migration 0002).
-    embedding_dimensions: int = 1536
+    embedding_dimensions: int = 384
 
     max_investigation_iterations: int = 3
     max_llm_calls: int = 30
@@ -48,6 +48,8 @@ class Settings(BaseModel):
     investigation_poll_interval: int = 10
 
     data_room_path: Path = Path("./data_room")
+    # Documents parsed at the same time during processing (separate processes; 1 = one at a time).
+    extract_workers: int = Field(default=4, ge=1)
 
     @property
     def data_room_dir(self) -> Path:

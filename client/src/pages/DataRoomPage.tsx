@@ -23,6 +23,7 @@ const STATUS_COLOR: Record<string, "default" | "success" | "error" | "warning" |
   processing: "info",
   processed: "success",
   failed: "error",
+  skipped: "warning",
 };
 
 export default function DataRoomPage() {

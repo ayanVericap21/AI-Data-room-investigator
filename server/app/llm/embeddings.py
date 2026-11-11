@@ -24,7 +24,7 @@ def l2_normalize(vector: list[float]) -> list[float]:
 class EmbeddingProvider(ABC):
     MAX_BATCH = 100
 
-    def __init__(self, dimensions: int = 1536, max_attempts: int = 3, base_delay: float = 1.0,
+    def __init__(self, dimensions: int = 384, max_attempts: int = 3, base_delay: float = 1.0,
                  sleep: Callable[[float], None] = time.sleep):
         self.dimensions = dimensions
         self.max_attempts = max_attempts
@@ -45,26 +45,29 @@ class EmbeddingProvider(ABC):
             batch = texts[start:start + self.MAX_BATCH]
             for attempt in range(1, self.max_attempts + 1):
                 started = time.perf_counter()
+                wall = time.time()
                 try:
                     vectors.extend(self._embed_batch(batch, task))
-                    self._record(started, None)
+                    self._record(started, None, batch, wall)
                     break
                 except LLMTransientError as exc:
-                    self._record(started, exc)
+                    self._record(started, exc, batch, wall)
                     if attempt == self.max_attempts:
                         raise
                     delay = exc.retry_after if exc.retry_after is not None else self.base_delay * (2 ** (attempt - 1))
                     logger.warning("Transient embedding error, retrying", extra={"attempt": attempt, "delay": delay})
                     self._sleep(min(delay, 60))
                 except LLMError as exc:
-                    self._record(started, exc)
+                    self._record(started, exc, batch, wall)
                     raise
         return vectors
 
-    def _record(self, started: float, error: Exception | None) -> None:
+    def _record(self, started: float, error: Exception | None, batch: list[str] | None = None,
+                wall: float = 0.0) -> None:
         self.call_metrics.append(CallMetric(
             kind="embedding", latency_ms=round((time.perf_counter() - started) * 1000), ok=error is None,
-            error=str(error)[:200] if error else None))
+            error=str(error)[:200] if error else None, items=len(batch or []),
+            prompt_chars=sum(len(t) for t in batch or []), started_at=wall))
 
 
 class MockEmbeddingProvider(EmbeddingProvider):

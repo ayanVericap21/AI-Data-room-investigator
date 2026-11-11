@@ -40,3 +40,11 @@ class XlsxCell(BaseModel):
     value: Any = None  # cached value (None if the file has no cached result)
     formula: str | None = None  # e.g. "=B2*C2" when the cell holds a formula
     cached_value_available: bool = True
+
+
+class ExtractionReport(BaseModel):
+    """Side information from one extraction: milliseconds per part, and plain-language notes about
+    anything that was not captured or was deliberately skipped."""
+
+    timings_ms: dict[str, int] = Field(default_factory=dict)
+    notes: list[str] = Field(default_factory=list)

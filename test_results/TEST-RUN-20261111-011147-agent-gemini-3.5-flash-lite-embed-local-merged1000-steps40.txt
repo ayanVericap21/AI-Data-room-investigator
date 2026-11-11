@@ -1,0 +1,311 @@
+TEST RUN  20261111-011147  agent-gemini-3.5-flash-lite-embed-local-merged1000-steps40
+==============================================================================
+
+HOW THIS RUN WAS ACHIEVED
+1. Documents: every supported file in server/data_room was scanned (SHA-256 identity, duplicates skipped) and parsed locally, 1 documents at a time (PyMuPDF, python-docx, openpyxl; .xlsm read like .xlsx); scanned PDFs are skipped automatically.
+2. Chunking: merged: small neighbouring units of the same page/sheet/heading joined up to 1000 chars; hard maximum 1000 chars; embedding text is prefixed with file name and heading.
+3. Embeddings: sentence-transformers/all-MiniLM-L6-v2 at 384 dims, run locally on this machine (fastembed, no API), batches of up to 64, stored with each chunk in Postgres/pgvector (HNSW cosine) in database 'dataroom_run_20261111_011147'.
+4. Investigation: a tool-using agent loop (gemini-3.5-flash-lite, temperature 0, JSON action protocol, 7 tools, max 40 steps, 80 tool calls); no claim extraction or candidate pairs were used.
+5. Safeguards: every finding quote is checked in code as an exact substring of its stored chunk before saving; arithmetic only through the calculate tool; provider retries up to 5 attempts honouring Google's retry delay.
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+Run started   : 2026-11-11 01:11:47 (local)   finished: 01:12:26   wall time: 39.7s
+Config        : agent-gemini-3.5-flash-lite-embed-local-merged1000-steps40
+Database      : dataroom_run_20261111_011147 (created for this run)
+Code version  : git d216257 + uncommitted changes   python 3.14.5   Windows
+RUN ERROR     : see section 'Run error' at the end of this file
+Documents     : 12 registered, 1 duplicates skipped; processing result: {}
+Chunks        : 0 total, 0 characters
+Embedding     : 8 calls (0 failed), 113 texts embedded, 5.2s total
+
+==============================================================================
+FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)
+==============================================================================
+No findings were saved in this run.
+(termination: n/a; see the agent trace and failures sections for why)
+
+==============================================================================
+CONFIGURATION
+==============================================================================
+llm provider/model         : google / gemini-3.5-flash-lite (temperature 0, JSON mime type for structured output)
+embedding provider/model   : local / sentence-transformers/all-MiniLM-L6-v2, 384 dims (reads at most 256 word pieces, about 1,000 characters; longer text is cut by the model)
+retry attempts (llm+embed) : 5 (backoff 1s, 2s, 4s...; Google retryDelay honoured; cap 60s per wait)
+chunking                   : merge=ON, target 1000, hard max 1000 chars
+parsing                    : 1 parallel worker processes; PDF table detection skipped on pages with more than 10,000 vector paths
+scanned-PDF rule           : picture-only page = under 20 chars and image covers >= 50%; PDF skipped when >= 50% of pages are picture-only
+agent limits               : max steps 40, tool budget 80, max findings 20
+agent history window       : last 3 tool results in full, older ones shortened; each result capped at 12,000 chars
+tool limits                : search top_k <= 10; read_section <= 40 chunks / 12,000 chars; quotes >= 8 chars
+focus given to the agent   : Review the whole data room for discrepancies between documents. Prioritise figures that appear in more than one document (capacities, quantities, costs, revenues, prices, dates, timelines, locations, counts) and statements that one document makes and another contradicts or does not support. Compare like with like (same metric, unit, period, scope). Submit a finding for each material discrepancy with exact quotes from both sides, and use missing_information or insufficient_evidence where something is claimed but not evidenced.
+
+==============================================================================
+DATA ROOM AND DOCUMENT PROCESSING
+==============================================================================
+scan: discovered 13, added 12, unchanged 0, missing 0
+      duplicates skipped (same content): ['Main Picth Deck HyveGeo .pdf']
+      unsupported types ignored        : none
+
+  file  type  KB  pages/sheets  status  chunks  chars  median  max
+  ----  ----  --  ------------  ------  ------  -----  ------  ---
+
+LATENCY OF EACH PART, PER DOCUMENT (the old single 'process' time was all four parts added together):
+  extract = read the file into text (local, PyMuPDF/openpyxl)      chunk = split text into chunks (local pure Python)
+  save    = write chunks to Postgres (local)                       embed = Google embedding API calls (network)
+
+  file  extract s  chunk ms  save ms  embed s  embed calls (failed)  total s
+  ----  ---------  --------  -------  -------  --------------------  -------
+
+Where the extract time goes (seconds):
+
+
+==============================================================================
+CHUNKING
+==============================================================================
+Strategy used in this run: merged to 1000 chars; chunk size in characters (about 4 chars per token).
+
+  type  chunks  chars  mean  median  p90  max  under 100 chars
+  ----  ------  -----  ----  ------  ---  ---  ---------------
+  all   0       0      0     0       0    0    n/a
+
+Chunking strategies compared (measured locally earlier today on these same files, not part of this run):
+  strategy               type  chunks  median  mean  p90   max   under 100ch
+  ---------------------  ----  ------  ------  ----  ----  ----  -----------
+  per-unit, old default  pdf   1300    27      53    92    1218  92%
+  per-unit, old default  xlsx  1594    190     383   1174  1500  18%
+  merge to 600           pdf   192     324     367   590   1218  8%
+  merge to 600           xlsx  894     532     683   1500  1500  2%
+  merge to 1000          pdf   143     428     494   977   1218  6%
+  merge to 1000          xlsx  651     922     939   1500  1500  2%
+  merge to 1500          pdf   126     460     560   1193  1490  4%
+  merge to 1500          xlsx  521     1345    1173  1500  1500  2%
+
+Reading: the old default turns every PDF text box into its own chunk (median 27 chars), which is too small to embed or quote well.
+Merging to 1000 keeps a slide or page together (PDF median 428) and groups spreadsheet rows (median 922) without crossing a page, sheet or heading.
+
+==============================================================================
+EMBEDDING CALLS
+==============================================================================
+calls: 8 (0 indexing, 8 agent searches), failed 0
+texts embedded: 113, characters sent: 67,376
+
+  #  phase        texts  chars sent  latency ms  result  error
+  -  -----------  -----  ----------  ----------  ------  -----
+  1  agent query  20     12,835      1868        ok
+  2  agent query  18     8,481       618         ok
+  3  agent query  15     7,908       617         ok
+  4  agent query  17     7,290       637         ok
+  5  agent query  5      3,778       175         ok
+  6  agent query  16     4,748       292         ok
+  7  agent query  19     19,572      812         ok
+  8  agent query  3      2,764       132         ok
+
+==============================================================================
+LLM CALLS: tokens, context size, latency, failures
+==============================================================================
+No investigation ran.
+
+==============================================================================
+TOOL CALLS: counts, targets, latency, failures
+==============================================================================
+No investigation ran.
+
+==============================================================================
+FAILURES
+==============================================================================
+LLM attempt failures:
+  none
+Tool call failures:
+  none
+Embedding failures:
+  none
+Documents not processed:
+  none
+
+==============================================================================
+TIMING
+==============================================================================
+  stage       duration  share of wall time
+  ----------  --------  ------------------
+  scan files  0.3s      1%
+
+==============================================================================
+PROMPT CACHING
+==============================================================================
+Facts (Google docs, fetched 2026-11-11): implicit caching is on by default for Gemini 2.5 and newer; the minimum for gemini-3.6-flash is 4,096 tokens;
+  stable content should come first in the prompt; cached tokens are reported by the API (usageMetadata.cachedContentTokenCount).
+Our prompt layout: system instruction + task + tool list (stable) -> history (grows; older results get shortened as new ones arrive) -> step counter -> JSON schema.
+  Shortening an old result changes the middle of the prompt, so only the prefix before the first change can be a cache hit.
+
+==============================================================================
+AGENT TRACE (operational summaries only)
+==============================================================================
+No investigation ran.
+
+==============================================================================
+Run error
+==============================================================================
+Traceback (most recent call last):
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\scripts\full_run.py", line 514, in main
+    result_list = processing.process_pending()
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\app\services\processing_service.py", line 97, in process_pending
+    results = [self.process_document(doc, parsed.get(doc.id)) for doc in docs]
+               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\app\services\processing_service.py", line 172, in process_document
+    self.session.commit()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2177, in commit
+    trans.commit(_to_root=True)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "<sqlalchemy generated _go() wrapper for sqlalchemy.orm.session.SessionTransaction.commit>", line 2, in commit
+    return target(fn, self, _to_root=_to_root)
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\orm\state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 1412, in commit
+    self._prepare_impl()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "<sqlalchemy generated _go() wrapper for sqlalchemy.orm.session.SessionTransaction._prepare_impl>", line 2, in _prepare_impl
+    return target(fn, self)
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\orm\state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 1386, in _prepare_impl
+    self.session.flush()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 4626, in flush
+    self._flush(objects)
+    ~~~~~~~~~~~^^^^^^^^^
+  File "<sqlalchemy generated warned() wrapper for sqlalchemy.orm.session.Session._flush>", line 2, in _flush
+    return target(fn, self, objects=objects)
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\util\deprecations.py", line 281, in warned
+    return fn(*args, **kwargs)  # type: ignore[no-any-return]
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 4769, in _flush
+    with util.safe_reraise():
+         ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 166, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 4730, in _flush
+    flush_context.execute()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\orm\unitofwork.py", line 467, in execute
+    rec.execute(self)
+    ~~~~~~~~~~~^^^^^^
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\orm\unitofwork.py", line 643, in execute
+    util.preloaded.orm_persistence._save_obj(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self.mapper,
+        ^^^^^^^^^^^^
+        uow.states_for_mapper_hierarchy(self.mapper, False, False),
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        uow,
+        ^^^^
+    )
+    ^
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\orm\persistence.py", line 92, in _save_obj
+    _emit_insert_statements(
+    ~~~~~~~~~~~~~~~~~~~~~~~^
+        base_mapper,
+        ^^^^^^^^^^^^
+    ...<3 lines>...
+        insert,
+        ^^^^^^^
+    )
+    ^
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\orm\persistence.py", line 1160, in _emit_insert_statements
+    result = connection.execute(
+        statement, multiparams, execution_options=execution_options
+    )
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1494, in execute
+    return meth(
+        self,
+        distilled_parameters,
+        execution_options or NO_OPTIONS,
+    )
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 534, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, distilled_params, execution_options
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1714, in _execute_clauseelement
+    ret = self._execute_context(
+        dialect,
+    ...<9 lines>...
+        param_dict=param_dict,
+    )
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1866, in _execute_context
+    return self._exec_insertmany_context(dialect, context)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2130, in _exec_insertmany_context
+    self._handle_dbapi_exception(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        e,
+        ^^
+    ...<4 lines>...
+        is_sub_exec=True,
+        ^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2354, in _handle_dbapi_exception
+    raise exc_info[1].with_traceback(exc_info[2])
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2113, in _exec_insertmany_context
+    dialect.do_execute(
+    ~~~~~~~~~~~~~~~~~~^
+        cursor,
+        ^^^^^^^
+    ...<2 lines>...
+        context,
+        ^^^^^^^^
+    )
+    ^
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 1192, in do_execute
+    cursor.execute(statement, parameters)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\psycopg\cursor.py", line 113, in execute
+    self._conn.wait(
+    ~~~~~~~~~~~~~~~^
+        self._execute_gen(query, params, prepare=prepare, binary=binary)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\psycopg\connection.py", line 495, in wait
+    return waiting.wait(
+           ~~~~~~~~~~~~^
+        gen, self.pgconn.socket, interval=interval, timeout=timeout
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\psycopg\waiting.py", line 341, in wait_select
+    s = next(gen)
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\psycopg\_cursor_base.py", line 205, in _execute_gen
+    pgq = self._convert_query(query, params)
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\psycopg\_cursor_base.py", line 465, in _convert_query
+    pgq.convert(query, params)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\psycopg\_queries.py", line 92, in convert
+    self.dump(vars)
+    ~~~~~~~~~^^^^^^
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\psycopg\_queries.py", line 103, in dump
+    self.params = self._tx.dump_sequence(params, self._want_formats)
+                  ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "psycopg_binary/_psycopg/transform.pyx", line 355, in psycopg_binary._psycopg.Transformer.dump_sequence
+  File "psycopg_binary/_psycopg/transform.pyx", line 407, in psycopg_binary._psycopg.Transformer.dump_sequence
+  File "C:\Users\Ayan Khan\Desktop\ai-dataroom-investigator\AI-Data-room-investigator\server\.venv\Lib\site-packages\psycopg\types\json.py", line 218, in dump
+    if isinstance((data := dumps(obj)), str):
+                           ~~~~~^^^^^
+  File "C:\Users\Ayan Khan\AppData\Local\Python\pythoncore-3.14-64\Lib\json\__init__.py", line 235, in dumps
+    return _default_encoder.encode(obj)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\Ayan Khan\AppData\Local\Python\pythoncore-3.14-64\Lib\json\encoder.py", line 202, in encode
+    chunks = self.iterencode(o, _one_shot=True)
+  File "C:\Users\Ayan Khan\AppData\Local\Python\pythoncore-3.14-64\Lib\json\encoder.py", line 263, in iterencode
+    return _iterencode(o, 0)
+  File "C:\Users\Ayan Khan\AppData\Local\Python\pythoncore-3.14-64\Lib\json\encoder.py", line 182, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+                    f'is not JSON serializable')
+TypeError: Object of type ArrayFormula is not JSON serializable
+when serializing dict item 'value'
+when serializing list item 2
+when serializing dict item 'cells'
+

@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 
 class CallMetric(BaseModel):
-    kind: Literal["llm", "embedding"]
+    kind: Literal["llm", "embedding", "tool"]
     latency_ms: int
     ok: bool = True
     error: str | None = None
@@ -19,6 +19,11 @@ class CallMetric(BaseModel):
     completion_tokens: int = 0
     thinking_tokens: int = 0
     total_tokens: int = 0
+    cached_tokens: int = 0  # input tokens served from the provider's prompt cache
+    prompt_chars: int = 0  # size of what was sent (system + prompt, or the embedded texts)
+    response_chars: int = 0
+    items: int = 0  # texts in an embedding batch
+    started_at: float = 0.0  # epoch seconds when the attempt began
 
 
 class LatencySummary(BaseModel):

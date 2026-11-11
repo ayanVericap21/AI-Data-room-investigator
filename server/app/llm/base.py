@@ -25,6 +25,7 @@ class TokenUsage(BaseModel):
     prompt_tokens: int = 0
     completion_tokens: int = 0
     thinking_tokens: int = 0  # hidden reasoning tokens (billed, and a main source of latency)
+    cached_tokens: int = 0  # prompt tokens served from the provider's prompt cache (part of prompt_tokens)
     total_tokens: int = 0
     calls: int = 0
 
@@ -32,6 +33,7 @@ class TokenUsage(BaseModel):
         self.prompt_tokens += other.prompt_tokens
         self.completion_tokens += other.completion_tokens
         self.thinking_tokens += other.thinking_tokens
+        self.cached_tokens += other.cached_tokens
         self.total_tokens += other.total_tokens
         self.calls += other.calls
 
@@ -99,8 +101,10 @@ class LLMClient(ABC):
     # -- internals -----------------------------------------------------------
     def _call(self, prompt: str, system: str | None, json_mode: bool) -> RawResponse:
         """Provider call with bounded exponential backoff for transient errors only."""
+        self._prompt_chars = len(prompt) + len(system or "")
         for attempt in range(1, self.max_attempts + 1):
             started = time.perf_counter()
+            self._attempt_wall = time.time()
             try:
                 response = self._raw_generate(prompt, system, json_mode)
             except LLMTransientError as exc:
@@ -115,17 +119,20 @@ class LLMClient(ABC):
             except LLMError as exc:  # permanent: record the attempt, then let it propagate
                 self._record(started, None, exc)
                 raise
-            self._record(started, response.usage, None)
+            self._record(started, response.usage, None, len(response.text))
             usage = response.usage.model_copy()
             usage.calls = 1
             self._usage.add(usage)
             return response
         raise AssertionError("unreachable")
 
-    def _record(self, started: float, usage: TokenUsage | None, error: Exception | None) -> None:
+    def _record(self, started: float, usage: TokenUsage | None, error: Exception | None,
+                response_chars: int = 0) -> None:
         self.call_metrics.append(CallMetric(
             kind="llm", latency_ms=round((time.perf_counter() - started) * 1000), ok=error is None,
             error=str(error)[:200] if error else None,
             prompt_tokens=usage.prompt_tokens if usage else 0, completion_tokens=usage.completion_tokens if usage else 0,
             thinking_tokens=usage.thinking_tokens if usage else 0, total_tokens=usage.total_tokens if usage else 0,
+            cached_tokens=usage.cached_tokens if usage else 0, prompt_chars=getattr(self, "_prompt_chars", 0),
+            response_chars=response_chars, started_at=getattr(self, "_attempt_wall", 0.0),
         ))

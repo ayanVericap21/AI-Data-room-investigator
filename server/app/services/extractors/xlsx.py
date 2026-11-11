@@ -10,13 +10,18 @@ as the column-header context for the rows below it (a heuristic, recorded in met
 """
 from __future__ import annotations
 
+import time
+from datetime import date, datetime
+from datetime import time as time_of_day
 from pathlib import Path
 
 import openpyxl
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.formula import ArrayFormula, DataTableFormula
 
 from app.core.exceptions import ExtractionError
-from app.schemas.extraction import ExtractedUnit, Locator, XlsxCell
+from app.schemas.extraction import ExtractedUnit, ExtractionReport, Locator, XlsxCell
+from app.services.extractors import lap
 
 
 def count_sheets(path: Path) -> int | None:
@@ -30,18 +35,42 @@ def count_sheets(path: Path) -> int | None:
         return None
 
 
-def _is_formula(value: object) -> bool:
-    return isinstance(value, str) and value.startswith("=")
+def _formula_text(value: object) -> str | None:
+    """The formula as text, for ordinary formulas ("=B2*C2") and Excel array / data-table formulas, else None."""
+    if isinstance(value, str):
+        return value if value.startswith("=") else None
+    if isinstance(value, ArrayFormula):
+        text = value.text or ""
+        return text if text.startswith("=") else f"={text}" if text else f"{{array formula {value.ref}}}"
+    if isinstance(value, DataTableFormula):
+        return f"{{data table formula {value.ref}}}"
+    return None
 
 
-def extract_xlsx(path: Path, document_id: str, filename: str) -> list[ExtractedUnit]:
+def _json_safe(value: object) -> object:
+    """Cell values go into a JSON column: keep numbers, text and booleans, write dates as ISO text,
+    anything else as its text."""
+    if value is None or isinstance(value, (bool, int, float, str)):
+        return value
+    if isinstance(value, (datetime, date, time_of_day)):
+        return value.isoformat()
+    return str(value)
+
+
+def extract_xlsx(path: Path, document_id: str, filename: str, report: ExtractionReport | None = None) -> list[ExtractedUnit]:
+    """``report`` (optional) receives milliseconds per part: load_formulas, load_values, read_rows."""
     try:
+        t = time.perf_counter()
         wb_f = openpyxl.load_workbook(path, data_only=False)
+        lap(report, "load_formulas", t)
+        t = time.perf_counter()
         wb_v = openpyxl.load_workbook(path, data_only=True)
+        lap(report, "load_values", t)
     except Exception as exc:
         raise ExtractionError(f"Cannot open XLSX '{filename}': {exc}") from exc
 
     units: list[ExtractedUnit] = []
+    t_rows = time.perf_counter()
     try:
         for ws_f in wb_f.worksheets:
             ws_v = wb_v[ws_f.title]
@@ -60,12 +89,13 @@ def extract_xlsx(path: Path, document_id: str, filename: str) -> list[ExtractedU
                 for c in row:
                     if c.value is None:
                         continue
-                    cached = ws_v[c.coordinate].value
-                    formula = c.value if _is_formula(c.value) else None
+                    cached = _json_safe(ws_v[c.coordinate].value)
+                    formula = _formula_text(c.value)
+                    plain = None if formula else _json_safe(c.value)
                     header = headers.get(c.column) if row_no != header_row_no else None
                     cell = XlsxCell(
                         ref=c.coordinate, column_header=header,
-                        value=cached if formula else c.value,
+                        value=cached if formula else plain,
                         formula=formula,
                         cached_value_available=(cached is not None) if formula else True,
                     )
@@ -76,7 +106,7 @@ def extract_xlsx(path: Path, document_id: str, filename: str) -> list[ExtractedU
                         parts.append(f"{label}{formula} (= {shown})" if cached is not None
                                      else f"{label}{formula} ({shown})")
                     else:
-                        parts.append(f"{label}{c.value}")
+                        parts.append(f"{label}{plain}")
                 first = get_column_letter(row[0].column)
                 last = get_column_letter(row[-1].column)
                 ref = f"{first}{row_no}:{last}{row_no}"
@@ -92,6 +122,7 @@ def extract_xlsx(path: Path, document_id: str, filename: str) -> list[ExtractedU
                     },
                 ))
     finally:
+        lap(report, "read_rows", t_rows)
         wb_f.close()
         wb_v.close()
     return units

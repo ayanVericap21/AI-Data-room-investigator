@@ -4,7 +4,9 @@ import os
 from app.models import Document
 from app.models.base import ProcessingStatus
 from app.services.document_service import DocumentService, hash_file
-from tests.conftest import make_docx, make_pdf
+from sqlalchemy import select
+
+from tests.conftest import make_docx, make_pdf, make_xlsx
 
 
 def test_hash_file_is_sha256(tmp_path):
@@ -75,3 +77,10 @@ def test_empty_data_room_dir_missing(session, tmp_path):
 
     svc = DocumentService(session, Settings(data_room_path=tmp_path / "nope"))
     assert svc.scan().discovered == 0
+
+
+def test_scan_registers_xlsm_files(session, settings, data_room):
+    make_xlsx(data_room / "model.xlsx").rename(data_room / "model.xlsm")
+    result = DocumentService(session, settings).scan()
+    assert result.added == 1 and result.unsupported == []
+    assert session.scalars(select(Document)).one().file_type == "xlsx"

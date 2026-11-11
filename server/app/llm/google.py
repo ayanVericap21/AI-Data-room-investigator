@@ -11,12 +11,26 @@ BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
 TIMEOUT = httpx.Timeout(60.0, connect=10.0)
 
 
+def retry_delay_seconds(response: httpx.Response) -> float | None:
+    """How long Google asks us to wait: the Retry-After header, or the RetryInfo.retryDelay
+    (e.g. "27s") that Google puts in the JSON error body of a 429."""
+    header = response.headers.get("retry-after")
+    if header and header.isdigit():
+        return float(header)
+    try:
+        for detail in response.json().get("error", {}).get("details", []):
+            delay = detail.get("retryDelay")
+            if isinstance(delay, str) and delay.endswith("s"):
+                return float(delay[:-1])
+    except (ValueError, AttributeError, TypeError):
+        pass
+    return None
+
+
 def _check(response: httpx.Response) -> dict:
     if response.status_code == 429 or response.status_code >= 500:
-        retry_after = response.headers.get("retry-after")
         raise LLMTransientError(
-            f"Google API {response.status_code}: {response.text[:200]}",
-            retry_after=float(retry_after) if retry_after and retry_after.isdigit() else None,
+            f"Google API {response.status_code}: {response.text[:200]}", retry_after=retry_delay_seconds(response),
         )
     if response.status_code >= 400:
         raise LLMPermanentError(f"Google API {response.status_code}: {response.text[:300]}")
@@ -57,6 +71,7 @@ class GoogleLLMClient(LLMClient):
             prompt_tokens=meta.get("promptTokenCount", 0),
             completion_tokens=meta.get("candidatesTokenCount", 0),
             thinking_tokens=meta.get("thoughtsTokenCount", 0),
+            cached_tokens=meta.get("cachedContentTokenCount", 0),
             total_tokens=meta.get("totalTokenCount", 0),
         )
         return RawResponse(text=text, usage=usage)
