@@ -1,0 +1,182 @@
+{
+  "investigation_id": "inv_3dd4bfb476a34a78",
+  "config_name": "ui-run",
+  "state": "completed",
+  "started_at": "2026-11-12 15:43:59",
+  "finished_at": "2026-11-12T15:46:19",
+  "wall_s": 139.0,
+  "results_file": "C:\\Users\\Ayan Khan\\Desktop\\ai-dataroom-investigator\\AI-Data-room-investigator\\test_results\\TEST-RUN-20261112-154359-ui-run.txt",
+  "settings": {
+    "extractor": "llamaextract (typed facts)",
+    "pairing": "llm (family I) + check families",
+    "vocabulary": "off",
+    "coverage_check": "gate fail",
+    "batch_chunks": null,
+    "batch_chars": 60,
+    "llm_model": "cost_effective",
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2"
+  },
+  "counts": {
+    "documents": 8,
+    "documents_fully_read": 8,
+    "chunks": 13,
+    "claims_recorded": 63,
+    "claims_rejected": 0,
+    "candidate_pairs": 9,
+    "extractor_credits": 60.0,
+    "pairs_without_clustering": 0,
+    "pairs_exact": 0,
+    "pairs_judged": 9,
+    "verdicts": {
+      "insufficient_evidence": 1,
+      "contextual_difference": 1,
+      "not_comparable": 7
+    },
+    "findings_saved": 2,
+    "findings_rejected": 1,
+    "embedding_calls": 1,
+    "embedding_texts": 63,
+    "coverage_calls": 0,
+    "coverage_claims_added": 0
+  },
+  "llm": {
+    "attempts": 34,
+    "failed": 1,
+    "retries": 1,
+    "total_s": 254.2,
+    "avg_ms": 7466,
+    "p95_ms": 15605,
+    "max_ms": 55616,
+    "prompt_tokens": 0,
+    "completion_tokens": 0,
+    "thinking_tokens": 0,
+    "cached_tokens": 0,
+    "total_tokens": 0,
+    "credits": 510.0,
+    "min_context_tokens": 0,
+    "avg_context_tokens": 0,
+    "max_context_tokens": 0
+  },
+  "phases": [
+    {
+      "phase": "3. case model, identifiers, aliases, timeline",
+      "attempts": 1,
+      "failed": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "thinking_tokens": 0,
+      "avg_context_tokens": 0,
+      "max_context_tokens": 0,
+      "avg_ms": 3130,
+      "p95_ms": 3130,
+      "total_s": 3.1
+    },
+    {
+      "phase": "4. plan the checks",
+      "attempts": 1,
+      "failed": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "thinking_tokens": 0,
+      "avg_context_tokens": 0,
+      "max_context_tokens": 0,
+      "avg_ms": 1497,
+      "p95_ms": 1497,
+      "total_s": 1.5
+    },
+    {
+      "phase": "5a. workers investigate",
+      "attempts": 27,
+      "failed": 1,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "thinking_tokens": 0,
+      "avg_context_tokens": 0,
+      "max_context_tokens": 0,
+      "avg_ms": 6339,
+      "p95_ms": 12088,
+      "total_s": 172.6
+    },
+    {
+      "phase": "5b. semantic value comparison (family I)",
+      "attempts": 3,
+      "failed": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "thinking_tokens": 0,
+      "avg_context_tokens": 0,
+      "max_context_tokens": 0,
+      "avg_ms": 20218,
+      "p95_ms": 55616,
+      "total_s": 60.7
+    },
+    {
+      "phase": "6. verify adversarially",
+      "attempts": 1,
+      "failed": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "thinking_tokens": 0,
+      "avg_context_tokens": 0,
+      "max_context_tokens": 0,
+      "avg_ms": 11697,
+      "p95_ms": 11697,
+      "total_s": 11.7
+    },
+    {
+      "phase": "7. consolidate by root cause and save",
+      "attempts": 1,
+      "failed": 0,
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "thinking_tokens": 0,
+      "avg_context_tokens": 0,
+      "max_context_tokens": 0,
+      "avg_ms": 4581,
+      "p95_ms": 4581,
+      "total_s": 4.6
+    }
+  ],
+  "stages": [
+    {
+      "stage": "1. load tables (SQLite), keep cell addresses",
+      "seconds": 0.0,
+      "percent": 0.0
+    },
+    {
+      "stage": "2. extract typed facts",
+      "seconds": 6.3,
+      "percent": 4.5
+    },
+    {
+      "stage": "3. case model, identifiers, aliases, timeline",
+      "seconds": 3.2,
+      "percent": 2.3
+    },
+    {
+      "stage": "4. plan the checks",
+      "seconds": 1.5,
+      "percent": 1.1
+    },
+    {
+      "stage": "5a. workers investigate",
+      "seconds": 50.9,
+      "percent": 36.6
+    },
+    {
+      "stage": "5b. semantic value comparison (family I)",
+      "seconds": 60.5,
+      "percent": 43.5
+    },
+    {
+      "stage": "6. verify adversarially",
+      "seconds": 11.7,
+      "percent": 8.4
+    },
+    {
+      "stage": "7. consolidate by root cause and save",
+      "seconds": 4.6,
+      "percent": 3.3
+    }
+  ]
+}

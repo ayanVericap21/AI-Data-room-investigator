@@ -1,0 +1,82 @@
+{
+  "run_id": "20261112-153420",
+  "config": "ui-run",
+  "wall_seconds": 182.2,
+  "args": {
+    "db_name": "data_room",
+    "config": "ui-run",
+    "only": [
+      "Daily_Field_Notes_Vance.docx",
+      "Dive_Log_and_Samples.xlsx",
+      "Expedition_Protocol_DSCAP26.docx",
+      "Final_Expedition_Summary.pdf",
+      "Incident_Report_ROV.docx",
+      "Lab_Analysis_Report.pdf",
+      "Permit_GOA_2026_099.pdf",
+      "Water_Quality_Metrics.xlsx"
+    ],
+    "workers": 4,
+    "max_tasks": 60,
+    "families": "ABCDEFGHI",
+    "no_verify": false,
+    "gate": "fail",
+    "worker_rounds": 2,
+    "llm_attempts": 5
+  },
+  "documents": 8,
+  "tables": 2,
+  "table_rows": 8,
+  "facts": 97,
+  "facts_by_type": {
+    "event": 18,
+    "observation": 44,
+    "assertion": 19,
+    "conclusion": 4,
+    "constraint": 9,
+    "reference": 3
+  },
+  "claims": 63,
+  "facts_rejected": 0,
+  "worker_tasks": 23,
+  "task_status": {
+    "passed": 5,
+    "finding": 2,
+    "untestable": 19
+  },
+  "candidates": 3,
+  "verdicts": {
+    "missing_evidence": 2,
+    "contextual_difference": 1
+  },
+  "rejected_by_verifier": 0,
+  "findings": 2,
+  "findings_by_taxonomy": {
+    "contextual_difference": 1,
+    "missing_evidence": 1
+  },
+  "findings_by_family": {
+    "I": 1,
+    "G": 1
+  },
+  "findings_by_severity": {
+    "low": 1,
+    "medium": 1
+  },
+  "llm": {
+    "attempts": 25,
+    "failed": 0,
+    "seconds": 228.1,
+    "credits": 340.0
+  },
+  "stages_seconds": {
+    "1. load tables (SQLite), keep cell addresses": 0.1,
+    "2. extract typed facts": 42.5,
+    "3. case model, identifiers, aliases, timeline": 9.5,
+    "4. plan the checks": 4.5,
+    "5a. workers investigate": 37.2,
+    "5b. semantic value comparison (family I)": 73.1,
+    "6. verify adversarially": 11.0,
+    "7. consolidate by root cause and save": 4.2
+  },
+  "gate_failures": []
+}

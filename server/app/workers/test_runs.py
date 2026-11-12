@@ -1,4 +1,4 @@
-"""Starts, stops and follows one test run: the ``scripts/ledger_run.py`` script run as a child process.
+"""Starts, stops and follows one test run: ``scripts/investigator_run.py`` (or ``scripts/ledger_run.py`` with DATAROOM_PIPELINE=classic) run as a child process.
 
 The run uses the script's own defaults, so whatever logic and configuration the script holds is what the API
 runs; the API only chooses which documents are read. One run at a time. The child writes its output to a
@@ -27,7 +27,9 @@ from app.core.exceptions import ConflictError
 
 logger = logging.getLogger(__name__)
 
-SCRIPT = SERVER_DIR / "scripts" / "ledger_run.py"
+# The pipeline the page runs: the investigator (pipeline v2) by default on this branch; DATAROOM_PIPELINE=classic runs the fact-ledger script instead.
+SCRIPTS = {"investigator": SERVER_DIR / "scripts" / "investigator_run.py", "classic": SERVER_DIR / "scripts" / "ledger_run.py"}
+SCRIPT = SCRIPTS["investigator"]
 RESULTS_LINE = re.compile(r"\[run\] results file=(.+)")
 
 
@@ -45,7 +47,8 @@ CommandFactory = Callable[[list[str], Path], list[str]]
 
 
 def default_command(documents: list[str], stop_file: Path) -> list[str]:
-    command = [sys.executable, "-u", str(SCRIPT), "--config", "ui-run", "--stop-file", str(stop_file)]
+    script = SCRIPTS.get(os.environ.get("DATAROOM_PIPELINE", "investigator").strip().lower(), SCRIPT)
+    command = [sys.executable, "-u", str(script), "--config", "ui-run", "--stop-file", str(stop_file)]
     for document in documents:
         command += ["--only", document]
     return command

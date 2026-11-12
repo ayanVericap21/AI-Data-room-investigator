@@ -1,0 +1,678 @@
+INVESTIGATOR RUN  20261112-155207  ui-run
+==============================================================================
+
+Status        : STOPPED
+Started       : 2026-11-12 15:52:07   wall time 113s
+Database      : data_room
+Pipeline      : investigator v2 (tables, typed facts, case model, check families, adversarial verifier)
+Options       : {'db_name': 'data_room', 'config': 'ui-run', 'only': ['Daily_Field_Notes_Vance.docx', 'Dive_Log_and_Samples.xlsx', 'Expedition_Protocol_DSCAP26.docx', 'Final_Expedition_Summary.pdf', 'Incident_Report_ROV.docx', 'Lab_Analysis_Report.pdf', 'Permit_GOA_2026_099.pdf', 'Water_Quality_Metrics.xlsx'], 'workers': 4, 'max_tasks': 60, 'families': 'ABCDEFGHI', 'no_verify': False, 'gate': 'fail', 'worker_rounds': 2, 'llm_attempts': 5}
+Documents     : 8 (0 new, 0 updated, 8 unchanged; scan and parsing 0s)
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+Tables        : 2 tables, 8 rows
+Facts         : 97 {'event': 18, 'observation': 44, 'assertion': 19, 'conclusion': 4, 'constraint': 9, 'reference': 3}; 0 rejected (quote not found); 63 stored as claims for family I
+Case model    : 8 document roles, 4 identifier kinds, 2 alias groups, 47 mentions, 13 dated events
+Plan          : 23 worker tasks, 3 candidates from code checks; task outcomes {'finding': 3, 'passed': 2, 'error': 15, 'untestable': 7}
+Candidates    : 4; verifier verdicts {}; 0 rejected, 0 unverified
+Findings      : 1 saved; by type {'other': 1}; by family {'?': 1}; by severity {'low': 1}
+LLM calls     : 47 attempts, 0 failed, 227s in total, 640 credits
+
+==============================================================================
+COVERAGE GATE (every document must produce facts or tables, or have no numbers)
+==============================================================================
+document                          chunks  with numbers  tables  table rows  facts  claims  gate
+--------------------------------  ------  ------------  ------  ----------  -----  ------  ----
+Daily_Field_Notes_Vance.docx      1       1             0       0           16     8       ok
+Dive_Log_and_Samples.xlsx         1       1             1       4           16     12      ok
+Expedition_Protocol_DSCAP26.docx  4       3             0       0           12     9       ok
+Final_Expedition_Summary.pdf      1       1             0       0           9      5       ok
+Incident_Report_ROV.docx          3       3             0       0           9      4       ok
+Lab_Analysis_Report.pdf           1       1             0       0           10     7       ok
+Permit_GOA_2026_099.pdf           1       1             0       0           9      2       ok
+Water_Quality_Metrics.xlsx        1       1             1       4           16     16      ok
+
+==============================================================================
+CASE MODEL
+==============================================================================
+Summary: The data room concerns the DSCAP-26 deep-sea coral assessment expedition, including its protocol, permit, field notes, dive and water-quality logs, incident report, laboratory analysis, and final summary. Its documents address coral health monitoring, sample collection, ROV operations, and compliance with permit restrictions.
+
+Document roles:
+document                          role              summary
+--------------------------------  ----------------  ------------------------------------------------------------------------------------------
+Daily_Field_Notes_Vance.docx      primary_record    Personal field journal recording expedition activities, observations, and the ROV issue.
+Dive_Log_and_Samples.xlsx         primary_record    Dive log recording dates, dive identifiers, sites, ROV operators, maximum depths, and col…
+Expedition_Protocol_DSCAP26.docx  authority         Sets the assessment objective, designated sites, methodology, and schedule.
+Final_Expedition_Summary.pdf      narrative         Summarizes the expedition’s reported completion, sample collection, compliance, and findi…
+Incident_Report_ROV.docx          event_register    Records the ROV thruster failure, resulting downtime, and repair completion.
+Lab_Analysis_Report.pdf           derived_analysis  Reports laboratory findings for coral samples and notes a sample without corresponding fi…
+Permit_GOA_2026_099.pdf           authority         Sets authorized activities, the maximum sample limit, protected-zone restrictions, and EI…
+Water_Quality_Metrics.xlsx        primary_record    Records dated water-quality measurements by site.
+
+Identifier kinds (pattern, distinct identifiers found):
+kind    pattern                                                             distinct ids
+------  ------------------------------------------------------------------  ------------
+sample  (?<![A-Za-z0-9])SPL\-\d{1,8}(?:[-_/][A-Za-z]{1,2})?(?![A-Za-z0-9])  18
+dive    (?<![A-Za-z0-9])D\-\d{1,8}(?:[-_/][A-Za-z]{1,2})?(?![A-Za-z0-9])    8
+sample  SPL-\d+                                                             18
+dive    D-\d+                                                               8
+
+Aliases:
+  Sarah Jenkins = S. Jenkins, Sarah Jenkins, ROV Technician
+  DSCAP-26 = Deep-Sea Coral Assessment Protocol (DSCAP-26), DSCAP-26 expedition field activities
+
+==============================================================================
+FINDINGS
+==============================================================================
+
+--- Finding 1 of 1 ----------------------------------------
+title          : ROV status on October 8 and October 10
+classification : contextual_difference   type: None   family: None 
+severity       : low   confidence 0.95   status: None   verifier: None
+description    : The journal states that the ROV was ‘back online’ on October 10, while the incident report says the vehicle was ‘completely inoperable’ following the October 8 thruster failure. These are successive statuses at different stated dates, and the October 10 status supersedes the earlier one.
+evidence (contextual): Oct 10: ROV is back online.   [chk_3ba3d45a205c4050]
+evidence (contextual): The vehicle was rendered completely inoperable.   [chk_734d18beb05c4d64]
+
+==============================================================================
+CHECK PLAN AND AUDIT LOG (every task and how it ended)
+==============================================================================
+family  name                           finding  passed  untestable  error  skipped
+------  -----------------------------  -------  ------  ----------  -----  -------
+A       constraint compliance          0        0       0           9      0
+B       set and chain reconciliation   1        0       0           1      0
+C       temporal consistency           0        0       0           1      0
+D       recomputation                  0        1       4           0      0
+E       universal and negative claims  0        0       3           0      0
+F       data integrity                 0        1       0           0      0
+G       reference resolution           1        0       0           0      0
+H       conclusion audit               0        0       0           4      0
+I       semantic value comparison      1        0       0           0      0
+
+task    fam  status      calls  cand  what                                                                    why
+------  ---  ----------  -----  ----  ----------------------------------------------------------------------  ----------------------------------------------------------------------
+B-code  B    finding     0      1     identifiers outside the range of another document's list                1 candidates
+F-code  F    passed      0      0     identical series and duplicated keys over every table                   0 candidates
+G-code  G    finding     0      2     3 references resolved in a fixed order                                  1 found in the room, 2 unresolved, 2 reported
+A1      A    error       1      0     Rule: Deep-Sea Coral Assessment Protocol (DSCAP-26), methodology | RO…  LLMInvalidOutputError: Model output did not match WorkerOutcome after…
+A2      A    error       1      0     Rule: Deep-Sea Coral Assessment Protocol (DSCAP-26), ROV dive schedul…  LLMInvalidOutputError: Model output did not match WorkerOutcome after…
+A3      A    error       1      0     Rule: Ocean acidification associated with coral bleaching observed at…  LLMInvalidOutputError: Model output did not match WorkerOutcome after…
+A4      A    error       1      0     Rule: Global Oceans Authority - Scientific Research Permit GOA-2026-0…  LLMInvalidOutputError: Model output did not match WorkerOutcome after…
+A5      A    error       1      0     Rule: Global Oceans Authority - Scientific Research Permit GOA-2026-0…  LLMInvalidOutputError: Model output did not match WorkerOutcome after…
+A6      A    error       2      0     Rule: Site Charlie | designated protection level = Level 1 Protected …  LLMInvalidOutputError: Model output did not match WorkerOutcome after…
+A7      A    error       0      0     Rule: Site Charlie | biological sampling or physical interaction = no…  LLMInvalidOutputError: Model output did not match WorkerOutcome after…
+A8      A    error       1      0     Rule: All activities under Global Oceans Authority - Scientific Resea…  LLMInvalidOutputError: Model output did not match WorkerOutcome after…
+A9      A    error       0      0     Rule: Global Oceans Authority - Scientific Research Permit GOA-2026-0…  LLMInvalidOutputError: Model output did not match WorkerOutcome after…
+B1      B    error       0      0     sample identifiers differ between Dive_Log_and_Samples.xlsx and Lab_A…  LLMInvalidOutputError: Model output did not match WorkerOutcome after…
+C1      C    error       0      0     Events stated in the documents against each other and against the dat…  LLMInvalidOutputError: Model output did not match WorkerOutcome after…
+D1      D    untestable  0      0     Stated figure: Dive D-01 at Alpha on 2026-10-02 | maximum depth = 210…  The tables contain only the stated maximum depth, not the underlying …
+D2      D    untestable  0      0     Stated figure: Dive D-02 at Bravo on 2026-10-05 | maximum depth = 195…  The tables contain only the stated maximum depth, not the underlying …
+D3      D    untestable  0      0     Stated figure: Dive D-03 at Bravo on 2026-10-08 | maximum depth = 200…  The tables contain only the stated maximum depth, not the underlying …
+D4      D    untestable  0      0     Stated figure: Dive D-04 at Charlie on 2026-10-09 | maximum depth = 2…  The tables contain only the stated maximum depth, not the underlying …
+D5      D    passed      0      0     Stated figure: DSCAP-26 expedition targeted samples | total collected…
+E1      E    untestable  0      0     Assertion: Gear deployment; Oct 9 | gear deployed: We did not deploy …  No gear deployment register, event/incident/deviation/exception recor…
+E2      E    untestable  0      0     Assertion: DSCAP-26 expedition | successful conclusion and objectives…  No expedition objectives record, completion record, or event/incident…
+E3      E    untestable  0      0     Assertion: DSCAP-26 expedition field activities | compliance with Glo…  No Global Oceans Authority regulations, compliance records, or event/…
+H1      H    error       0      0     Conclusion: Visual transects; Bravo; Oct 5 | difficulty due to turbid…  LLMInvalidOutputError: Model output did not match WorkerOutcome after…
+H2      H    error       0      0     Conclusion: DSCAP-26 expedition targeted samples | alignment with per…  LLMInvalidOutputError: Model output did not match WorkerOutcome after…
+H3      H    error       0      0     Conclusion: Coral bleaching observed at Site Bravo | primary driver: …  LLMInvalidOutputError: Model output did not match WorkerOutcome after…
+H4      H    error       0      0     Conclusion: Sample SPL-044-B | analysis result: it is a fragment of b…  LLMInvalidOutputError: Model output did not match WorkerOutcome after…
+I       I    finding     0      1     pairing and judging of claims: 63 claims in 1 batch(es), 2 groups cov…  1 candidates; 1 consistent or insufficient-evidence results not repor…
+
+==============================================================================
+VERIFIER
+==============================================================================
+0 calls; verdicts {}; errors []
+
+==============================================================================
+CONSOLIDATION
+==============================================================================
+0 candidates became 0 findings (0 exact duplicates, 0 root-cause groups)
+
+==============================================================================
+FAMILY I (semantic value comparison)
+==============================================================================
+63 claims in 1 batch(es), 2 groups covering 4 claims, 9 pairs (7 from nearest neighbours)
+not reported: 1 consistent or insufficient-evidence results
+  insufficient_evidence: Bravo turbidity: 15 NTU versus ‘exceptionally high’
+
+==============================================================================
+WORKERS
+==============================================================================
+9 batches, 12 model calls, 8 tool calls; 0 candidates dropped (evidence not found or empty), 0 evidence items dropped
+  A batch: LLMInvalidOutputError: Model output did not match WorkerOutcome after 5 attempts: 2 validation errors for WorkerOutcome
+results.8.candidates.0.title
+  Field required [type=missing, in
+  A batch: LLMInvalidOutputError: Model output did not match WorkerOutcome after 5 attempts: 3 validation errors for WorkerOutcome
+results.0.candidates.0.title
+  Field required [type=missing, in
+  C batch: LLMInvalidOutputError: Model output did not match WorkerOutcome after 5 attempts: 2 validation errors for WorkerOutcome
+results.0.candidates.0.title
+  Field required [type=missing, in
+  B batch: LLMInvalidOutputError: Model output did not match WorkerOutcome after 5 attempts: 10 validation errors for WorkerOutcome
+results.0.candidates.0.title
+  Field required [type=missing, i
+  H batch: LLMInvalidOutputError: Model output did not match WorkerOutcome after 5 attempts: 1 validation error for WorkerOutcome
+results.0.candidates.0.title
+  Field required [type=missing, inp
+  H batch: LLMInvalidOutputError: Model output did not match WorkerOutcome after 5 attempts: 3 validation errors for WorkerOutcome
+results.0.candidates.0.title
+  Field required [type=missing, in
+
+==============================================================================
+TIMING AND LLM USE PER STAGE
+==============================================================================
+stage                                          wall   llm attempts  failed  llm time
+---------------------------------------------  -----  ------------  ------  --------
+1. load tables (SQLite), keep cell addresses   0.0s   0             0       0s
+2. extract typed facts                         3.4s   0             0       0s
+3. case model, identifiers, aliases, timeline  1.4s   1             0       1s
+4. plan the checks                             0.9s   1             0       1s
+5a. workers investigate                        51.2s  42            0       166s
+5b. semantic value comparison (family I)       56.3s  3             0       59s
+
+==============================================================================
+APPENDIX A: RUN METRICS (read by the run page)
+==============================================================================
+<<<RUN_METRICS
+{
+ "investigation_id": "inv_cc66311a10a743ff",
+ "config_name": "ui-run",
+ "state": "stopped",
+ "started_at": "2026-11-12 15:52:07",
+ "finished_at": "2026-11-12T15:54:01",
+ "wall_s": 113.5,
+ "results_file": "C:\\Users\\Ayan Khan\\Desktop\\ai-dataroom-investigator\\AI-Data-room-investigator\\test_results\\TEST-RUN-20261112-155207-ui-run.txt",
+ "settings": {
+  "extractor": "llamaextract (typed facts)",
+  "pairing": "llm (family I) + check families",
+  "vocabulary": "off",
+  "coverage_check": "gate fail",
+  "batch_chunks": null,
+  "batch_chars": 60,
+  "llm_model": "cost_effective",
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2"
+ },
+ "counts": {
+  "documents": 8,
+  "documents_fully_read": 8,
+  "chunks": 13,
+  "claims_recorded": 63,
+  "claims_rejected": 0,
+  "candidate_pairs": 9,
+  "extractor_credits": 60.0,
+  "pairs_without_clustering": 0,
+  "pairs_exact": 0,
+  "pairs_judged": 9,
+  "verdicts": {
+   "insufficient_evidence": 1,
+   "contextual_difference": 1,
+   "not_comparable": 7
+  },
+  "findings_saved": 0,
+  "findings_rejected": 0,
+  "embedding_calls": 1,
+  "embedding_texts": 63,
+  "coverage_calls": 0,
+  "coverage_claims_added": 0
+ },
+ "llm": {
+  "attempts": 47,
+  "failed": 0,
+  "retries": 30,
+  "total_s": 227.0,
+  "avg_ms": 4829,
+  "p95_ms": 15429,
+  "max_ms": 53810,
+  "prompt_tokens": 0,
+  "completion_tokens": 0,
+  "thinking_tokens": 0,
+  "cached_tokens": 0,
+  "total_tokens": 0,
+  "credits": 700.0,
+  "min_context_tokens": 0,
+  "avg_context_tokens": 0,
+  "max_context_tokens": 0
+ },
+ "phases": [
+  {
+   "phase": "3. case model, identifiers, aliases, timeline",
+   "attempts": 1,
+   "failed": 0,
+   "prompt_tokens": 0,
+   "completion_tokens": 0,
+   "thinking_tokens": 0,
+   "avg_context_tokens": 0,
+   "max_context_tokens": 0,
+   "avg_ms": 1364,
+   "p95_ms": 1364,
+   "total_s": 1.4
+  },
+  {
+   "phase": "4. plan the checks",
+   "attempts": 1,
+   "failed": 0,
+   "prompt_tokens": 0,
+   "completion_tokens": 0,
+   "thinking_tokens": 0,
+   "avg_context_tokens": 0,
+   "max_context_tokens": 0,
+   "avg_ms": 862,
+   "p95_ms": 862,
+   "total_s": 0.9
+  },
+  {
+   "phase": "5a. workers investigate",
+   "attempts": 42,
+   "failed": 0,
+   "prompt_tokens": 0,
+   "completion_tokens": 0,
+   "thinking_tokens": 0,
+   "avg_context_tokens": 0,
+   "max_context_tokens": 0,
+   "avg_ms": 3949,
+   "p95_ms": 14222,
+   "total_s": 165.8
+  },
+  {
+   "phase": "5b. semantic value comparison (family I)",
+   "attempts": 3,
+   "failed": 0,
+   "prompt_tokens": 0,
+   "completion_tokens": 0,
+   "thinking_tokens": 0,
+   "avg_context_tokens": 0,
+   "max_context_tokens": 0,
+   "avg_ms": 19634,
+   "p95_ms": 53810,
+   "total_s": 58.9
+  }
+ ],
+ "stages": [
+  {
+   "stage": "1. load tables (SQLite), keep cell addresses",
+   "seconds": 0.0,
+   "percent": 0.0
+  },
+  {
+   "stage": "2. extract typed facts",
+   "seconds": 3.4,
+   "percent": 3.0
+  },
+  {
+   "stage": "3. case model, identifiers, aliases, timeline",
+   "seconds": 1.4,
+   "percent": 1.3
+  },
+  {
+   "stage": "4. plan the checks",
+   "seconds": 0.9,
+   "percent": 0.8
+  },
+  {
+   "stage": "5a. workers investigate",
+   "seconds": 51.2,
+   "percent": 45.1
+  },
+  {
+   "stage": "5b. semantic value comparison (family I)",
+   "seconds": 56.3,
+   "percent": 49.6
+  }
+ ]
+}
+RUN_METRICS>>>
+
+==============================================================================
+APPENDIX B: FINDINGS AS DATA (read by scripts/score_run.py)
+==============================================================================
+<<<FINDINGS
+[
+ {
+  "id": "fnd_ec83f8fa9bea4e8c",
+  "title": "ROV status on October 8 and October 10",
+  "classification": "contextual_difference",
+  "taxonomy": null,
+  "family": null,
+  "severity": "low",
+  "confidence": 0.95,
+  "status": null,
+  "description": "The journal states that the ROV was ‘back online’ on October 10, while the incident report says the vehicle was ‘completely inoperable’ following the October 8 thruster failure. These are successive statuses at different stated dates, and the October 10 status supersedes the earlier one.",
+  "unresolved_questions": [],
+  "evidence": [
+   {
+    "quote": "Oct 10: ROV is back online.",
+    "role": "contextual",
+    "chunk_id": "chk_3ba3d45a205c4050",
+    "reason": "Oct 10: ROV is back online."
+   },
+   {
+    "quote": "The vehicle was rendered completely inoperable.",
+    "role": "contextual",
+    "chunk_id": "chk_734d18beb05c4d64",
+    "reason": "The vehicle was rendered completely inoperable."
+   }
+  ],
+  "verdict": null
+ }
+]
+FINDINGS>>>
+
+==============================================================================
+APPENDIX C: CASE MODEL (what the run assumed about the room)
+==============================================================================
+<<<CASE_MODEL
+{
+ "case_summary": "The data room concerns the DSCAP-26 deep-sea coral assessment expedition, including its protocol, permit, field notes, dive and water-quality logs, incident report, laboratory analysis, and final summary. Its documents address coral health monitoring, sample collection, ROV operations, and compliance with permit restrictions.",
+ "roles": [
+  {
+   "document": "Daily_Field_Notes_Vance.docx",
+   "role": "primary_record",
+   "summary": "Personal field journal recording expedition activities, observations, and the ROV issue."
+  },
+  {
+   "document": "Dive_Log_and_Samples.xlsx",
+   "role": "primary_record",
+   "summary": "Dive log recording dates, dive identifiers, sites, ROV operators, maximum depths, and collected sample ranges."
+  },
+  {
+   "document": "Expedition_Protocol_DSCAP26.docx",
+   "role": "authority",
+   "summary": "Sets the assessment objective, designated sites, methodology, and schedule."
+  },
+  {
+   "document": "Final_Expedition_Summary.pdf",
+   "role": "narrative",
+   "summary": "Summarizes the expedition’s reported completion, sample collection, compliance, and findings."
+  },
+  {
+   "document": "Incident_Report_ROV.docx",
+   "role": "event_register",
+   "summary": "Records the ROV thruster failure, resulting downtime, and repair completion."
+  },
+  {
+   "document": "Lab_Analysis_Report.pdf",
+   "role": "derived_analysis",
+   "summary": "Reports laboratory findings for coral samples and notes a sample without corresponding field metadata."
+  },
+  {
+   "document": "Permit_GOA_2026_099.pdf",
+   "role": "authority",
+   "summary": "Sets authorized activities, the maximum sample limit, protected-zone restrictions, and EIA compliance requirements."
+  },
+  {
+   "document": "Water_Quality_Metrics.xlsx",
+   "role": "primary_record",
+   "summary": "Records dated water-quality measurements by site."
+  }
+ ],
+ "id_patterns": [
+  {
+   "entity_type": "sample",
+   "regex": "(?<![A-Za-z0-9])SPL\\-\\d{1,8}(?:[-_/][A-Za-z]{1,2})?(?![A-Za-z0-9])",
+   "description": "shape SPL-#",
+   "case_fold": true,
+   "strip_separators": true,
+   "pad_last_number_to": 3
+  },
+  {
+   "entity_type": "dive",
+   "regex": "(?<![A-Za-z0-9])D\\-\\d{1,8}(?:[-_/][A-Za-z]{1,2})?(?![A-Za-z0-9])",
+   "description": "shape D-#",
+   "case_fold": true,
+   "strip_separators": true,
+   "pad_last_number_to": 2
+  },
+  {
+   "entity_type": "sample",
+   "regex": "SPL-\\d+",
+   "description": "Sample identifiers, shown in Dive_Log_and_Samples.xlsx and Lab_Analysis_Report.pdf.",
+   "case_fold": false,
+   "strip_separators": false,
+   "pad_last_number_to": 3
+  },
+  {
+   "entity_type": "dive",
+   "regex": "D-\\d+",
+   "description": "Dive identifiers shown in Dive_Log_and_Samples.xlsx.",
+   "case_fold": false,
+   "strip_separators": false,
+   "pad_last_number_to": 2
+  }
+ ],
+ "aliases": [
+  {
+   "canonical": "Sarah Jenkins",
+   "entity_type": "person",
+   "aliases": [
+    "S. Jenkins",
+    "Sarah Jenkins, ROV Technician"
+   ]
+  },
+  {
+   "canonical": "DSCAP-26",
+   "entity_type": "expedition",
+   "aliases": [
+    "Deep-Sea Coral Assessment Protocol (DSCAP-26)",
+    "DSCAP-26 expedition field activities"
+   ]
+  }
+ ],
+ "definitions": [],
+ "units": [],
+ "time_conventions": [
+  {
+   "document": "Incident_Report_ROV.docx",
+   "convention": "At 14:00 local time on October 8"
+  }
+ ],
+ "shapes_seen": [
+  {
+   "shape": "SPL-#",
+   "count": 9,
+   "examples": [
+    "SPL-001",
+    "SPL-010",
+    "SPL-011",
+    "SPL-025"
+   ],
+   "documents": [
+    "Dive_Log_and_Samples.xlsx",
+    "Lab_Analysis_Report.pdf"
+   ]
+  },
+  {
+   "shape": "D-#",
+   "count": 4,
+   "examples": [
+    "D-01",
+    "D-02",
+    "D-03",
+    "D-04"
+   ],
+   "documents": [
+    "Dive_Log_and_Samples.xlsx"
+   ]
+  }
+ ],
+ "notes": []
+}
+CASE_MODEL>>>
+
+==============================================================================
+APPENDIX D: RUN STATISTICS
+==============================================================================
+<<<STATS
+{
+ "run_id": "20261112-155207",
+ "config": "ui-run",
+ "wall_seconds": 113.5,
+ "args": {
+  "db_name": "data_room",
+  "config": "ui-run",
+  "only": [
+   "Daily_Field_Notes_Vance.docx",
+   "Dive_Log_and_Samples.xlsx",
+   "Expedition_Protocol_DSCAP26.docx",
+   "Final_Expedition_Summary.pdf",
+   "Incident_Report_ROV.docx",
+   "Lab_Analysis_Report.pdf",
+   "Permit_GOA_2026_099.pdf",
+   "Water_Quality_Metrics.xlsx"
+  ],
+  "workers": 4,
+  "max_tasks": 60,
+  "families": "ABCDEFGHI",
+  "no_verify": false,
+  "gate": "fail",
+  "worker_rounds": 2,
+  "llm_attempts": 5
+ },
+ "documents": 8,
+ "tables": 2,
+ "table_rows": 8,
+ "facts": 97,
+ "facts_by_type": {
+  "event": 18,
+  "observation": 44,
+  "assertion": 19,
+  "conclusion": 4,
+  "constraint": 9,
+  "reference": 3
+ },
+ "claims": 63,
+ "facts_rejected": 0,
+ "worker_tasks": 23,
+ "task_status": {
+  "finding": 3,
+  "passed": 2,
+  "error": 15,
+  "untestable": 7
+ },
+ "candidates": 4,
+ "verdicts": {},
+ "rejected_by_verifier": 0,
+ "findings": 1,
+ "findings_by_taxonomy": {
+  "other": 1
+ },
+ "findings_by_family": {
+  "?": 1
+ },
+ "findings_by_severity": {
+  "low": 1
+ },
+ "llm": {
+  "attempts": 47,
+  "failed": 0,
+  "seconds": 227.0,
+  "credits": 640.0
+ },
+ "stages_seconds": {
+  "1. load tables (SQLite), keep cell addresses": 0.0,
+  "2. extract typed facts": 3.4,
+  "3. case model, identifiers, aliases, timeline": 1.4,
+  "4. plan the checks": 0.9,
+  "5a. workers investigate": 51.2,
+  "5b. semantic value comparison (family I)": 56.3
+ },
+ "gate_failures": []
+}
+STATS>>>
+
+==============================================================================
+APPENDIX E: WORKER TRACE (each batch: the plan, the tool results, what the model concluded)
+==============================================================================
+<<<WORKER_TRACE
+[
+ {
+  "tasks": [
+   "D1",
+   "D2",
+   "D3",
+   "D4"
+  ],
+  "round": 1,
+  "plan": [],
+  "tool_results": [],
+  "outcome": {
+   "results": [
+    {
+     "task_id": "D1",
+     "status": "untestable",
+     "reason": "The tables contain only the stated maximum depth, not the underlying depth data needed to recompute it.",
+     "candidates": []
+    },
+    {
+     "task_id": "D2",
+     "status": "untestable",
+     "reason": "The tables contain only the stated maximum depth, not the underlying depth data needed to recompute it.",
+     "candidates": []
+    },
+    {
+     "task_id": "D3",
+     "status": "untestable",
+     "reason": "The tables contain only the stated maximum depth, not the underlying depth data needed to recompute it.",
+     "candidates": []
+    },
+    {
+     "task_id": "D4",
+     "status": "untestable",
+     "reason": "The tables contain only the stated maximum depth, not the underlying depth data needed to recompute it.",
+     "candidates": []
+    }
+   ]
+  }
+ },
+ {
+  "tasks": [
+   "D5"
+  ],
+  "round": 1,
+  "plan": [],
+  "tool_results": [],
+  "outcome": {
+   "results": [
+    {
+     "task_id": "D5",
+     "status": "passed",
+     "reason": "",
+     "candidates": []
+    }
+   ]
+  }
+ },
+ {
+  "tasks": [
+   "E1",
+   "E2",
+   "E3"
+  ],
+  "round": 1,
+  "plan": [],
+  "tool_results": [],
+  "outcome": {
+   "results": [
+    {
+     "task_id": "E1",
+     "status": "untestable",
+     "reason": "No gear deployment register, event/incident/deviation/exception records, or relevant notes that could verify gear deployment are provided; the dive log only records dives and samples.",
+     "candidates": []
+    },
+    {
+     "task_id": "E2",
+     "status": "untestable",
+     "reason": "No expedition objectives record, completion record, or event/incident/deviation/exception records that could test whether all objectives were met are provided.",
+     "candidates": []
+    },
+    {
+     "task_id": "E3",
+     "status": "untestable",
+     "reason": "No Global Oceans Authority regulations, compliance records, or event/incident/deviation/exception records that could test regulatory compliance are provided.",
+     "candidates": []
+    }
+   ]
+  }
+ }
+]
+WORKER_TRACE>>>

@@ -1,0 +1,135 @@
+{
+  "case_summary": "The data room concerns the DSCAP-26 deep-sea coral assessment expedition, including its protocol, permit, field notes, dive and water-quality logs, incident report, laboratory analysis, and final summary. Its documents address coral health monitoring, sample collection, ROV operations, and compliance with permit restrictions.",
+  "roles": [
+    {
+      "document": "Daily_Field_Notes_Vance.docx",
+      "role": "primary_record",
+      "summary": "Personal field journal recording expedition activities, observations, and the ROV issue."
+    },
+    {
+      "document": "Dive_Log_and_Samples.xlsx",
+      "role": "primary_record",
+      "summary": "Dive log recording dates, dive identifiers, sites, ROV operators, maximum depths, and collected sample ranges."
+    },
+    {
+      "document": "Expedition_Protocol_DSCAP26.docx",
+      "role": "authority",
+      "summary": "Sets the assessment objective, designated sites, methodology, and schedule."
+    },
+    {
+      "document": "Final_Expedition_Summary.pdf",
+      "role": "narrative",
+      "summary": "Summarizes the expedition’s reported completion, sample collection, compliance, and findings."
+    },
+    {
+      "document": "Incident_Report_ROV.docx",
+      "role": "event_register",
+      "summary": "Records the ROV thruster failure, resulting downtime, and repair completion."
+    },
+    {
+      "document": "Lab_Analysis_Report.pdf",
+      "role": "derived_analysis",
+      "summary": "Reports laboratory findings for coral samples and notes a sample without corresponding field metadata."
+    },
+    {
+      "document": "Permit_GOA_2026_099.pdf",
+      "role": "authority",
+      "summary": "Sets authorized activities, the maximum sample limit, protected-zone restrictions, and EIA compliance requirements."
+    },
+    {
+      "document": "Water_Quality_Metrics.xlsx",
+      "role": "primary_record",
+      "summary": "Records dated water-quality measurements by site."
+    }
+  ],
+  "id_patterns": [
+    {
+      "entity_type": "sample",
+      "regex": "(?<![A-Za-z0-9])SPL\\-\\d{1,8}(?:[-_/][A-Za-z]{1,2})?(?![A-Za-z0-9])",
+      "description": "shape SPL-#",
+      "case_fold": true,
+      "strip_separators": true,
+      "pad_last_number_to": 3
+    },
+    {
+      "entity_type": "dive",
+      "regex": "(?<![A-Za-z0-9])D\\-\\d{1,8}(?:[-_/][A-Za-z]{1,2})?(?![A-Za-z0-9])",
+      "description": "shape D-#",
+      "case_fold": true,
+      "strip_separators": true,
+      "pad_last_number_to": 2
+    },
+    {
+      "entity_type": "sample",
+      "regex": "SPL-\\d+",
+      "description": "Sample identifiers, shown in Dive_Log_and_Samples.xlsx and Lab_Analysis_Report.pdf.",
+      "case_fold": false,
+      "strip_separators": false,
+      "pad_last_number_to": 3
+    },
+    {
+      "entity_type": "dive",
+      "regex": "D-\\d+",
+      "description": "Dive identifiers shown in Dive_Log_and_Samples.xlsx.",
+      "case_fold": false,
+      "strip_separators": false,
+      "pad_last_number_to": 2
+    }
+  ],
+  "aliases": [
+    {
+      "canonical": "Sarah Jenkins",
+      "entity_type": "person",
+      "aliases": [
+        "S. Jenkins",
+        "Sarah Jenkins, ROV Technician"
+      ]
+    },
+    {
+      "canonical": "DSCAP-26",
+      "entity_type": "expedition",
+      "aliases": [
+        "Deep-Sea Coral Assessment Protocol (DSCAP-26)",
+        "DSCAP-26 expedition field activities"
+      ]
+    }
+  ],
+  "definitions": [],
+  "units": [],
+  "time_conventions": [
+    {
+      "document": "Incident_Report_ROV.docx",
+      "convention": "At 14:00 local time on October 8"
+    }
+  ],
+  "shapes_seen": [
+    {
+      "shape": "SPL-#",
+      "count": 9,
+      "examples": [
+        "SPL-001",
+        "SPL-010",
+        "SPL-011",
+        "SPL-025"
+      ],
+      "documents": [
+        "Dive_Log_and_Samples.xlsx",
+        "Lab_Analysis_Report.pdf"
+      ]
+    },
+    {
+      "shape": "D-#",
+      "count": 4,
+      "examples": [
+        "D-01",
+        "D-02",
+        "D-03",
+        "D-04"
+      ],
+      "documents": [
+        "Dive_Log_and_Samples.xlsx"
+      ]
+    }
+  ],
+  "notes": []
+}

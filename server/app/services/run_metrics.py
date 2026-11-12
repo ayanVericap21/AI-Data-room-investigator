@@ -25,14 +25,30 @@ def write_metrics(results_file: Path, metrics: RunMetrics) -> Path:
     return path
 
 
+def extract_block(text: str, name: str) -> str | None:
+    """The text between a ``<<<NAME`` line and a ``NAME>>>`` line: a run that keeps everything in its one results file embeds its JSON this way."""
+    start, end = f"<<<{name}\n", f"\n{name}>>>"
+    a = text.find(start)
+    if a < 0:
+        return None
+    b = text.find(end, a + len(start))
+    return text[a + len(start):b] if b >= 0 else None
+
+
 def find_metrics(investigation_id: str, directory: Path | None = None) -> RunMetrics | None:
-    """The newest metrics file written for this investigation, or None (older runs have none)."""
+    """The newest metrics written for this investigation (a ``.metrics.json`` file, or the RUN_METRICS block inside a results text file), or None."""
     directory = directory or RESULTS_DIR
     if not directory.is_dir():
         return None
-    for path in sorted(directory.glob(f"*{SUFFIX}"), reverse=True):
+    files = sorted([*directory.glob(f"*{SUFFIX}"), *directory.glob("TEST-RUN-*.txt")], key=lambda p: p.name, reverse=True)
+    for path in files:
         try:
-            data = json.loads(path.read_text(encoding="utf-8"))
+            raw = path.read_text(encoding="utf-8")
+            if path.suffix == ".txt":
+                raw = extract_block(raw, "RUN_METRICS")
+                if raw is None:
+                    continue
+            data = json.loads(raw)
         except (OSError, ValueError):
             logger.warning("Unreadable metrics file", extra={"file": str(path)})
             continue

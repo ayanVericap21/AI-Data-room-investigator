@@ -1,0 +1,27 @@
+SCORE  room: Site survey room (permit GOA_2026_099, dive log, ROV incident report, water quality, lab report, protocol, summary, field notes)   (PROVISIONAL KEY: derived from a reviewer's description, check the tokens)
+==============================================================================
+findings file : TEST-RUN-20261112-154359-ui-run.findings.json
+issues found  : 1 of 5 counted (20% recall)
+findings      : 2; 1 match a key issue (50%), 1 match nothing in the key, 0 flag a trap
+trap false positives: 0 of 3 traps hit
+F1 (recall and key-match share): 0.29
+
+Issues:
+  [MISSED] T1  Dive D-04 on 9 Oct while the ROV was in the workshop (dive log against incident report and field notes)
+  [MISSED] T2  Biological sampling at Site Charlie, a Level 1 protected zone where the permit forbids it
+  [MISSED] T3  Site Bravo pH stated below 7.8 while the measurements are 8.15 and 8.11
+  [MISSED] T4  Sample SPL-044-B in the lab report has no record in the dive log
+  [FOUND ] T5  The approved Environmental Impact Assessment (GOA-EIA-2026) is referenced and not in the room
+           <- missing_information / missing_evidence family G: [missing evidence] Referenced items missing from the data room
+
+Findings that match nothing in the key (extra finds or false alarms; read them):
+  contextual_difference / contextual_difference family I low: [contextual difference] ROV Nautilus status on October 8 and October 10
+
+By check family (issues expected to be found by that family, and how many it matched):
+  A: 0 of 2
+  B: 0 of 1
+  C: 0 of 1
+  E: 0 of 1
+  G: 1 of 1
+  H: 0 of 1
+  I: 0 of 1

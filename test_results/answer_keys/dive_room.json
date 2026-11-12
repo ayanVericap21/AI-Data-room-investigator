@@ -1,0 +1,22 @@
+{
+  "room": "Site survey room (permit GOA_2026_099, dive log, ROV incident report, water quality, lab report, protocol, summary, field notes)",
+  "provisional": true,
+  "note": "Written from a reviewer's description of the five planted issues and three traps. Words are lower case. Edit the words if a finding about an issue is not recognised.",
+  "issues": [
+    {"id": "T1", "title": "Dive D-04 on 9 Oct while the ROV was in the workshop (dive log against incident report and field notes)",
+     "match": {"all": ["d-04"], "any": ["oct 9", "october 9", "2026-10-09", "workshop", "rov"]}, "families": ["C", "E"]},
+    {"id": "T2", "title": "Biological sampling at Site Charlie, a Level 1 protected zone where the permit forbids it",
+     "match": {"all": ["charlie"], "any": ["protected", "prohibit", "level 1", "not permitted", "no biological", "restriction"]}, "families": ["A"]},
+    {"id": "T3", "title": "Site Bravo pH stated below 7.8 while the measurements are 8.15 and 8.11",
+     "match": {"all": ["bravo", "7.8"]}, "families": ["I", "H", "A"]},
+    {"id": "T4", "title": "Sample SPL-044-B in the lab report has no record in the dive log",
+     "match": {"all": ["spl-044-b"]}, "families": ["B"]},
+    {"id": "T5", "title": "The approved Environmental Impact Assessment (GOA-EIA-2026) is referenced and not in the room",
+     "match": {"all": ["eia"]}, "classes": ["missing_information", "missing_evidence"], "families": ["G"]}
+  ],
+  "traps": [
+    {"id": "L1", "title": "'Exceptionally high' turbidity against 15 NTU is not a contradiction", "match": {"all": ["turbidity"]}, "flag_classes": ["contradiction"]},
+    {"id": "L2", "title": "38 samples collected against a permit maximum of 50 is compliant", "match": {"all": ["38", "50"]}, "flag_classes": ["contradiction"]},
+    {"id": "L3", "title": "ROV status moving from failed (8 Oct) to repaired to back online (10 Oct) is a progression", "match": {"all": ["rov"], "any": ["back online", "oct 10", "october 10", "oct 8", "october 8"]}, "flag_classes": ["contradiction"]}
+  ]
+}

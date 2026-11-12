@@ -1,0 +1,59 @@
+[
+  {
+    "id": "fnd_367b7af5b8814cf8",
+    "title": "[contextual difference] ROV Nautilus status on October 8 and October 10",
+    "classification": "contextual_difference",
+    "taxonomy": "contextual_difference",
+    "family": "I",
+    "severity": "low",
+    "confidence": 0.99,
+    "status": "definitive",
+    "description": "Status: definitive. Type: contextual difference. Check family I: semantic value comparison.\n\nIncident_Report_ROV.docx states that on October 8 the vehicle was rendered completely inoperable after a thruster failure. Daily_Field_Notes_Vance.docx states on October 10 that the ROV is back online. These are successive dated states, and the later status supersedes the earlier one.\n\nVerification: The quoted states are compatible as successive events: the ROV became inoperable after the October 8 failure and was back online by October 10. The downtime passage further says repairs were completed by 08:00 on October 10 and the vehicle was cleared for subsequent operations. Explanation considered: The change in status is explained by repairs completed by 08:00 on October 10; the later status follows the October 8 failure. Possibly resolving evidence: Incident_Report_ROV.docx, section 'Downtime & Resolution': repairs were completed by 08:00 on October 10, and the vehicle was cleared for subsequent operations.",
+    "unresolved_questions": [],
+    "evidence": [
+      {
+        "quote": "The vehicle was rendered completely inoperable.",
+        "role": "contextual",
+        "chunk_id": "chk_734d18beb05c4d64",
+        "reason": "The vehicle was rendered completely inoperable."
+      },
+      {
+        "quote": "Oct 10: ROV is back online.",
+        "role": "contextual",
+        "chunk_id": "chk_3ba3d45a205c4050",
+        "reason": "Oct 10: ROV is back online."
+      }
+    ],
+    "verdict": "contextual_difference"
+  },
+  {
+    "id": "fnd_478b0211e9f74a93",
+    "title": "[missing evidence] Referenced items missing from the data room",
+    "classification": "missing_information",
+    "taxonomy": "missing_evidence",
+    "family": "G",
+    "severity": "medium",
+    "confidence": 0.65,
+    "status": "needs_investigation",
+    "description": "Status: needs investigation. Type: missing evidence. Check family G: reference resolution.\n\nBoth candidates identify a referenced document or report that is not present in the data room.\n\nPrimary symptom: Permit_GOA_2026_099.pdf, page 1 refers to \"Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A)\", but no file, sheet, heading, caption, table row or identifier in the data room is named like it, and every document was read.\n\nRelated symptoms merged here: Referenced item not in the data room: Incident Report #26-04.\n\nVerification: The permit quote confirms that it refers to the EIA document and says it is attached as Appendix A, but the provided passages do not establish whether that appendix or a separately named EIA document is present elsewhere in the data room. Its absence cannot be verified from this excerpt.",
+    "unresolved_questions": [
+      "the document or record \"Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A)\"",
+      "the document or record \"Incident Report #26-04\""
+    ],
+    "evidence": [
+      {
+        "quote": "2. All activities must strictly adhere to the protocols outlined in the Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A).",
+        "role": "insufficient",
+        "chunk_id": "chk_fd5f6f2ed3e64912",
+        "reason": "Refers to Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A)"
+      },
+      {
+        "quote": "Incident Report #26-04",
+        "role": "insufficient",
+        "chunk_id": "chk_da43002475ea4859",
+        "reason": "Refers to Incident Report #26-04"
+      }
+    ],
+    "verdict": "missing_evidence"
+  }
+]

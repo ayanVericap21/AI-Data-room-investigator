@@ -1,0 +1,2104 @@
+INVESTIGATOR RUN  20261112-155450  ui-run
+==============================================================================
+
+Status        : completed
+Started       : 2026-11-12 15:54:50   wall time 88s
+Database      : data_room
+Pipeline      : investigator v2 (tables, typed facts, case model, check families, adversarial verifier)
+Options       : {'db_name': 'data_room', 'config': 'ui-run', 'only': ['Daily_Field_Notes_Vance.docx', 'Dive_Log_and_Samples.xlsx', 'Expedition_Protocol_DSCAP26.docx', 'Final_Expedition_Summary.pdf', 'Incident_Report_ROV.docx', 'Lab_Analysis_Report.pdf', 'Permit_GOA_2026_099.pdf', 'Water_Quality_Metrics.xlsx'], 'workers': 4, 'max_tasks': 60, 'families': 'ABCDEFGHI', 'no_verify': False, 'gate': 'fail', 'worker_rounds': 2, 'llm_attempts': 5}
+Documents     : 8 (0 new, 0 updated, 8 unchanged; scan and parsing 0s)
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+Tables        : 2 tables, 8 rows
+Facts         : 97 {'event': 18, 'observation': 44, 'assertion': 19, 'conclusion': 4, 'constraint': 9, 'reference': 3}; 0 rejected (quote not found); 63 stored as claims for family I
+Case model    : 8 document roles, 4 identifier kinds, 2 alias groups, 47 mentions, 13 dated events
+Plan          : 23 worker tasks, 3 candidates from code checks; task outcomes {'finding': 8, 'passed': 12, 'untestable': 7}
+Candidates    : 11; verifier verdicts {'contextual_difference': 2, 'missing_evidence': 3, 'confirmed': 4, 'rejected': 1, 'unsupported': 1}; 1 rejected, 0 unverified
+Findings      : 7 saved; by type {'contextual_difference': 1, 'constraint_violation': 1, 'direct_contradiction': 1, 'unsupported_conclusion': 1, 'reconciliation_gap': 1, 'missing_evidence': 2}; by family {'I': 1, 'A': 1, 'E': 1, 'H': 1, 'B': 1, 'G': 2}; by severity {'low': 1, 'high': 2, 'medium': 4}
+LLM calls     : 35 attempts, 0 failed, 119s in total, 500 credits
+
+==============================================================================
+COVERAGE GATE (every document must produce facts or tables, or have no numbers)
+==============================================================================
+document                          chunks  with numbers  tables  table rows  facts  claims  gate
+--------------------------------  ------  ------------  ------  ----------  -----  ------  ----
+Daily_Field_Notes_Vance.docx      1       1             0       0           16     8       ok
+Dive_Log_and_Samples.xlsx         1       1             1       4           16     12      ok
+Expedition_Protocol_DSCAP26.docx  4       3             0       0           12     9       ok
+Final_Expedition_Summary.pdf      1       1             0       0           9      5       ok
+Incident_Report_ROV.docx          3       3             0       0           9      4       ok
+Lab_Analysis_Report.pdf           1       1             0       0           10     7       ok
+Permit_GOA_2026_099.pdf           1       1             0       0           9      2       ok
+Water_Quality_Metrics.xlsx        1       1             1       4           16     16      ok
+
+==============================================================================
+CASE MODEL
+==============================================================================
+Summary: The data room concerns the DSCAP-26 deep-sea coral assessment expedition, including its protocol, permit, field notes, dive and water-quality logs, incident report, laboratory analysis, and final summary. Its documents address coral health monitoring, sample collection, ROV operations, and compliance with permit restrictions.
+
+Document roles:
+document                          role              summary
+--------------------------------  ----------------  ------------------------------------------------------------------------------------------
+Daily_Field_Notes_Vance.docx      primary_record    Personal field journal recording expedition activities, observations, and the ROV issue.
+Dive_Log_and_Samples.xlsx         primary_record    Dive log recording dates, dive identifiers, sites, ROV operators, maximum depths, and col…
+Expedition_Protocol_DSCAP26.docx  authority         Sets the assessment objective, designated sites, methodology, and schedule.
+Final_Expedition_Summary.pdf      narrative         Summarizes the expedition’s reported completion, sample collection, compliance, and findi…
+Incident_Report_ROV.docx          event_register    Records the ROV thruster failure, resulting downtime, and repair completion.
+Lab_Analysis_Report.pdf           derived_analysis  Reports laboratory findings for coral samples and notes a sample without corresponding fi…
+Permit_GOA_2026_099.pdf           authority         Sets authorized activities, the maximum sample limit, protected-zone restrictions, and EI…
+Water_Quality_Metrics.xlsx        primary_record    Records dated water-quality measurements by site.
+
+Identifier kinds (pattern, distinct identifiers found):
+kind    pattern                                                             distinct ids
+------  ------------------------------------------------------------------  ------------
+sample  (?<![A-Za-z0-9])SPL\-\d{1,8}(?:[-_/][A-Za-z]{1,2})?(?![A-Za-z0-9])  18
+dive    (?<![A-Za-z0-9])D\-\d{1,8}(?:[-_/][A-Za-z]{1,2})?(?![A-Za-z0-9])    8
+sample  SPL-\d+                                                             18
+dive    D-\d+                                                               8
+
+Aliases:
+  Sarah Jenkins = S. Jenkins, Sarah Jenkins, ROV Technician
+  DSCAP-26 = Deep-Sea Coral Assessment Protocol (DSCAP-26), DSCAP-26 expedition field activities
+
+==============================================================================
+FINDINGS
+==============================================================================
+
+--- Finding 1 of 7 ----------------------------------------
+title          : [contextual difference] ROV status: inoperable on October 8, back online on October 10
+classification : contextual_difference   type: contextual_difference   family: I semantic value comparison
+severity       : low   confidence 0.99   status: definitive   verifier: contextual_difference
+description    : Status: definitive. Type: contextual difference. Check family I: semantic value comparison.
+                 
+                 The Incident_Report_ROV.docx states that the ROV was rendered completely inoperable after the failure on October 8; the Daily_Field_Notes_Vance.docx says on Oct 10 that it was back online. These are successive states at different stated dates, and the later October 10 statement supersedes the earlier October 8 state.
+                 
+                 Verification: The passages describe successive states: the vehicle was rendered inoperable, and the journal later says it was back online on October 10. The incident report's downtime and resolution passage says repairs were completed by 08:00 on October 10 and the vehicle was cleared for subsequent operations. Explanation considered: The inoperable state and subsequent return to service are explained by repairs completed by 08:00 on October 10. Possibly resolving evidence: Incident_Report_ROV.docx, section 'Downtime & Resolution': Repairs were completed by 08:00 on October 10, and the vehicle was cleared for subsequent operations.
+evidence (contextual): Oct 10: ROV is back online.   [chk_3ba3d45a205c4050]
+evidence (contextual): The vehicle was rendered completely inoperable.   [chk_734d18beb05c4d64]
+
+--- Finding 2 of 7 ----------------------------------------
+title          : [constraint violation] Unauthorized sampling at Site Charlie
+classification : contradiction   type: constraint_violation   family: A constraint compliance
+severity       : high   confidence 1.00   status: definitive   verifier: confirmed
+description    : Status: definitive. Type: constraint violation. Check family A: constraint compliance.
+                 
+                 The dive log records biological samples collected at Site Charlie despite the permit’s prohibition on biological sampling or physical interaction there.
+                 
+                 Primary symptom: The dive log records samples collected at Site Charlie on 2026-10-09: “SPL-031 to SPL-038” (t1, A5:F5). The permit states: “Site Charlie is designated as a Level 1 Protected Zone. NO biological sampling or physical interaction is permitted at Site Charlie.”
+                 
+                 Computed: Compared the Charlie dive log’s samples_collected value (SPL-031 to SPL-038) with the permit restriction prohibiting biological sampling at Charlie.
+                 
+                 Related symptoms merged here: Permit_GOA_2026_099.pdf, page 1 states: “1. Site Charlie is designated as a Level 1 Protected Zone. NO biological sampli.
+                 
+                 Verification: The dive log records samples collected during a dive at Charlie, while the permit prohibits biological sampling there. No supplied passage establishes an exception or other explanation for the recorded sampling.
+evidence (contradicting): [Sheet1!A5:F5] Date: 2026-10-09; Dive_ID: D-04; Site: Charlie; ROV_Operator: S. Jenkins; Max_Depth_m: 220; Samples_Collected: SPL-031 to SPL-038   [chk_9102fba65a404896]
+evidence (supporting): Site Charlie is designated as a Level 1 Protected Zone. NO biological sampling or physical interaction is permitted at Site Charlie.   [chk_fd5f6f2ed3e64912]
+evidence (supporting): 1. Site Charlie is designated as a Level 1 Protected Zone. NO biological sampling or physical interaction is permitted at Site Charlie.   [chk_fd5f6f2ed3e64912]
+
+--- Finding 3 of 7 ----------------------------------------
+title          : [direct contradiction] Table t1 records a dive at Charlie on 2026-10-09, operated by S. Jenkins, with a maximum depth of 220 m and samples SPL-
+classification : contradiction   type: direct_contradiction   family: E universal and negative claims
+severity       : high   confidence 1.00   status: definitive   verifier: confirmed
+description    : Status: definitive. Type: direct contradiction. Check family E: universal and negative claims.
+                 
+                 Table t1 records a dive at Charlie on 2026-10-09, operated by S. Jenkins, with a maximum depth of 220 m and samples SPL-031 to SPL-038 (A5:F5). The Personal Field Journal states, “Since we couldn't dive” and “We did not deploy any gear.” Downtime & Resolution says the ROV was offline for the entirety of October 9. These statements conflict about whether a dive occurred that day.
+                 
+                 Computed: Compared the 2026-10-09 row in t1 (dive D-04 recorded) with the journal statement that no dive or gear deployment occurred and the downtime record that the ROV was offline all day; these claims cannot all be true.
+                 
+                 Verification: The log records D-04 on October 9 at Charlie, with S. Jenkins, a maximum depth of 220 m, and samples SPL-031 to SPL-038. The journal says they could not dive and deployed no gear, while the incident report says the ROV was offline all day; no provided passage reconciles these claims.
+evidence (contradicting): [Sheet1!A5:F5] Date: 2026-10-09; Dive_ID: D-04; Site: Charlie; ROV_Operator: S. Jenkins; Max_Depth_m: 220; Samples_Collected: SPL-031 to SPL-038   [chk_9102fba65a404896]
+evidence (contradicting): Oct 9: Extremely frustrating day. Sarah was in the workshop all day dismantling the ROV. Since we couldn't dive, Aris and I spent the day processing the water samples from yesterday and organizing the wet lab. We did not deploy any gear.   [chk_3ba3d45a205c4050]
+evidence (supporting): The ROV was offline and undergoing intensive repairs in the workshop for the entirety of October 9, 2026. Repairs were completed by 08:00 on October 10, and the vehicle was cleared for subsequent operations.   [chk_b251b7a3c49c4a50]
+
+--- Finding 4 of 7 ----------------------------------------
+title          : [unsupported conclusion] The conclusion states that Sample SPL-044-B “is a fragment of black coral (Leiopathes sp.).” Lab_Analysis_Report.pdf, pa
+classification : insufficient_evidence   type: unsupported_conclusion   family: H conclusion audit
+severity       : medium   confidence 0.94   status: needs_investigation   verifier: unsupported
+description    : Status: needs investigation. Type: unsupported conclusion. Check family H: conclusion audit.
+                 
+                 The conclusion states that Sample SPL-044-B “is a fragment of black coral (Leiopathes sp.).” Lab_Analysis_Report.pdf, page 1, reports: “Analysis reveals it is a fragment of black coral (Leiopathes sp.).” The same page notes that SPL-044-B “lacks corresponding field metadata,” and provides no identification method, comparative evidence, sample size, or uncertainty assessment. The available dive log lists collected samples only through SPL-038 and does not provide field information for SPL-044-B. The evidence in the room therefore does not establish the basis or reliability of the identification.
+                 
+                 Computed: Compared the report's batch and results scope (SPL-001 through SPL-038, plus SPL-044-B) with the dive-log sample ranges (ending at SPL-038). No method, comparison, sample-size basis, or uncertainty information for the identification appears in the provided results.
+                 
+                 Verification: The report asserts that SPL-044-B is a fragment of black coral but also says it lacks corresponding field metadata. The listed dive-log samples end at SPL-038, and the provided passages do not establish the method or reliability of the identification.
+needs          : Field metadata or chain-of-custody information for SPL-044-B.
+needs          : The analytical methods, observations, and supporting results used to identify SPL-044-B as Leiopathes sp.
+needs          : Any relevant reference comparison or independent confirmation.
+evidence (supporting): Note: Sample SPL-044-B was received in the batch but lacks corresponding field metadata. Analysis reveals it is a fragment of black coral (Leiopathes sp.).   [chk_0785e643042b414a]
+evidence (contextual): [Sheet1!A5:F5] Date: 2026-10-09; Dive_ID: D-04; Site: Charlie; ROV_Operator: S. Jenkins; Max_Depth_m: 220; Samples_Collected: SPL-031 to SPL-038   [chk_9102fba65a404896]
+evidence (insufficient): Results: - Alpha Samples (SPL-001 to 010): Healthy coral polyps, negligible bleaching. - Bravo Samples (SPL-011 to 030): Moderate stress indicators. - Charlie Samples (SPL-031 to 038): Severe tissue degradation and bleaching observed.   [chk_0785e643042b414a]
+
+--- Finding 5 of 7 ----------------------------------------
+title          : [reconciliation gap] Unaccounted-for sample identifiers
+classification : missing_information   type: reconciliation_gap   family: B set and chain reconciliation
+severity       : medium   confidence 0.72   status: needs_investigation   verifier: missing_evidence
+description    : Status: needs investigation. Type: reconciliation gap. Check family B: set and chain reconciliation.
+                 
+                 The lab report names SPL-044-B, SPL044B, and SPL-044, while the dive log lists identifiers only through SPL-038 and contains no record of those samples.
+                 
+                 Primary symptom: Lab_Analysis_Report.pdf states “Samples SPL-001 through SPL-038, plus SPL-044-B.” The dive-log ranges run from SPL-001 through SPL-038 and do not list SPL-044-B. The supplied results provide no documented reason for the additional lab identifier. The prompt's SPL044B form lacks the hyphenated identifier shown in the lab statement, so it is not treated as a separate documented identifier.
+                 
+                 Computed: Compared the dive-log ranges, which together cover SPL-001 through SPL-038, with the lab batch statement, which additionally names SPL-044-B. No search/find_entity results showing a disposition for SPL-044-B were supplied.
+                 
+                 Related symptoms merged here: SPL044B, SPL-044 named in Lab_Analysis_Report.pdf has no record in Dive_Log_and_Samples.xlsx (SPL001 to SPL038).
+                 
+                 Verification: The lab report names SPL-044-B in addition to SPL-001 through SPL-038, while the provided dive-log passages do not document that identifier or its disposition. The supplied contextual passages do not explain the additional lab identifier.
+needs          : Search and find_entity results for SPL-044-B showing whether it has a documented reason for being listed in the lab batch but not in the dive log.
+needs          : the record for SPL044B, SPL-044 in Dive_Log_and_Samples.xlsx, or the document that accounts for it
+evidence (supporting): Marine Pathology Laboratory - Post-Expedition Analysis Date: October 20, 2026 Analyst: Dr. M. Fisher Batch: Samples SPL-001 through SPL-038, plus SPL-044-B   [chk_0785e643042b414a]
+evidence (insufficient): [Sheet1!A5:F5] Date: 2026-10-09; Dive_ID: D-04; Site: Charlie; ROV_Operator: S. Jenkins; Max_Depth_m: 220; Samples_Collected: SPL-031 to SPL-038   [chk_9102fba65a404896]
+
+--- Finding 6 of 7 ----------------------------------------
+title          : [missing evidence] Referenced item not in the data room: Incident Report #26-04
+classification : missing_information   type: missing_evidence   family: G reference resolution
+severity       : medium   confidence 0.65   status: needs_investigation   verifier: missing_evidence
+description    : Status: needs investigation. Type: missing evidence. Check family G: reference resolution.
+                 
+                 Incident_Report_ROV.docx, section 'Incident Report #26-04' refers to "Incident Report #26-04", but no file, sheet, heading, caption, table row or identifier in the data room is named like it, and every document was read.
+                 
+                 Verification: The cited section name confirms a reference to “Incident Report #26-04,” but the supplied passages do not establish whether a separate report with that identifier exists elsewhere in the room. The candidate's claim that every document was read and that no matching item exists cannot be independently verified from these excerpts.
+needs          : the document or record "Incident Report #26-04"
+evidence (insufficient): Incident Report #26-04   [chk_da43002475ea4859]
+
+--- Finding 7 of 7 ----------------------------------------
+title          : [missing evidence] Referenced item not in the data room: Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A)
+classification : missing_information   type: missing_evidence   family: G reference resolution
+severity       : medium   confidence 0.65   status: needs_investigation   verifier: missing_evidence
+description    : Status: needs investigation. Type: missing evidence. Check family G: reference resolution.
+                 
+                 Permit_GOA_2026_099.pdf, page 1 refers to "Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A)", but no file, sheet, heading, caption, table row or identifier in the data room is named like it, and every document was read.
+                 
+                 Verification: The permit quotation explicitly refers to an approved EIA document and says it is attached as Appendix A, but the provided passages do not establish whether that document or appendix is present elsewhere in the data room. The claimed room-wide absence cannot be confirmed from the excerpts alone.
+needs          : the document or record "Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A)"
+evidence (insufficient): 2. All activities must strictly adhere to the protocols outlined in the Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A).   [chk_fd5f6f2ed3e64912]
+
+==============================================================================
+CHECK PLAN AND AUDIT LOG (every task and how it ended)
+==============================================================================
+family  name                           finding  passed  untestable  error  skipped
+------  -----------------------------  -------  ------  ----------  -----  -------
+A       constraint compliance          2        5       2           0      0
+B       set and chain reconciliation   2        0       0           0      0
+C       temporal consistency           0        0       1           0      0
+D       recomputation                  0        5       0           0      0
+E       universal and negative claims  1        1       1           0      0
+F       data integrity                 0        1       0           0      0
+G       reference resolution           1        0       0           0      0
+H       conclusion audit               1        0       3           0      0
+I       semantic value comparison      1        0       0           0      0
+
+task    fam  status      calls  cand  what                                                                    why
+------  ---  ----------  -----  ----  ----------------------------------------------------------------------  ----------------------------------------------------------------------
+B-code  B    finding     0      1     identifiers outside the range of another document's list                1 candidates
+F-code  F    passed      0      0     identical series and duplicated keys over every table                   0 candidates
+G-code  G    finding     0      2     3 references resolved in a fixed order                                  1 found in the room, 2 unresolved, 2 reported
+A1      A    untestable  0      0     Rule: Deep-Sea Coral Assessment Protocol (DSCAP-26), methodology | RO…  The room shows four dated ROV dive records, but does not provide a co…
+A2      A    passed      0      0     Rule: Deep-Sea Coral Assessment Protocol (DSCAP-26), ROV dive schedul…  All four ROV dive records shown are dated between Oct 1 and Oct 12, 2…
+A3      A    passed      0      0     Rule: Ocean acidification associated with coral bleaching observed at…  The two water-quality records for Site Bravo show pH values of 8.15 a…
+A4      A    passed      0      0     Rule: Global Oceans Authority - Scientific Research Permit GOA-2026-0…  The permit states valid dates of October 1, 2026 to October 15, 2026,…
+A5      A    passed      0      0     Rule: Global Oceans Authority - Scientific Research Permit GOA-2026-0…  The permit authorizes ROV exploration and limited biological sampling…
+A6      A    finding     3      2     Rule: Site Charlie | designated protection level = Level 1 Protected …  The Charlie dive record shows samples collected at a site where the p…
+A7      A    finding     0      1     Rule: Site Charlie | biological sampling or physical interaction = no…
+A8      A    untestable  1      0     Rule: All activities under Global Oceans Authority - Scientific Resea…  The Approved Environmental Impact Assessment (EIA) Document Ref: GOA-…
+A9      A    passed      0      0     Rule: Global Oceans Authority - Scientific Research Permit GOA-2026-0…  No record in the provided content establishes a failure to comply bey…
+B1      B    finding     0      2     sample identifiers differ between Dive_Log_and_Samples.xlsx and Lab_A…  The displayed material identifies the differing sample identifiers bu…
+C1      C    untestable  0      0     Events stated in the documents against each other and against the dat…  The provided content does not include the results of timeline(entity,…
+D1      D    passed      0      0     Stated figure: Dive D-01 at Alpha on 2026-10-02 | maximum depth = 210…  The table lists a maximum depth of 210 m for Dive D-01 at Alpha on 20…
+D2      D    passed      0      0     Stated figure: Dive D-02 at Bravo on 2026-10-05 | maximum depth = 195…  The table lists a maximum depth of 195 m for Dive D-02 at Bravo on 20…
+D3      D    passed      0      0     Stated figure: Dive D-03 at Bravo on 2026-10-08 | maximum depth = 200…  The table lists a maximum depth of 200 m for Dive D-03 at Bravo on 20…
+D4      D    passed      0      0     Stated figure: Dive D-04 at Charlie on 2026-10-09 | maximum depth = 2…  The table lists a maximum depth of 220 m for Dive D-04 at Charlie on …
+D5      D    passed      0      0     Stated figure: DSCAP-26 expedition targeted samples | total collected…  The listed sample ranges contain 10 + 15 + 5 + 8 = 38 samples, matchi…
+E1      E    finding     6      1     Assertion: Gear deployment; Oct 9 | gear deployed: We did not deploy …  The October 9 dive log entry conflicts with the journal and downtime …
+E2      E    untestable  2      0     Assertion: DSCAP-26 expedition | successful conclusion and objectives…  The visible search results identify relevant summary, protocol, and i…
+E3      E    passed      2      0     Assertion: DSCAP-26 expedition field activities | compliance with Glo…  The search returned no mentions of Global Oceans Authority.
+H1      H    untestable  2      0     Conclusion: Visual transects; Bravo; Oct 5 | difficulty due to turbid…  The shown search result does not return the Oct 5 field-note statemen…
+H2      H    untestable  2      0     Conclusion: DSCAP-26 expedition targeted samples | alignment with per…  The summary asserts that 38 targeted samples aligned with permit cons…
+H3      H    untestable  2      0     Conclusion: Coral bleaching observed at Site Bravo | primary driver: …  The conclusion claims severe ocean acidification below pH 7.8 was the…
+H4      H    finding     3      1     Conclusion: Sample SPL-044-B | analysis result: it is a fragment of b…  The analysis identifies SPL-044-B as black coral, but the report stat…
+I       I    finding     0      1     pairing and judging of claims: 63 claims in 1 batch(es), 2 groups cov…  1 candidates; 1 consistent or insufficient-evidence results not repor…
+
+==============================================================================
+VERIFIER
+==============================================================================
+3 calls; verdicts {'contextual_difference': 2, 'missing_evidence': 3, 'confirmed': 4, 'rejected': 1, 'unsupported': 1}; errors []
+  rejected [B] Dive_Log_and_Samples.xlsx lists SPL-010, SPL-025, SPL-026, and SPL-030 as identifiers onl…: The cited dive-log ranges include the four identifiers, and the lab statement covers SPL-001 through SPL-038, so those numeric identifiers fall within its stated range. The candidate's own evidence does not show an iden…
+
+==============================================================================
+CONSOLIDATION
+==============================================================================
+10 candidates became 7 findings (1 exact duplicates, 2 root-cause groups)
+  2 findings became one: Unauthorized sampling at Site Charlie (merged: Permit_GOA_2026_099.pdf, page 1 states: “1. Site Charlie is )
+  2 findings became one: Unaccounted-for sample identifiers (merged: SPL044B, SPL-044 named in Lab_Analysis_Report.pdf has no rec)
+
+==============================================================================
+FAMILY I (semantic value comparison)
+==============================================================================
+63 claims in 1 batch(es), 2 groups covering 4 claims, 9 pairs (7 from nearest neighbours)
+not reported: 1 consistent or insufficient-evidence results
+  insufficient_evidence: Turbidity at Bravo: 15 versus exceptionally high
+
+==============================================================================
+WORKERS
+==============================================================================
+9 batches, 26 model calls, 23 tool calls; 0 candidates dropped (evidence not found or empty), 6 evidence items dropped
+
+==============================================================================
+TIMING AND LLM USE PER STAGE
+==============================================================================
+stage                                          wall   llm attempts  failed  llm time
+---------------------------------------------  -----  ------------  ------  --------
+1. load tables (SQLite), keep cell addresses   0.1s   0             0       0s
+2. extract typed facts                         4.5s   0             0       0s
+3. case model, identifiers, aliases, timeline  1.4s   1             0       1s
+4. plan the checks                             0.9s   1             0       1s
+5a. workers investigate                        8.5s   26            0       29s
+5b. semantic value comparison (family I)       56.8s  3             0       56s
+6. verify adversarially                        10.8s  3             0       27s
+7. consolidate by root cause and save          4.3s   1             0       4s
+
+==============================================================================
+APPENDIX A: RUN METRICS (read by the run page)
+==============================================================================
+<<<RUN_METRICS
+{
+ "investigation_id": "inv_2f07651bc1fb40f0",
+ "config_name": "ui-run",
+ "state": "completed",
+ "started_at": "2026-11-12 15:54:50",
+ "finished_at": "2026-11-12T15:56:17",
+ "wall_s": 87.5,
+ "results_file": "C:\\Users\\Ayan Khan\\Desktop\\ai-dataroom-investigator\\AI-Data-room-investigator\\test_results\\TEST-RUN-20261112-155450-ui-run.txt",
+ "settings": {
+  "extractor": "llamaextract (typed facts)",
+  "pairing": "llm (family I) + check families",
+  "vocabulary": "off",
+  "coverage_check": "gate fail",
+  "batch_chunks": null,
+  "batch_chars": 60,
+  "llm_model": "cost_effective",
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2"
+ },
+ "counts": {
+  "documents": 8,
+  "documents_fully_read": 8,
+  "chunks": 13,
+  "claims_recorded": 63,
+  "claims_rejected": 0,
+  "candidate_pairs": 9,
+  "extractor_credits": 60.0,
+  "pairs_without_clustering": 0,
+  "pairs_exact": 0,
+  "pairs_judged": 9,
+  "verdicts": {
+   "insufficient_evidence": 1,
+   "contextual_difference": 1,
+   "not_comparable": 7
+  },
+  "findings_saved": 7,
+  "findings_rejected": 1,
+  "embedding_calls": 1,
+  "embedding_texts": 63,
+  "coverage_calls": 0,
+  "coverage_claims_added": 0
+ },
+ "llm": {
+  "attempts": 35,
+  "failed": 0,
+  "retries": 0,
+  "total_s": 118.9,
+  "avg_ms": 3397,
+  "p95_ms": 10802,
+  "max_ms": 54361,
+  "prompt_tokens": 0,
+  "completion_tokens": 0,
+  "thinking_tokens": 0,
+  "cached_tokens": 0,
+  "total_tokens": 0,
+  "credits": 560.0,
+  "min_context_tokens": 0,
+  "avg_context_tokens": 0,
+  "max_context_tokens": 0
+ },
+ "phases": [
+  {
+   "phase": "3. case model, identifiers, aliases, timeline",
+   "attempts": 1,
+   "failed": 0,
+   "prompt_tokens": 0,
+   "completion_tokens": 0,
+   "thinking_tokens": 0,
+   "avg_context_tokens": 0,
+   "max_context_tokens": 0,
+   "avg_ms": 1354,
+   "p95_ms": 1354,
+   "total_s": 1.4
+  },
+  {
+   "phase": "4. plan the checks",
+   "attempts": 1,
+   "failed": 0,
+   "prompt_tokens": 0,
+   "completion_tokens": 0,
+   "thinking_tokens": 0,
+   "avg_context_tokens": 0,
+   "max_context_tokens": 0,
+   "avg_ms": 865,
+   "p95_ms": 865,
+   "total_s": 0.9
+  },
+  {
+   "phase": "5a. workers investigate",
+   "attempts": 26,
+   "failed": 0,
+   "prompt_tokens": 0,
+   "completion_tokens": 0,
+   "thinking_tokens": 0,
+   "avg_context_tokens": 0,
+   "max_context_tokens": 0,
+   "avg_ms": 1116,
+   "p95_ms": 1692,
+   "total_s": 29.0
+  },
+  {
+   "phase": "5b. semantic value comparison (family I)",
+   "attempts": 3,
+   "failed": 0,
+   "prompt_tokens": 0,
+   "completion_tokens": 0,
+   "thinking_tokens": 0,
+   "avg_context_tokens": 0,
+   "max_context_tokens": 0,
+   "avg_ms": 18719,
+   "p95_ms": 54361,
+   "total_s": 56.2
+  },
+  {
+   "phase": "6. verify adversarially",
+   "attempts": 3,
+   "failed": 0,
+   "prompt_tokens": 0,
+   "completion_tokens": 0,
+   "thinking_tokens": 0,
+   "avg_context_tokens": 0,
+   "max_context_tokens": 0,
+   "avg_ms": 9097,
+   "p95_ms": 10802,
+   "total_s": 27.3
+  },
+  {
+   "phase": "7. consolidate by root cause and save",
+   "attempts": 1,
+   "failed": 0,
+   "prompt_tokens": 0,
+   "completion_tokens": 0,
+   "thinking_tokens": 0,
+   "avg_context_tokens": 0,
+   "max_context_tokens": 0,
+   "avg_ms": 4220,
+   "p95_ms": 4220,
+   "total_s": 4.2
+  }
+ ],
+ "stages": [
+  {
+   "stage": "1. load tables (SQLite), keep cell addresses",
+   "seconds": 0.1,
+   "percent": 0.1
+  },
+  {
+   "stage": "2. extract typed facts",
+   "seconds": 4.5,
+   "percent": 5.2
+  },
+  {
+   "stage": "3. case model, identifiers, aliases, timeline",
+   "seconds": 1.4,
+   "percent": 1.6
+  },
+  {
+   "stage": "4. plan the checks",
+   "seconds": 0.9,
+   "percent": 1.0
+  },
+  {
+   "stage": "5a. workers investigate",
+   "seconds": 8.5,
+   "percent": 9.7
+  },
+  {
+   "stage": "5b. semantic value comparison (family I)",
+   "seconds": 56.8,
+   "percent": 64.9
+  },
+  {
+   "stage": "6. verify adversarially",
+   "seconds": 10.8,
+   "percent": 12.3
+  },
+  {
+   "stage": "7. consolidate by root cause and save",
+   "seconds": 4.3,
+   "percent": 4.9
+  }
+ ]
+}
+RUN_METRICS>>>
+
+==============================================================================
+APPENDIX B: FINDINGS AS DATA (read by scripts/score_run.py)
+==============================================================================
+<<<FINDINGS
+[
+ {
+  "id": "fnd_e1958e3ca47b4223",
+  "title": "[contextual difference] ROV status: inoperable on October 8, back online on October 10",
+  "classification": "contextual_difference",
+  "taxonomy": "contextual_difference",
+  "family": "I",
+  "severity": "low",
+  "confidence": 0.99,
+  "status": "definitive",
+  "description": "Status: definitive. Type: contextual difference. Check family I: semantic value comparison.\n\nThe Incident_Report_ROV.docx states that the ROV was rendered completely inoperable after the failure on October 8; the Daily_Field_Notes_Vance.docx says on Oct 10 that it was back online. These are successive states at different stated dates, and the later October 10 statement supersedes the earlier October 8 state.\n\nVerification: The passages describe successive states: the vehicle was rendered inoperable, and the journal later says it was back online on October 10. The incident report's downtime and resolution passage says repairs were completed by 08:00 on October 10 and the vehicle was cleared for subsequent operations. Explanation considered: The inoperable state and subsequent return to service are explained by repairs completed by 08:00 on October 10. Possibly resolving evidence: Incident_Report_ROV.docx, section 'Downtime & Resolution': Repairs were completed by 08:00 on October 10, and the vehicle was cleared for subsequent operations.",
+  "unresolved_questions": [],
+  "evidence": [
+   {
+    "quote": "Oct 10: ROV is back online.",
+    "role": "contextual",
+    "chunk_id": "chk_3ba3d45a205c4050",
+    "reason": "Oct 10: ROV is back online."
+   },
+   {
+    "quote": "The vehicle was rendered completely inoperable.",
+    "role": "contextual",
+    "chunk_id": "chk_734d18beb05c4d64",
+    "reason": "The vehicle was rendered completely inoperable."
+   }
+  ],
+  "verdict": "contextual_difference"
+ },
+ {
+  "id": "fnd_172e10987a49462f",
+  "title": "[constraint violation] Unauthorized sampling at Site Charlie",
+  "classification": "contradiction",
+  "taxonomy": "constraint_violation",
+  "family": "A",
+  "severity": "high",
+  "confidence": 1.0,
+  "status": "definitive",
+  "description": "Status: definitive. Type: constraint violation. Check family A: constraint compliance.\n\nThe dive log records biological samples collected at Site Charlie despite the permit’s prohibition on biological sampling or physical interaction there.\n\nPrimary symptom: The dive log records samples collected at Site Charlie on 2026-10-09: “SPL-031 to SPL-038” (t1, A5:F5). The permit states: “Site Charlie is designated as a Level 1 Protected Zone. NO biological sampling or physical interaction is permitted at Site Charlie.”\n\nComputed: Compared the Charlie dive log’s samples_collected value (SPL-031 to SPL-038) with the permit restriction prohibiting biological sampling at Charlie.\n\nRelated symptoms merged here: Permit_GOA_2026_099.pdf, page 1 states: “1. Site Charlie is designated as a Level 1 Protected Zone. NO biological sampli.\n\nVerification: The dive log records samples collected during a dive at Charlie, while the permit prohibits biological sampling there. No supplied passage establishes an exception or other explanation for the recorded sampling.",
+  "unresolved_questions": [],
+  "evidence": [
+   {
+    "quote": "[Sheet1!A5:F5] Date: 2026-10-09; Dive_ID: D-04; Site: Charlie; ROV_Operator: S. Jenkins; Max_Depth_m: 220; Samples_Collected: SPL-031 to SPL-038",
+    "role": "contradicting",
+    "chunk_id": "chk_9102fba65a404896",
+    "reason": "Records dive D-04 at Charlie on 2026-10-09, with samples collected SPL-031 to SPL-038."
+   },
+   {
+    "quote": "Site Charlie is designated as a Level 1 Protected Zone. NO biological sampling or physical interaction is permitted at Site Charlie.",
+    "role": "supporting",
+    "chunk_id": "chk_fd5f6f2ed3e64912",
+    "reason": "Prohibits biological sampling and physical interaction at Charlie."
+   },
+   {
+    "quote": "1. Site Charlie is designated as a Level 1 Protected Zone. NO biological sampling or physical interaction is permitted at Site Charlie.",
+    "role": "supporting",
+    "chunk_id": "chk_fd5f6f2ed3e64912",
+    "reason": "Site Charlie is protected and sampling or physical interaction is prohibited."
+   }
+  ],
+  "verdict": "confirmed"
+ },
+ {
+  "id": "fnd_a9d62e9fb9f94d71",
+  "title": "[direct contradiction] Table t1 records a dive at Charlie on 2026-10-09, operated by S. Jenkins, with a maximum depth of 220 m and samples SPL-",
+  "classification": "contradiction",
+  "taxonomy": "direct_contradiction",
+  "family": "E",
+  "severity": "high",
+  "confidence": 1.0,
+  "status": "definitive",
+  "description": "Status: definitive. Type: direct contradiction. Check family E: universal and negative claims.\n\nTable t1 records a dive at Charlie on 2026-10-09, operated by S. Jenkins, with a maximum depth of 220 m and samples SPL-031 to SPL-038 (A5:F5). The Personal Field Journal states, “Since we couldn't dive” and “We did not deploy any gear.” Downtime & Resolution says the ROV was offline for the entirety of October 9. These statements conflict about whether a dive occurred that day.\n\nComputed: Compared the 2026-10-09 row in t1 (dive D-04 recorded) with the journal statement that no dive or gear deployment occurred and the downtime record that the ROV was offline all day; these claims cannot all be true.\n\nVerification: The log records D-04 on October 9 at Charlie, with S. Jenkins, a maximum depth of 220 m, and samples SPL-031 to SPL-038. The journal says they could not dive and deployed no gear, while the incident report says the ROV was offline all day; no provided passage reconciles these claims.",
+  "unresolved_questions": [],
+  "evidence": [
+   {
+    "quote": "[Sheet1!A5:F5] Date: 2026-10-09; Dive_ID: D-04; Site: Charlie; ROV_Operator: S. Jenkins; Max_Depth_m: 220; Samples_Collected: SPL-031 to SPL-038",
+    "role": "contradicting",
+    "chunk_id": "chk_9102fba65a404896",
+    "reason": "Records dive D-04 at Charlie on 2026-10-09, operated by S. Jenkins, with max_depth_m 220 and samples_collected SPL-031 to SPL-038."
+   },
+   {
+    "quote": "Oct 9: Extremely frustrating day. Sarah was in the workshop all day dismantling the ROV. Since we couldn't dive, Aris and I spent the day processing the water samples from yesterday and organizing the wet lab. We did not deploy any gear.",
+    "role": "contradicting",
+    "chunk_id": "chk_3ba3d45a205c4050",
+    "reason": "States no dive occurred and no gear was deployed on October 9."
+   },
+   {
+    "quote": "The ROV was offline and undergoing intensive repairs in the workshop for the entirety of October 9, 2026. Repairs were completed by 08:00 on October 10, and the vehicle was cleared for subsequent operations.",
+    "role": "supporting",
+    "chunk_id": "chk_b251b7a3c49c4a50",
+    "reason": "States the ROV was offline for the entirety of October 9."
+   }
+  ],
+  "verdict": "confirmed"
+ },
+ {
+  "id": "fnd_39737b37e4614661",
+  "title": "[unsupported conclusion] The conclusion states that Sample SPL-044-B “is a fragment of black coral (Leiopathes sp.).” Lab_Analysis_Report.pdf, pa",
+  "classification": "insufficient_evidence",
+  "taxonomy": "unsupported_conclusion",
+  "family": "H",
+  "severity": "medium",
+  "confidence": 0.94,
+  "status": "needs_investigation",
+  "description": "Status: needs investigation. Type: unsupported conclusion. Check family H: conclusion audit.\n\nThe conclusion states that Sample SPL-044-B “is a fragment of black coral (Leiopathes sp.).” Lab_Analysis_Report.pdf, page 1, reports: “Analysis reveals it is a fragment of black coral (Leiopathes sp.).” The same page notes that SPL-044-B “lacks corresponding field metadata,” and provides no identification method, comparative evidence, sample size, or uncertainty assessment. The available dive log lists collected samples only through SPL-038 and does not provide field information for SPL-044-B. The evidence in the room therefore does not establish the basis or reliability of the identification.\n\nComputed: Compared the report's batch and results scope (SPL-001 through SPL-038, plus SPL-044-B) with the dive-log sample ranges (ending at SPL-038). No method, comparison, sample-size basis, or uncertainty information for the identification appears in the provided results.\n\nVerification: The report asserts that SPL-044-B is a fragment of black coral but also says it lacks corresponding field metadata. The listed dive-log samples end at SPL-038, and the provided passages do not establish the method or reliability of the identification.",
+  "unresolved_questions": [
+   "Field metadata or chain-of-custody information for SPL-044-B.",
+   "The analytical methods, observations, and supporting results used to identify SPL-044-B as Leiopathes sp.",
+   "Any relevant reference comparison or independent confirmation."
+  ],
+  "evidence": [
+   {
+    "quote": "Note: Sample SPL-044-B was received in the batch but lacks corresponding field metadata. Analysis reveals it is a fragment of black coral (Leiopathes sp.).",
+    "role": "supporting",
+    "chunk_id": "chk_0785e643042b414a",
+    "reason": "The report asserts the identification while acknowledging missing field metadata."
+   },
+   {
+    "quote": "[Sheet1!A5:F5] Date: 2026-10-09; Dive_ID: D-04; Site: Charlie; ROV_Operator: S. Jenkins; Max_Depth_m: 220; Samples_Collected: SPL-031 to SPL-038",
+    "role": "contextual",
+    "chunk_id": "chk_9102fba65a404896",
+    "reason": "The dive log's listed samples end at SPL-038; it contains no field record for SPL-044-B."
+   },
+   {
+    "quote": "Results: - Alpha Samples (SPL-001 to 010): Healthy coral polyps, negligible bleaching. - Bravo Samples (SPL-011 to 030): Moderate stress indicators. - Charlie Samples (SPL-031 to 038): Severe tissue degradation and bleaching observed.",
+    "role": "insufficient",
+    "chunk_id": "chk_0785e643042b414a",
+    "reason": "The report gives group-level results for samples SPL-001 through SPL-038 but no methods or comparison supporting SPL-044-B's identification."
+   }
+  ],
+  "verdict": "unsupported"
+ },
+ {
+  "id": "fnd_37490b95e0784fef",
+  "title": "[reconciliation gap] Unaccounted-for sample identifiers",
+  "classification": "missing_information",
+  "taxonomy": "reconciliation_gap",
+  "family": "B",
+  "severity": "medium",
+  "confidence": 0.72,
+  "status": "needs_investigation",
+  "description": "Status: needs investigation. Type: reconciliation gap. Check family B: set and chain reconciliation.\n\nThe lab report names SPL-044-B, SPL044B, and SPL-044, while the dive log lists identifiers only through SPL-038 and contains no record of those samples.\n\nPrimary symptom: Lab_Analysis_Report.pdf states “Samples SPL-001 through SPL-038, plus SPL-044-B.” The dive-log ranges run from SPL-001 through SPL-038 and do not list SPL-044-B. The supplied results provide no documented reason for the additional lab identifier. The prompt's SPL044B form lacks the hyphenated identifier shown in the lab statement, so it is not treated as a separate documented identifier.\n\nComputed: Compared the dive-log ranges, which together cover SPL-001 through SPL-038, with the lab batch statement, which additionally names SPL-044-B. No search/find_entity results showing a disposition for SPL-044-B were supplied.\n\nRelated symptoms merged here: SPL044B, SPL-044 named in Lab_Analysis_Report.pdf has no record in Dive_Log_and_Samples.xlsx (SPL001 to SPL038).\n\nVerification: The lab report names SPL-044-B in addition to SPL-001 through SPL-038, while the provided dive-log passages do not document that identifier or its disposition. The supplied contextual passages do not explain the additional lab identifier.",
+  "unresolved_questions": [
+   "Search and find_entity results for SPL-044-B showing whether it has a documented reason for being listed in the lab batch but not in the dive log.",
+   "the record for SPL044B, SPL-044 in Dive_Log_and_Samples.xlsx, or the document that accounts for it"
+  ],
+  "evidence": [
+   {
+    "quote": "Marine Pathology Laboratory - Post-Expedition Analysis Date: October 20, 2026 Analyst: Dr. M. Fisher Batch: Samples SPL-001 through SPL-038, plus SPL-044-B",
+    "role": "supporting",
+    "chunk_id": "chk_0785e643042b414a",
+    "reason": "The laboratory batch statement adds SPL-044-B beyond the SPL-001 through SPL-038 range."
+   },
+   {
+    "quote": "[Sheet1!A5:F5] Date: 2026-10-09; Dive_ID: D-04; Site: Charlie; ROV_Operator: S. Jenkins; Max_Depth_m: 220; Samples_Collected: SPL-031 to SPL-038",
+    "role": "insufficient",
+    "chunk_id": "chk_9102fba65a404896",
+    "reason": "names SPL038"
+   }
+  ],
+  "verdict": "missing_evidence"
+ },
+ {
+  "id": "fnd_a816f60ec6ed423c",
+  "title": "[missing evidence] Referenced item not in the data room: Incident Report #26-04",
+  "classification": "missing_information",
+  "taxonomy": "missing_evidence",
+  "family": "G",
+  "severity": "medium",
+  "confidence": 0.65,
+  "status": "needs_investigation",
+  "description": "Status: needs investigation. Type: missing evidence. Check family G: reference resolution.\n\nIncident_Report_ROV.docx, section 'Incident Report #26-04' refers to \"Incident Report #26-04\", but no file, sheet, heading, caption, table row or identifier in the data room is named like it, and every document was read.\n\nVerification: The cited section name confirms a reference to “Incident Report #26-04,” but the supplied passages do not establish whether a separate report with that identifier exists elsewhere in the room. The candidate's claim that every document was read and that no matching item exists cannot be independently verified from these excerpts.",
+  "unresolved_questions": [
+   "the document or record \"Incident Report #26-04\""
+  ],
+  "evidence": [
+   {
+    "quote": "Incident Report #26-04",
+    "role": "insufficient",
+    "chunk_id": "chk_da43002475ea4859",
+    "reason": "Refers to Incident Report #26-04"
+   }
+  ],
+  "verdict": "missing_evidence"
+ },
+ {
+  "id": "fnd_534d98869a4a4092",
+  "title": "[missing evidence] Referenced item not in the data room: Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A)",
+  "classification": "missing_information",
+  "taxonomy": "missing_evidence",
+  "family": "G",
+  "severity": "medium",
+  "confidence": 0.65,
+  "status": "needs_investigation",
+  "description": "Status: needs investigation. Type: missing evidence. Check family G: reference resolution.\n\nPermit_GOA_2026_099.pdf, page 1 refers to \"Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A)\", but no file, sheet, heading, caption, table row or identifier in the data room is named like it, and every document was read.\n\nVerification: The permit quotation explicitly refers to an approved EIA document and says it is attached as Appendix A, but the provided passages do not establish whether that document or appendix is present elsewhere in the data room. The claimed room-wide absence cannot be confirmed from the excerpts alone.",
+  "unresolved_questions": [
+   "the document or record \"Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A)\""
+  ],
+  "evidence": [
+   {
+    "quote": "2. All activities must strictly adhere to the protocols outlined in the Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A).",
+    "role": "insufficient",
+    "chunk_id": "chk_fd5f6f2ed3e64912",
+    "reason": "Refers to Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A)"
+   }
+  ],
+  "verdict": "missing_evidence"
+ }
+]
+FINDINGS>>>
+
+==============================================================================
+APPENDIX C: CASE MODEL (what the run assumed about the room)
+==============================================================================
+<<<CASE_MODEL
+{
+ "case_summary": "The data room concerns the DSCAP-26 deep-sea coral assessment expedition, including its protocol, permit, field notes, dive and water-quality logs, incident report, laboratory analysis, and final summary. Its documents address coral health monitoring, sample collection, ROV operations, and compliance with permit restrictions.",
+ "roles": [
+  {
+   "document": "Daily_Field_Notes_Vance.docx",
+   "role": "primary_record",
+   "summary": "Personal field journal recording expedition activities, observations, and the ROV issue."
+  },
+  {
+   "document": "Dive_Log_and_Samples.xlsx",
+   "role": "primary_record",
+   "summary": "Dive log recording dates, dive identifiers, sites, ROV operators, maximum depths, and collected sample ranges."
+  },
+  {
+   "document": "Expedition_Protocol_DSCAP26.docx",
+   "role": "authority",
+   "summary": "Sets the assessment objective, designated sites, methodology, and schedule."
+  },
+  {
+   "document": "Final_Expedition_Summary.pdf",
+   "role": "narrative",
+   "summary": "Summarizes the expedition’s reported completion, sample collection, compliance, and findings."
+  },
+  {
+   "document": "Incident_Report_ROV.docx",
+   "role": "event_register",
+   "summary": "Records the ROV thruster failure, resulting downtime, and repair completion."
+  },
+  {
+   "document": "Lab_Analysis_Report.pdf",
+   "role": "derived_analysis",
+   "summary": "Reports laboratory findings for coral samples and notes a sample without corresponding field metadata."
+  },
+  {
+   "document": "Permit_GOA_2026_099.pdf",
+   "role": "authority",
+   "summary": "Sets authorized activities, the maximum sample limit, protected-zone restrictions, and EIA compliance requirements."
+  },
+  {
+   "document": "Water_Quality_Metrics.xlsx",
+   "role": "primary_record",
+   "summary": "Records dated water-quality measurements by site."
+  }
+ ],
+ "id_patterns": [
+  {
+   "entity_type": "sample",
+   "regex": "(?<![A-Za-z0-9])SPL\\-\\d{1,8}(?:[-_/][A-Za-z]{1,2})?(?![A-Za-z0-9])",
+   "description": "shape SPL-#",
+   "case_fold": true,
+   "strip_separators": true,
+   "pad_last_number_to": 3
+  },
+  {
+   "entity_type": "dive",
+   "regex": "(?<![A-Za-z0-9])D\\-\\d{1,8}(?:[-_/][A-Za-z]{1,2})?(?![A-Za-z0-9])",
+   "description": "shape D-#",
+   "case_fold": true,
+   "strip_separators": true,
+   "pad_last_number_to": 2
+  },
+  {
+   "entity_type": "sample",
+   "regex": "SPL-\\d+",
+   "description": "Sample identifiers, shown in Dive_Log_and_Samples.xlsx and Lab_Analysis_Report.pdf.",
+   "case_fold": false,
+   "strip_separators": false,
+   "pad_last_number_to": 3
+  },
+  {
+   "entity_type": "dive",
+   "regex": "D-\\d+",
+   "description": "Dive identifiers shown in Dive_Log_and_Samples.xlsx.",
+   "case_fold": false,
+   "strip_separators": false,
+   "pad_last_number_to": 2
+  }
+ ],
+ "aliases": [
+  {
+   "canonical": "Sarah Jenkins",
+   "entity_type": "person",
+   "aliases": [
+    "S. Jenkins",
+    "Sarah Jenkins, ROV Technician"
+   ]
+  },
+  {
+   "canonical": "DSCAP-26",
+   "entity_type": "expedition",
+   "aliases": [
+    "Deep-Sea Coral Assessment Protocol (DSCAP-26)",
+    "DSCAP-26 expedition field activities"
+   ]
+  }
+ ],
+ "definitions": [],
+ "units": [],
+ "time_conventions": [
+  {
+   "document": "Incident_Report_ROV.docx",
+   "convention": "At 14:00 local time on October 8"
+  }
+ ],
+ "shapes_seen": [
+  {
+   "shape": "SPL-#",
+   "count": 9,
+   "examples": [
+    "SPL-001",
+    "SPL-010",
+    "SPL-011",
+    "SPL-025"
+   ],
+   "documents": [
+    "Dive_Log_and_Samples.xlsx",
+    "Lab_Analysis_Report.pdf"
+   ]
+  },
+  {
+   "shape": "D-#",
+   "count": 4,
+   "examples": [
+    "D-01",
+    "D-02",
+    "D-03",
+    "D-04"
+   ],
+   "documents": [
+    "Dive_Log_and_Samples.xlsx"
+   ]
+  }
+ ],
+ "notes": []
+}
+CASE_MODEL>>>
+
+==============================================================================
+APPENDIX D: RUN STATISTICS
+==============================================================================
+<<<STATS
+{
+ "run_id": "20261112-155450",
+ "config": "ui-run",
+ "wall_seconds": 87.5,
+ "args": {
+  "db_name": "data_room",
+  "config": "ui-run",
+  "only": [
+   "Daily_Field_Notes_Vance.docx",
+   "Dive_Log_and_Samples.xlsx",
+   "Expedition_Protocol_DSCAP26.docx",
+   "Final_Expedition_Summary.pdf",
+   "Incident_Report_ROV.docx",
+   "Lab_Analysis_Report.pdf",
+   "Permit_GOA_2026_099.pdf",
+   "Water_Quality_Metrics.xlsx"
+  ],
+  "workers": 4,
+  "max_tasks": 60,
+  "families": "ABCDEFGHI",
+  "no_verify": false,
+  "gate": "fail",
+  "worker_rounds": 2,
+  "llm_attempts": 5
+ },
+ "documents": 8,
+ "tables": 2,
+ "table_rows": 8,
+ "facts": 97,
+ "facts_by_type": {
+  "event": 18,
+  "observation": 44,
+  "assertion": 19,
+  "conclusion": 4,
+  "constraint": 9,
+  "reference": 3
+ },
+ "claims": 63,
+ "facts_rejected": 0,
+ "worker_tasks": 23,
+ "task_status": {
+  "finding": 8,
+  "passed": 12,
+  "untestable": 7
+ },
+ "candidates": 11,
+ "verdicts": {
+  "contextual_difference": 2,
+  "missing_evidence": 3,
+  "confirmed": 4,
+  "rejected": 1,
+  "unsupported": 1
+ },
+ "rejected_by_verifier": 1,
+ "findings": 7,
+ "findings_by_taxonomy": {
+  "contextual_difference": 1,
+  "constraint_violation": 1,
+  "direct_contradiction": 1,
+  "unsupported_conclusion": 1,
+  "reconciliation_gap": 1,
+  "missing_evidence": 2
+ },
+ "findings_by_family": {
+  "I": 1,
+  "A": 1,
+  "E": 1,
+  "H": 1,
+  "B": 1,
+  "G": 2
+ },
+ "findings_by_severity": {
+  "low": 1,
+  "high": 2,
+  "medium": 4
+ },
+ "llm": {
+  "attempts": 35,
+  "failed": 0,
+  "seconds": 118.9,
+  "credits": 500.0
+ },
+ "stages_seconds": {
+  "1. load tables (SQLite), keep cell addresses": 0.1,
+  "2. extract typed facts": 4.5,
+  "3. case model, identifiers, aliases, timeline": 1.4,
+  "4. plan the checks": 0.9,
+  "5a. workers investigate": 8.5,
+  "5b. semantic value comparison (family I)": 56.8,
+  "6. verify adversarially": 10.8,
+  "7. consolidate by root cause and save": 4.3
+ },
+ "gate_failures": []
+}
+STATS>>>
+
+==============================================================================
+APPENDIX E: WORKER TRACE (each batch: the plan, the tool results, what the model concluded)
+==============================================================================
+<<<WORKER_TRACE
+[
+ {
+  "tasks": [
+   "A1",
+   "A2",
+   "A3",
+   "A4",
+   "A5"
+  ],
+  "round": 1,
+  "plan": [],
+  "tool_results": [],
+  "outcome": {
+   "results": [
+    {
+     "task_id": "A1",
+     "status": "untestable",
+     "reason": "The room shows four dated ROV dive records, but does not provide a complete dive log or other record establishing all planned ROV dives; therefore daily planned frequency cannot be tested against a complete schedule.",
+     "candidates": []
+    },
+    {
+     "task_id": "A2",
+     "status": "passed",
+     "reason": "All four ROV dive records shown are dated between Oct 1 and Oct 12, 2026, inclusive.",
+     "candidates": []
+    },
+    {
+     "task_id": "A3",
+     "status": "passed",
+     "reason": "The two water-quality records for Site Bravo show pH values of 8.15 and 8.11, neither below 7.8.",
+     "candidates": []
+    },
+    {
+     "task_id": "A4",
+     "status": "passed",
+     "reason": "The permit states valid dates of October 1, 2026 to October 15, 2026, matching the required date range.",
+     "candidates": []
+    },
+    {
+     "task_id": "A5",
+     "status": "passed",
+     "reason": "The permit authorizes ROV exploration and limited biological sampling up to 50 samples. The four dive rows list sample ranges SPL-001 to SPL-010, SPL-011 to SPL-025, SPL-026 to SPL-030, and SPL-031 to SPL-038, totaling 38 samples; the records indicate ROV dives and sampling within the stated limit.",
+     "candidates": []
+    }
+   ]
+  }
+ },
+ {
+  "tasks": [
+   "C1"
+  ],
+  "round": 1,
+  "plan": [],
+  "tool_results": [],
+  "outcome": {
+   "results": [
+    {
+     "task_id": "C1",
+     "status": "needs_more",
+     "reason": "The provided content does not include the results of timeline(entity, window), document quotes supporting the listed event descriptions, or other records needed to determine whether any events conflict. Another round of tool calls could settle the task.",
+     "candidates": []
+    }
+   ]
+  }
+ },
+ {
+  "tasks": [
+   "B1"
+  ],
+  "round": 1,
+  "plan": [],
+  "tool_results": [],
+  "outcome": {
+   "results": [
+    {
+     "task_id": "B1",
+     "status": "needs_more",
+     "reason": "The displayed material identifies the differing sample identifiers but does not include search or find_entity results establishing whether documented reasons exist. The dive log lists sample ranges SPL-001 to SPL-010, SPL-011 to SPL-025, SPL-026 to SPL-030, and SPL-031 to SPL-038; the lab report states “Samples SPL-001 through SPL-038, plus SPL-044-B.” Thus the stated ranges/counts do not establish the unexplained differences, and the required room-wide reason check remains unresolved.",
+     "candidates": [
+      {
+       "type": "reconciliation_gap",
+       "title": "",
+       "description": "Dive_Log_and_Samples.xlsx lists SPL-010, SPL-025, SPL-026, and SPL-030 as identifiers only in that document; the listed sample ranges include them. Lab_Analysis_Report.pdf states “Samples SPL-001 through SPL-038, plus SPL-044-B,” which includes their numeric sample identifiers, but does not separately list these four identifiers. No documented reason for the identifier-list differences is shown in the supplied results.",
+       "severity": "medium",
+       "confidence": 0.66,
+       "status": "needs_investigation",
+       "evidence_needed": [
+        "Search and find_entity results for SPL-010, SPL-025, SPL-026, and SPL-030 showing whether each has a documented reason for the difference."
+       ],
+       "evidence": [
+        {
+         "kind": "quote",
+         "table": null,
+         "ref": null,
+         "document": "Dive_Log_and_Samples.xlsx",
+         "quote": "Date: 2026-10-02; Dive_ID: D-01; Site: Alpha; ROV_Operator: S. Jenkins; Max_Depth_m: 210; Samples_Collected: SPL-001 to SPL-010",
+         "shows": "The dive log range includes SPL-010.",
+         "role": "supporting"
+        },
+        {
+         "kind": "quote",
+         "table": null,
+         "ref": null,
+         "document": "Dive_Log_and_Samples.xlsx",
+         "quote": "Date: 2026-10-05; Dive_ID: D-02; Site: Bravo; ROV_Operator: S. Jenkins; Max_Depth_m: 195; Samples_Collected: SPL-011 to SPL-025",
+         "shows": "The dive log range includes SPL-025.",
+         "role": "supporting"
+        },
+        {
+         "kind": "quote",
+         "table": null,
+         "ref": null,
+         "document": "Dive_Log_and_Samples.xlsx",
+         "quote": "Date: 2026-10-08; Dive_ID: D-03; Site: Bravo; ROV_Operator: S. Jenkins; Max_Depth_m: 200; Samples_Collected: SPL-026 to SPL-030",
+         "shows": "The dive log range includes SPL-026 and SPL-030.",
+         "role": "supporting"
+        },
+        {
+         "kind": "quote",
+         "table": null,
+         "ref": null,
+         "document": "Lab_Analysis_Report.pdf",
+         "quote": "Marine Pathology Laboratory - Post-Expedition Analysis Date: October 20, 2026 Analyst: Dr. M. Fisher Batch: Samples SPL-001 through SPL-038, plus SPL-044-B",
+         "shows": "The report states a batch range covering numeric identifiers SPL-010, SPL-025, SPL-026, and SPL-030, plus SPL-044-B.",
+         "role": "contextual"
+        }
+       ],
+       "computed": "Compared the dive-log ranges SPL-001–SPL-010, SPL-011–SPL-025, and SPL-026–SPL-030 with the lab batch statement SPL-001 through SPL-038, plus SPL-044-B. The four numeric identifiers fall within the lab's stated range; the supplied results contain no room search/find_entity outcomes resolving the identifier-list differences.",
+       "entities": [
+        "SPL-010",
+        "SPL-025",
+        "SPL-026",
+        "SPL-030",
+        "Dive_Log_and_Samples.xlsx",
+        "Lab_Analysis_Report.pdf"
+       ],
+       "root_cause": "No documented disposition evidence provided"
+      },
+      {
+       "type": "reconciliation_gap",
+       "title": "",
+       "description": "Lab_Analysis_Report.pdf states “Samples SPL-001 through SPL-038, plus SPL-044-B.” The dive-log ranges run from SPL-001 through SPL-038 and do not list SPL-044-B. The supplied results provide no documented reason for the additional lab identifier. The prompt's SPL044B form lacks the hyphenated identifier shown in the lab statement, so it is not treated as a separate documented identifier.",
+       "severity": "medium",
+       "confidence": 0.72,
+       "status": "needs_investigation",
+       "evidence_needed": [
+        "Search and find_entity results for SPL-044-B showing whether it has a documented reason for being listed in the lab batch but not in the dive log."
+       ],
+       "evidence": [
+        {
+         "kind": "quote",
+         "table": null,
+         "ref": null,
+         "document": "Lab_Analysis_Report.pdf",
+         "quote": "Marine Pathology Laboratory - Post-Expedition Analysis Date: October 20, 2026 Analyst: Dr. M. Fisher Batch: Samples SPL-001 through SPL-038, plus SPL-044-B",
+         "shows": "The laboratory batch statement adds SPL-044-B beyond the SPL-001 through SPL-038 range.",
+         "role": "supporting"
+        },
+        {
+         "kind": "row",
+         "table": "Dive_Log_and_Samples.xlsx",
+         "ref": "A2:F2",
+         "document": null,
+         "quote": null,
+         "shows": "The first dive-log range begins at SPL-001.",
+         "role": "contextual"
+        },
+        {
+         "kind": "row",
+         "table": "Dive_Log_and_Samples.xlsx",
+         "ref": "A3:F3",
+         "document": null,
+         "quote": null,
+         "shows": "The second dive-log range continues through SPL-025.",
+         "role": "contextual"
+        },
+        {
+         "kind": "row",
+         "table": "Dive_Log_and_Samples.xlsx",
+         "ref": "A4:F4",
+         "document": null,
+         "quote": null,
+         "shows": "The third dive-log range continues through SPL-030.",
+         "role": "contextual"
+        },
+        {
+         "kind": "row",
+         "table": "Dive_Log_and_Samples.xlsx",
+         "ref": "A5:F5",
+         "document": null,
+         "quote": null,
+         "shows": "The final dive-log range continues through SPL-038.",
+         "role": "contradicting"
+        }
+       ],
+       "computed": "Compared the dive-log ranges, which together cover SPL-001 through SPL-038, with the lab batch statement, which additionally names SPL-044-B. No search/find_entity results showing a disposition for SPL-044-B were supplied.",
+       "entities": [
+        "SPL-044-B",
+        "Dive_Log_and_Samples.xlsx",
+        "Lab_Analysis_Report.pdf"
+       ],
+       "root_cause": "Additional lab batch identifier has no disposition shown"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "tasks": [
+   "A6",
+   "A7",
+   "A8",
+   "A9"
+  ],
+  "round": 1,
+  "plan": [
+   {
+    "task_id": "A6,A7",
+    "tool": "sql",
+    "sql": "SELECT \"date\", \"dive_id\", \"site\", \"rov_operator\", \"max_depth_m\", \"samples_collected\", \"_ref\" FROM \"t1\" WHERE \"site\" = 'Charlie'",
+    "query": null,
+    "document": null,
+    "location": null,
+    "entity": null,
+    "window_start": null,
+    "window_end": null
+   },
+   {
+    "task_id": "A6,A7",
+    "tool": "sql",
+    "sql": "SELECT \"date\", \"site\", \"temp_c\", \"salinity_psu\", \"ph\", \"turbidity_ntu\", \"_ref\" FROM \"t2\" WHERE \"site\" = 'Charlie'",
+    "query": null,
+    "document": null,
+    "location": null,
+    "entity": null,
+    "window_start": null,
+    "window_end": null
+   },
+   {
+    "task_id": "A8,A9",
+    "tool": "search",
+    "sql": null,
+    "query": "GOA-2026-099 permit revocation Approved Environmental Impact Assessment EIA Appendix A protocols compliance",
+    "document": "Permit_GOA_2026_099.pdf",
+    "location": null,
+    "entity": null,
+    "window_start": null,
+    "window_end": null
+   },
+   {
+    "task_id": "A8",
+    "tool": "search",
+    "sql": null,
+    "query": "GOA-EIA-2026 Approved Environmental Impact Assessment Appendix A protocols",
+    "document": null,
+    "location": null,
+    "entity": null,
+    "window_start": null,
+    "window_end": null
+   }
+  ],
+  "tool_results": [
+   {
+    "call": "round 1, task A6,A7, sql(SELECT \"date\", \"dive_id\", \"site\", \"rov_operator\", \"max_depth_m\", \"samples_collected\", \"_ref\" FROM \"t1\" WHERE \"site\" = 'Charlie')",
+    "result": "1 row(s)\ndate | dive_id | site | rov_operator | max_depth_m | samples_collected | _ref\n2026-10-09 | D-04 | Charlie | S. Jenkins | 220 | SPL-031 to SPL-038 | A5:F5"
+   },
+   {
+    "call": "round 1, task A6,A7, sql(SELECT \"date\", \"site\", \"temp_c\", \"salinity_psu\", \"ph\", \"turbidity_ntu\", \"_ref\" FROM \"t2\" WHERE \"site\" = 'Charlie')",
+    "result": "1 row(s)\ndate | site | temp_c | salinity_psu | ph | turbidity_ntu | _ref\n2026-10-09 | Charlie | 3.8 | 35.2 | 8.05 | 2.8 | A5:F5"
+   },
+   {
+    "call": "round 1, task A8,A9, search(GOA-2026-099 permit revocation Approved Environmental Impact Assessment EIA Appendix A protocols compliance)",
+    "result": "- [chk_fd5f6f2ed3e64912] Permit_GOA_2026_099.pdf, page 1: Global Oceans Authority - Scientific Research Permit Permit Number: GOA-2026-099 Issued To: Dr. Aris Thorne Valid Dates: October 1, 2026 to October 15, 2026"
+   },
+   {
+    "call": "round 1, task A8, search(GOA-EIA-2026 Approved Environmental Impact Assessment Appendix A protocols)",
+    "result": "- [chk_fd5f6f2ed3e64912] Permit_GOA_2026_099.pdf, page 1: Restrictions: 1. Site Charlie is designated as a Level 1 Protected Zone. NO biological sampling or physical interaction is permitted at Site Charlie. 2. All activities must strictly adhere to the protocols outlined in the Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, at\n- [chk_8cce46ad047b4bc0] Expedition_Protocol_DSCAP26.docx, section 'Deep-Sea Coral Assessment Protocol (DSCAP-26)': Deep-Sea Coral Assessment Protocol (DSCAP-26)"
+   }
+  ],
+  "outcome": {
+   "results": [
+    {
+     "task_id": "A6",
+     "status": "finding",
+     "reason": "",
+     "candidates": [
+      {
+       "type": "constraint_violation",
+       "title": "",
+       "description": "Permit_GOA_2026_099.pdf, page 1 states: “1. Site Charlie is designated as a Level 1 Protected Zone. NO biological sampling or physical interaction is permitted at Site Charlie.” Dive_Log_and_Samples.xlsx, Sheet1 row A5:F5 records dive D-04 at Charlie with samples SPL-031 to SPL-038. The record shows sampling at the protected site, contrary to the rule.",
+       "severity": "high",
+       "confidence": 1.0,
+       "status": "definitive",
+       "evidence_needed": [],
+       "evidence": [
+        {
+         "kind": "quote",
+         "table": null,
+         "ref": null,
+         "document": "Permit_GOA_2026_099.pdf, page 1",
+         "quote": "1. Site Charlie is designated as a Level 1 Protected Zone. NO biological sampling or physical interaction is permitted at Site Charlie.",
+         "shows": "Site Charlie is protected and sampling or physical interaction is prohibited.",
+         "role": "supporting"
+        },
+        {
+         "kind": "row",
+         "table": "Dive_Log_and_Samples.xlsx, Sheet1",
+         "ref": "A5:F5",
+         "document": null,
+         "quote": null,
+         "shows": "Dive D-04 at Charlie records samples SPL-031 to SPL-038.",
+         "role": "contradicting"
+        }
+       ],
+       "computed": "Compared the Site Charlie rule with the dive log row for Charlie; the row records samples SPL-031 to SPL-038.",
+       "entities": [
+        "Site Charlie",
+        "D-04",
+        "SPL-031 to SPL-038"
+       ],
+       "root_cause": "Sampling recorded at a protected site"
+      }
+     ]
+    },
+    {
+     "task_id": "A7",
+     "status": "finding",
+     "reason": "",
+     "candidates": [
+      {
+       "type": "constraint_violation",
+       "title": "",
+       "description": "Permit_GOA_2026_099.pdf, page 1 states: “1. Site Charlie is designated as a Level 1 Protected Zone. NO biological sampling or physical interaction is permitted at Site Charlie.” Dive_Log_and_Samples.xlsx, Sheet1 row A5:F5 records dive D-04 at Charlie with samples SPL-031 to SPL-038, indicating biological sampling where it is not permitted.",
+       "severity": "high",
+       "confidence": 1.0,
+       "status": "definitive",
+       "evidence_needed": [],
+       "evidence": [
+        {
+         "kind": "quote",
+         "table": null,
+         "ref": null,
+         "document": "Permit_GOA_2026_099.pdf, page 1",
+         "quote": "1. Site Charlie is designated as a Level 1 Protected Zone. NO biological sampling or physical interaction is permitted at Site Charlie.",
+         "shows": "Biological sampling and physical interaction are not permitted at Charlie.",
+         "role": "supporting"
+        },
+        {
+         "kind": "row",
+         "table": "Dive_Log_and_Samples.xlsx, Sheet1",
+         "ref": "A5:F5",
+         "document": null,
+         "quote": null,
+         "shows": "Dive D-04 at Charlie records samples SPL-031 to SPL-038.",
+         "role": "contradicting"
+        }
+       ],
+       "computed": "Compared the rule prohibiting sampling or physical interaction at Charlie with the dive log; D-04 at Charlie records samples SPL-031 to SPL-038.",
+       "entities": [
+        "Site Charlie",
+        "D-04",
+        "SPL-031 to SPL-038"
+       ],
+       "root_cause": "Sampling recorded at a site where it is prohibited"
+      }
+     ]
+    },
+    {
+     "task_id": "A8",
+     "status": "untestable",
+     "reason": "The Approved Environmental Impact Assessment (EIA) Document Ref: GOA-EIA-2026, identified as attached Appendix A, is not present in the provided room content, so activities cannot be tested for adherence to its protocols.",
+     "candidates": []
+    },
+    {
+     "task_id": "A9",
+     "status": "passed",
+     "reason": "No record in the provided content establishes a failure to comply beyond the permit's statement of the consequence; the consequence itself is not a compliance requirement to test against these records.",
+     "candidates": []
+    },
+    {
+     "task_id": "A6",
+     "status": "finding",
+     "reason": "The Charlie dive record shows samples collected at a site where the permit prohibits biological sampling and physical interaction.",
+     "candidates": [
+      {
+       "type": "constraint_violation",
+       "title": "",
+       "description": "The dive log records samples collected at Site Charlie on 2026-10-09: “SPL-031 to SPL-038” (t1, A5:F5). The permit states: “Site Charlie is designated as a Level 1 Protected Zone. NO biological sampling or physical interaction is permitted at Site Charlie.”",
+       "severity": "high",
+       "confidence": 1.0,
+       "status": "definitive",
+       "evidence_needed": [],
+       "evidence": [
+        {
+         "kind": "row",
+         "table": "t1",
+         "ref": "A5:F5",
+         "document": null,
+         "quote": null,
+         "shows": "Records dive D-04 at Charlie on 2026-10-09, with samples collected SPL-031 to SPL-038.",
+         "role": "contradicting"
+        },
+        {
+         "kind": "quote",
+         "table": null,
+         "ref": null,
+         "document": "Permit_GOA_2026_099.pdf, page 1",
+         "quote": "Site Charlie is designated as a Level 1 Protected Zone. NO biological sampling or physical interaction is permitted at Site Charlie.",
+         "shows": "Prohibits biological sampling and physical interaction at Charlie.",
+         "role": "supporting"
+        }
+       ],
+       "computed": "Compared the Charlie dive log’s samples_collected value (SPL-031 to SPL-038) with the permit restriction prohibiting biological sampling at Charlie.",
+       "entities": [
+        "D-04",
+        "Charlie",
+        "SPL-031 to SPL-038",
+        "GOA-2026-099"
+       ],
+       "root_cause": "Sampling recorded at a site where the permit prohibits it."
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "tasks": [
+   "D1",
+   "D2",
+   "D3",
+   "D4"
+  ],
+  "round": 1,
+  "plan": [],
+  "tool_results": [],
+  "outcome": {
+   "results": [
+    {
+     "task_id": "D1",
+     "status": "passed",
+     "reason": "The table lists a maximum depth of 210 m for Dive D-01 at Alpha on 2026-10-02, matching the stated figure.",
+     "candidates": []
+    },
+    {
+     "task_id": "D2",
+     "status": "passed",
+     "reason": "The table lists a maximum depth of 195 m for Dive D-02 at Bravo on 2026-10-05, matching the stated figure.",
+     "candidates": []
+    },
+    {
+     "task_id": "D3",
+     "status": "passed",
+     "reason": "The table lists a maximum depth of 200 m for Dive D-03 at Bravo on 2026-10-08, matching the stated figure.",
+     "candidates": []
+    },
+    {
+     "task_id": "D4",
+     "status": "passed",
+     "reason": "The table lists a maximum depth of 220 m for Dive D-04 at Charlie on 2026-10-09, matching the stated figure.",
+     "candidates": []
+    }
+   ]
+  }
+ },
+ {
+  "tasks": [
+   "C1"
+  ],
+  "round": 2,
+  "plan": [],
+  "tool_results": [],
+  "outcome": {
+   "results": [
+    {
+     "task_id": "C1",
+     "status": "needs_more",
+     "reason": "The provided content does not include the results of timeline(entity, window), document quotes supporting the listed event descriptions, or other records needed to determine whether any events conflict. Another round of tool calls could settle the task.",
+     "candidates": []
+    }
+   ]
+  }
+ },
+ {
+  "tasks": [
+   "B1"
+  ],
+  "round": 2,
+  "plan": [],
+  "tool_results": [],
+  "outcome": {
+   "results": [
+    {
+     "task_id": "B1",
+     "status": "needs_more",
+     "reason": "The displayed material identifies the differing sample identifiers but does not include search or find_entity results establishing whether documented reasons exist. The dive log lists sample ranges SPL-001 to SPL-010, SPL-011 to SPL-025, SPL-026 to SPL-030, and SPL-031 to SPL-038; the lab report states “Samples SPL-001 through SPL-038, plus SPL-044-B.” Thus the stated ranges/counts do not establish the unexplained differences, and the required room-wide reason check remains unresolved.",
+     "candidates": [
+      {
+       "type": "reconciliation_gap",
+       "title": "",
+       "description": "Dive_Log_and_Samples.xlsx lists SPL-010, SPL-025, SPL-026, and SPL-030 as identifiers only in that document; the listed sample ranges include them. Lab_Analysis_Report.pdf states “Samples SPL-001 through SPL-038, plus SPL-044-B,” which includes their numeric sample identifiers, but does not separately list these four identifiers. No documented reason for the identifier-list differences is shown in the supplied results.",
+       "severity": "medium",
+       "confidence": 0.66,
+       "status": "needs_investigation",
+       "evidence_needed": [
+        "Search and find_entity results for SPL-010, SPL-025, SPL-026, and SPL-030 showing whether each has a documented reason for the difference."
+       ],
+       "evidence": [
+        {
+         "kind": "quote",
+         "table": null,
+         "ref": null,
+         "document": "Dive_Log_and_Samples.xlsx",
+         "quote": "Date: 2026-10-02; Dive_ID: D-01; Site: Alpha; ROV_Operator: S. Jenkins; Max_Depth_m: 210; Samples_Collected: SPL-001 to SPL-010",
+         "shows": "The dive log range includes SPL-010.",
+         "role": "supporting"
+        },
+        {
+         "kind": "quote",
+         "table": null,
+         "ref": null,
+         "document": "Dive_Log_and_Samples.xlsx",
+         "quote": "Date: 2026-10-05; Dive_ID: D-02; Site: Bravo; ROV_Operator: S. Jenkins; Max_Depth_m: 195; Samples_Collected: SPL-011 to SPL-025",
+         "shows": "The dive log range includes SPL-025.",
+         "role": "supporting"
+        },
+        {
+         "kind": "quote",
+         "table": null,
+         "ref": null,
+         "document": "Dive_Log_and_Samples.xlsx",
+         "quote": "Date: 2026-10-08; Dive_ID: D-03; Site: Bravo; ROV_Operator: S. Jenkins; Max_Depth_m: 200; Samples_Collected: SPL-026 to SPL-030",
+         "shows": "The dive log range includes SPL-026 and SPL-030.",
+         "role": "supporting"
+        },
+        {
+         "kind": "quote",
+         "table": null,
+         "ref": null,
+         "document": "Lab_Analysis_Report.pdf",
+         "quote": "Marine Pathology Laboratory - Post-Expedition Analysis Date: October 20, 2026 Analyst: Dr. M. Fisher Batch: Samples SPL-001 through SPL-038, plus SPL-044-B",
+         "shows": "The report states a batch range covering numeric identifiers SPL-010, SPL-025, SPL-026, and SPL-030, plus SPL-044-B.",
+         "role": "contextual"
+        }
+       ],
+       "computed": "Compared the dive-log ranges SPL-001–SPL-010, SPL-011–SPL-025, and SPL-026–SPL-030 with the lab batch statement SPL-001 through SPL-038, plus SPL-044-B. The four numeric identifiers fall within the lab's stated range; the supplied results contain no room search/find_entity outcomes resolving the identifier-list differences.",
+       "entities": [
+        "SPL-010",
+        "SPL-025",
+        "SPL-026",
+        "SPL-030",
+        "Dive_Log_and_Samples.xlsx",
+        "Lab_Analysis_Report.pdf"
+       ],
+       "root_cause": "No documented disposition evidence provided"
+      },
+      {
+       "type": "reconciliation_gap",
+       "title": "",
+       "description": "Lab_Analysis_Report.pdf states “Samples SPL-001 through SPL-038, plus SPL-044-B.” The dive-log ranges run from SPL-001 through SPL-038 and do not list SPL-044-B. The supplied results provide no documented reason for the additional lab identifier. The prompt's SPL044B form lacks the hyphenated identifier shown in the lab statement, so it is not treated as a separate documented identifier.",
+       "severity": "medium",
+       "confidence": 0.72,
+       "status": "needs_investigation",
+       "evidence_needed": [
+        "Search and find_entity results for SPL-044-B showing whether it has a documented reason for being listed in the lab batch but not in the dive log."
+       ],
+       "evidence": [
+        {
+         "kind": "quote",
+         "table": null,
+         "ref": null,
+         "document": "Lab_Analysis_Report.pdf",
+         "quote": "Marine Pathology Laboratory - Post-Expedition Analysis Date: October 20, 2026 Analyst: Dr. M. Fisher Batch: Samples SPL-001 through SPL-038, plus SPL-044-B",
+         "shows": "The laboratory batch statement adds SPL-044-B beyond the SPL-001 through SPL-038 range.",
+         "role": "supporting"
+        },
+        {
+         "kind": "row",
+         "table": "Dive_Log_and_Samples.xlsx",
+         "ref": "A2:F2",
+         "document": null,
+         "quote": null,
+         "shows": "The first dive-log range begins at SPL-001.",
+         "role": "contextual"
+        },
+        {
+         "kind": "row",
+         "table": "Dive_Log_and_Samples.xlsx",
+         "ref": "A3:F3",
+         "document": null,
+         "quote": null,
+         "shows": "The second dive-log range continues through SPL-025.",
+         "role": "contextual"
+        },
+        {
+         "kind": "row",
+         "table": "Dive_Log_and_Samples.xlsx",
+         "ref": "A4:F4",
+         "document": null,
+         "quote": null,
+         "shows": "The third dive-log range continues through SPL-030.",
+         "role": "contextual"
+        },
+        {
+         "kind": "row",
+         "table": "Dive_Log_and_Samples.xlsx",
+         "ref": "A5:F5",
+         "document": null,
+         "quote": null,
+         "shows": "The final dive-log range continues through SPL-038.",
+         "role": "contradicting"
+        }
+       ],
+       "computed": "Compared the dive-log ranges, which together cover SPL-001 through SPL-038, with the lab batch statement, which additionally names SPL-044-B. No search/find_entity results showing a disposition for SPL-044-B were supplied.",
+       "entities": [
+        "SPL-044-B",
+        "Dive_Log_and_Samples.xlsx",
+        "Lab_Analysis_Report.pdf"
+       ],
+       "root_cause": "Additional lab batch identifier has no disposition shown"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "tasks": [
+   "D5"
+  ],
+  "round": 1,
+  "plan": [],
+  "tool_results": [],
+  "outcome": {
+   "results": [
+    {
+     "task_id": "D5",
+     "status": "passed",
+     "reason": "The listed sample ranges contain 10 + 15 + 5 + 8 = 38 samples, matching the stated total of 38.",
+     "candidates": []
+    }
+   ]
+  }
+ },
+ {
+  "tasks": [
+   "E1",
+   "E2",
+   "E3"
+  ],
+  "round": 1,
+  "plan": [
+   {
+    "task_id": "E1",
+    "tool": "search",
+    "sql": null,
+    "query": "gear deployed Oct 9 gear deployment gear deployment register incident deviation exception",
+    "document": null,
+    "location": null,
+    "entity": null,
+    "window_start": null,
+    "window_end": null
+   },
+   {
+    "task_id": "E1",
+    "tool": "find_entity",
+    "sql": null,
+    "query": null,
+    "document": null,
+    "location": null,
+    "entity": "gear deployment; Oct 9",
+    "window_start": null,
+    "window_end": null
+   },
+   {
+    "task_id": "E2",
+    "tool": "search",
+    "sql": null,
+    "query": "DSCAP-26 expedition objectives successful conclusion unmet objective incident deviation exception",
+    "document": null,
+    "location": null,
+    "entity": null,
+    "window_start": null,
+    "window_end": null
+   },
+   {
+    "task_id": "E2",
+    "tool": "find_entity",
+    "sql": null,
+    "query": null,
+    "document": null,
+    "location": null,
+    "entity": "DSCAP-26 expedition",
+    "window_start": null,
+    "window_end": null
+   },
+   {
+    "task_id": "E3",
+    "tool": "search",
+    "sql": null,
+    "query": "DSCAP-26 Global Oceans Authority regulations field activities non-compliance incident deviation exception",
+    "document": null,
+    "location": null,
+    "entity": null,
+    "window_start": null,
+    "window_end": null
+   },
+   {
+    "task_id": "E3",
+    "tool": "find_entity",
+    "sql": null,
+    "query": null,
+    "document": null,
+    "location": null,
+    "entity": "Global Oceans Authority",
+    "window_start": null,
+    "window_end": null
+   }
+  ],
+  "tool_results": [
+   {
+    "call": "round 1, task E1, search(gear deployed Oct 9 gear deployment gear deployment register incident deviation exception)",
+    "result": "- [chk_3ba3d45a205c4050] Daily_Field_Notes_Vance.docx, section 'Personal Field Journal - Dr. Linnea Vance': Oct 1: Boarded the research vessel. Weather is clear.\n- [chk_38223fb457c84a1c] Expedition_Protocol_DSCAP26.docx, section 'Methodology & Schedule': Daily ROV dives using the Nautilus vehicle to collect video transects and physical samples. Schedule: Oct 1 - Oct 12, 2026.\n- [chk_da43002475ea4859] Incident_Report_ROV.docx, section 'Incident Report #26-04': Incident Report #26-04\n- [chk_734d18beb05c4d64] Incident_Report_ROV.docx, section 'Description': At 14:00 local time on October 8, the ROV 'Nautilus' experienced a catastrophic failure of the port-side vertical thruster during recovery."
+   },
+   {
+    "call": "round 1, task E1, find_entity(gear deployment; Oct 9)",
+    "result": "(no mentions)"
+   },
+   {
+    "call": "round 1, task E2, search(DSCAP-26 expedition objectives successful conclusion unmet objective incident deviation exception)",
+    "result": "- [chk_79029626fb994f0d] Final_Expedition_Summary.pdf, page 1: DSCAP-26 Final Expedition Summary Date: October 25, 2026 Prepared by: Dr. Aris Thorne, Lead Scientist\n- [chk_dc1cfe9b3f084333] Expedition_Protocol_DSCAP26.docx, section 'Objective': Objective\n- [chk_8cce46ad047b4bc0] Expedition_Protocol_DSCAP26.docx, section 'Deep-Sea Coral Assessment Protocol (DSCAP-26)': Deep-Sea Coral Assessment Protocol (DSCAP-26)\n- [chk_da43002475ea4859] Incident_Report_ROV.docx, section 'Incident Report #26-04': Incident Report #26-04\n- [chk_3ba3d45a205c4050] Daily_Field_Notes_Vance.docx, section 'Personal Field Journal - Dr. Linnea Vance': Oct 5: Dive at Bravo. I noted the turbidity was exceptionally high "
+   },
+   {
+    "call": "round 1, task E2, find_entity(DSCAP-26 expedition)",
+    "result": "(no mentions)"
+   },
+   {
+    "call": "round 1, task E3, search(DSCAP-26 Global Oceans Authority regulations field activities non-compliance incident deviation exception)",
+    "result": "- [chk_79029626fb994f0d] Final_Expedition_Summary.pdf, page 1: DSCAP-26 Final Expedition Summary Date: October 25, 2026 Prepared by: Dr. Aris Thorne, Lead Scientist\n- [chk_fd5f6f2ed3e64912] Permit_GOA_2026_099.pdf, page 1: Global Oceans Authority - Scientific Research Permit Permit Number: GOA-2026-099 Issued To: Dr. Aris Thorne Valid Dates: October 1, 2026 to October 15, 2026\n- [chk_da43002475ea4859] Incident_Report_ROV.docx, section 'Incident Report #26-04': Incident Report #26-04\n- [chk_8cce46ad047b4bc0] Expedition_Protocol_DSCAP26.docx, section 'Deep-Sea Coral Assessment Protocol (DSCAP-26)': Deep-Sea Coral Assessment Protocol (DSCAP-26)\n- [chk_734d18beb05c4d64] Incident_Report_ROV.docx,"
+   },
+   {
+    "call": "round 1, task E3, find_entity(Global Oceans Authority)",
+    "result": "(no mentions)"
+   }
+  ],
+  "outcome": {
+   "results": [
+    {
+     "task_id": "E1",
+     "status": "needs_more",
+     "reason": "The available search results do not establish whether gear was deployed on Oct 9. The ROV repair record does not state that no gear of any kind was deployed, and the relevant registers or primary records have not been fully checked.",
+     "candidates": []
+    },
+    {
+     "task_id": "E2",
+     "status": "untestable",
+     "reason": "The room excerpt shows no record that tests whether all expedition objectives were met; the objective-tracking or completion record is missing.",
+     "candidates": []
+    },
+    {
+     "task_id": "E3",
+     "status": "untestable",
+     "reason": "The room excerpt shows no record that tests compliance with Global Oceans Authority regulations; the applicable compliance or regulatory review record is missing.",
+     "candidates": []
+    }
+   ]
+  }
+ },
+ {
+  "tasks": [
+   "H1",
+   "H2",
+   "H3"
+  ],
+  "round": 1,
+  "plan": [
+   {
+    "task_id": "H1",
+    "tool": "search",
+    "sql": null,
+    "query": "Oct 5 Bravo turbidity visual transects difficult",
+    "document": "Daily_Field_Notes_Vance.docx",
+    "location": null,
+    "entity": null,
+    "window_start": null,
+    "window_end": null
+   },
+   {
+    "task_id": "H1",
+    "tool": "sql",
+    "sql": "SELECT \"date\", \"site\", \"ph\", \"turbidity_ntu\", \"_ref\" FROM \"Water_Quality_Metrics\" WHERE \"site\" = 'Bravo' OR \"date\" = '2026-10-05'",
+    "query": null,
+    "document": null,
+    "location": null,
+    "entity": null,
+    "window_start": null,
+    "window_end": null
+   },
+   {
+    "task_id": "H2",
+    "tool": "search",
+    "sql": null,
+    "query": "38 targeted samples permit constraints perfectly aligning permit",
+    "document": "Final_Expedition_Summary.pdf",
+    "location": null,
+    "entity": null,
+    "window_start": null,
+    "window_end": null
+   },
+   {
+    "task_id": "H2",
+    "tool": "search",
+    "sql": null,
+    "query": "permit constraints samples expedition permit",
+    "document": "Final_Expedition_Summary.pdf",
+    "location": null,
+    "entity": null,
+    "window_start": null,
+    "window_end": null
+   },
+   {
+    "task_id": "H3",
+    "tool": "search",
+    "sql": null,
+    "query": "ocean acidification pH 7.8 coral bleaching Site Bravo",
+    "document": "Final_Expedition_Summary.pdf",
+    "location": null,
+    "entity": null,
+    "window_start": null,
+    "window_end": null
+   },
+   {
+    "task_id": "H3",
+    "tool": "sql",
+    "sql": "SELECT \"date\", \"site\", \"ph\", \"turbidity_ntu\", \"_ref\" FROM \"Water_Quality_Metrics\" WHERE \"site\" = 'Bravo'",
+    "query": null,
+    "document": null,
+    "location": null,
+    "entity": null,
+    "window_start": null,
+    "window_end": null
+   }
+  ],
+  "tool_results": [
+   {
+    "call": "round 1, task H1, search(Oct 5 Bravo turbidity visual transects difficult)",
+    "result": "- [chk_3ba3d45a205c4050] Daily_Field_Notes_Vance.docx, section 'Personal Field Journal - Dr. Linnea Vance': Oct 1: Boarded the research vessel. Weather is clear."
+   },
+   {
+    "call": "round 1, task H1, sql(SELECT \"date\", \"site\", \"ph\", \"turbidity_ntu\", \"_ref\" FROM \"Water_Quality_Metrics\" WHERE \"site\" = 'Bravo' OR \"date\" = '2026-10-05')",
+    "result": "SQL error: no such table: Water_Quality_Metrics"
+   },
+   {
+    "call": "round 1, task H2, search(38 targeted samples permit constraints perfectly aligning permit)",
+    "result": "- [chk_79029626fb994f0d] Final_Expedition_Summary.pdf, page 1: Executive Summary: The DSCAP-26 expedition successfully concluded with all objectives met. A total of 38 targeted samples were collected, perfectly aligning with our permit constraints. All field activities remained fully compliant with the Global Oceans Authority regulations."
+   },
+   {
+    "call": "round 1, task H2, search(permit constraints samples expedition permit)",
+    "result": "- [chk_79029626fb994f0d] Final_Expedition_Summary.pdf, page 1: DSCAP-26 Final Expedition Summary Date: October 25, 2026 Prepared by: Dr. Aris Thorne, Lead Scientist"
+   },
+   {
+    "call": "round 1, task H3, search(ocean acidification pH 7.8 coral bleaching Site Bravo)",
+    "result": "- [chk_79029626fb994f0d] Final_Expedition_Summary.pdf, page 1: Executive Summary: The DSCAP-26 expedition successfully concluded with all objectives met. A total of 38 targeted samples were collected, perfectly aligning with our permit constraints. All field activities remained fully compliant with the Global Oceans Authority regulations."
+   },
+   {
+    "call": "round 1, task H3, sql(SELECT \"date\", \"site\", \"ph\", \"turbidity_ntu\", \"_ref\" FROM \"Water_Quality_Metrics\" WHERE \"site\" = 'Bravo')",
+    "result": "SQL error: no such table: Water_Quality_Metrics"
+   }
+  ],
+  "outcome": {
+   "results": [
+    {
+     "task_id": "H1",
+     "status": "needs_more",
+     "reason": "The shown search result does not return the Oct 5 field-note statement, and the SQL query failed because the named table was not available. The available table transcription gives turbidity on Oct 5 but does not establish whether visual transects were difficult.",
+     "candidates": []
+    },
+    {
+     "task_id": "H2",
+     "status": "needs_more",
+     "reason": "The summary asserts that 38 targeted samples aligned with permit constraints, but no permit or permit constraints are shown to verify the comparison. Check whether the room contains the permit before determining whether evidence is missing.",
+     "candidates": []
+    },
+    {
+     "task_id": "H3",
+     "status": "needs_more",
+     "reason": "The conclusion claims severe ocean acidification below pH 7.8 was the primary driver of bleaching at Bravo. The provided water-quality rows show pH 8.15 and 8.11 at Bravo, and the SQL query failed; the available evidence does not establish the causal claim. Further investigation could settle whether other relevant measurements or evidence are in the room.",
+     "candidates": []
+    }
+   ]
+  }
+ },
+ {
+  "tasks": [
+   "H4"
+  ],
+  "round": 1,
+  "plan": [
+   {
+    "task_id": "H4",
+    "tool": "search",
+    "sql": null,
+    "query": "SPL-044-B black coral Leiopathes analysis comparison sample limitations disclaimer",
+    "document": "Lab_Analysis_Report.pdf",
+    "location": null,
+    "entity": null,
+    "window_start": null,
+    "window_end": null
+   },
+   {
+    "task_id": "H4",
+    "tool": "read",
+    "sql": null,
+    "query": null,
+    "document": "Lab_Analysis_Report.pdf",
+    "location": "page 1",
+    "entity": null,
+    "window_start": null,
+    "window_end": null
+   },
+   {
+    "task_id": "H4",
+    "tool": "get_facts",
+    "sql": null,
+    "query": "Sample SPL-044-B analysis result identification as black coral (Leiopathes sp.), supporting evidence, methods, scope, sample size, uncertainty or disclaimers",
+    "document": null,
+    "location": null,
+    "entity": null,
+    "window_start": null,
+    "window_end": null
+   }
+  ],
+  "tool_results": [
+   {
+    "call": "round 1, task H4, search(SPL-044-B black coral Leiopathes analysis comparison sample limitations disclaimer)",
+    "result": "- [chk_0785e643042b414a] Lab_Analysis_Report.pdf, page 1: Marine Pathology Laboratory - Post-Expedition Analysis Date: October 20, 2026 Analyst: Dr. M. Fisher Batch: Samples SPL-001 through SPL-038, plus SPL-044-B"
+   },
+   {
+    "call": "round 1, task H4, read(page 1)",
+    "result": "[chk_0785e643042b414a] page 1\nMarine Pathology Laboratory - Post-Expedition Analysis Date: October 20, 2026 Analyst: Dr. M. Fisher Batch: Samples SPL-001 through SPL-038, plus SPL-044-B\nResults: - Alpha Samples (SPL-001 to 010): Healthy coral polyps, negligible bleaching. - Bravo Samples (SPL-011 to 030): Moderate stress indicators. - Charlie Samples (SPL-031 to 038): Severe tissue degradation and bleaching observed.\nNote: Sample SPL-044-B was received in the batch but lacks corresponding field metadata. Analysis reveals it is a fragment of black coral (Leiopathes sp.)."
+   },
+   {
+    "call": "round 1, task H4, get_facts(Sample SPL-044-B analysis result identification as black coral (Leiopathes sp.), supporting evidence, methods, scope, sample size, uncertainty or disclaimers)",
+    "result": "(no facts match)"
+   }
+  ],
+  "outcome": {
+   "results": [
+    {
+     "task_id": "H4",
+     "status": "finding",
+     "reason": "The analysis identifies SPL-044-B as black coral, but the report states that the sample lacks corresponding field metadata and provides no method, comparison, or uncertainty information to support the identification.",
+     "candidates": [
+      {
+       "type": "unsupported_conclusion",
+       "title": "",
+       "description": "The conclusion states that Sample SPL-044-B “is a fragment of black coral (Leiopathes sp.).” Lab_Analysis_Report.pdf, page 1, reports: “Analysis reveals it is a fragment of black coral (Leiopathes sp.).” The same page notes that SPL-044-B “lacks corresponding field metadata,” and provides no identification method, comparative evidence, sample size, or uncertainty assessment. The available dive log lists collected samples only through SPL-038 and does not provide field information for SPL-044-B. The evidence in the room therefore does not establish the basis or reliability of the identification.",
+       "severity": "medium",
+       "confidence": 0.94,
+       "status": "needs_investigation",
+       "evidence_needed": [
+        "Field metadata or chain-of-custody information for SPL-044-B.",
+        "The analytical methods, observations, and supporting results used to identify SPL-044-B as Leiopathes sp.",
+        "Any relevant reference comparison or independent confirmation."
+       ],
+       "evidence": [
+        {
+         "kind": "quote",
+         "table": null,
+         "ref": null,
+         "document": "Lab_Analysis_Report.pdf, page 1",
+         "quote": "Note: Sample SPL-044-B was received in the batch but lacks corresponding field metadata. Analysis reveals it is a fragment of black coral (Leiopathes sp.).",
+         "shows": "The report asserts the identification while acknowledging missing field metadata.",
+         "role": "supporting"
+        },
+        {
+         "kind": "row",
+         "table": "t1",
+         "ref": "A5:F5",
+         "document": null,
+         "quote": null,
+         "shows": "The dive log's listed samples end at SPL-038; it contains no field record for SPL-044-B.",
+         "role": "contextual"
+        },
+        {
+         "kind": "quote",
+         "table": null,
+         "ref": null,
+         "document": "Lab_Analysis_Report.pdf, page 1",
+         "quote": "Results: - Alpha Samples (SPL-001 to 010): Healthy coral polyps, negligible bleaching. - Bravo Samples (SPL-011 to 030): Moderate stress indicators. - Charlie Samples (SPL-031 to 038): Severe tissue degradation and bleaching observed.",
+         "shows": "The report gives group-level results for samples SPL-001 through SPL-038 but no methods or comparison supporting SPL-044-B's identification.",
+         "role": "insufficient"
+        }
+       ],
+       "computed": "Compared the report's batch and results scope (SPL-001 through SPL-038, plus SPL-044-B) with the dive-log sample ranges (ending at SPL-038). No method, comparison, sample-size basis, or uncertainty information for the identification appears in the provided results.",
+       "entities": [
+        "SPL-044-B",
+        "Leiopathes sp.",
+        "Lab_Analysis_Report.pdf",
+        "Dive_Log_and_Samples.xlsx"
+       ],
+       "root_cause": "Identification asserted without supporting methods or field metadata."
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "tasks": [
+   "E1",
+   "E2",
+   "E3"
+  ],
+  "round": 2,
+  "plan": [
+   {
+    "task_id": "E1",
+    "tool": "sql",
+    "sql": "SELECT \"date\", \"dive_id\", \"site\", \"rov_operator\", \"max_depth_m\", \"samples_collected\", \"_ref\" FROM \"t1\" WHERE \"date\" = '2026-10-09'",
+    "query": null,
+    "document": null,
+    "location": null,
+    "entity": null,
+    "window_start": null,
+    "window_end": null
+   },
+   {
+    "task_id": "E1",
+    "tool": "read",
+    "sql": null,
+    "query": null,
+    "document": "Daily_Field_Notes_Vance.docx",
+    "location": "Personal Field Journal - Dr. Linnea Vance",
+    "entity": null,
+    "window_start": null,
+    "window_end": null
+   },
+   {
+    "task_id": "E1",
+    "tool": "read",
+    "sql": null,
+    "query": null,
+    "document": "Incident_Report_ROV.docx",
+    "location": "Downtime & Resolution",
+    "entity": null,
+    "window_start": null,
+    "window_end": null
+   },
+   {
+    "task_id": "E1",
+    "tool": "search",
+    "sql": null,
+    "query": "gear deployment deployed gear October 9 equipment deployment register",
+    "document": null,
+    "location": null,
+    "entity": null,
+    "window_start": null,
+    "window_end": null
+   }
+  ],
+  "tool_results": [
+   {
+    "call": "round 2, task E1, sql(SELECT \"date\", \"dive_id\", \"site\", \"rov_operator\", \"max_depth_m\", \"samples_collected\", \"_ref\" FROM \"t1\" WHERE \"date\" = '2026-10-09')",
+    "result": "1 row(s)\ndate | dive_id | site | rov_operator | max_depth_m | samples_collected | _ref\n2026-10-09 | D-04 | Charlie | S. Jenkins | 220 | SPL-031 to SPL-038 | A5:F5"
+   },
+   {
+    "call": "round 2, task E1, read(Personal Field Journal - Dr. Linnea Vance)",
+    "result": "[chk_3ba3d45a205c4050] section 'Personal Field Journal - Dr. Linnea Vance'\nPersonal Field Journal - Dr. Linnea Vance\nOct 1: Boarded the research vessel. Weather is clear.\nOct 2: First dive at Alpha. Beautiful specimens.\nOct 5: Dive at Bravo. I noted the turbidity was exceptionally high today, making visual transects difficult.\nOct 8: Morning dive successful, but Sarah reported a thruster issue.\nOct 9: Extremely frustrating day. Sarah was in the workshop all day dismantling the ROV. Since we couldn't dive, Aris and I spent the day processing the water samples from yesterday and organizing the wet lab. We did not deploy any gear.\nOct 10: ROV is back online."
+   },
+   {
+    "call": "round 2, task E1, read(Downtime & Resolution)",
+    "result": "[chk_b251b7a3c49c4a50] section 'Downtime & Resolution'\nDowntime & Resolution\nThe ROV was offline and undergoing intensive repairs in the workshop for the entirety of October 9, 2026. Repairs were completed by 08:00 on October 10, and the vehicle was cleared for subsequent operations."
+   },
+   {
+    "call": "round 2, task E1, search(gear deployment deployed gear October 9 equipment deployment register)",
+    "result": "- [chk_3ba3d45a205c4050] Daily_Field_Notes_Vance.docx, section 'Personal Field Journal - Dr. Linnea Vance': Oct 9: Extremely frustrating day. Sarah was in the workshop all day dismantling the ROV. Since we couldn't dive, Aris and I spent the day processing the water samples from yesterday and organizing the wet lab. We did not deploy any gear.\n- [chk_da43002475ea4859] Incident_Report_ROV.docx, section 'Incident Report #26-04': Date of Report: October 10, 2026\n- [chk_b251b7a3c49c4a50] Incident_Report_ROV.docx, section 'Downtime & Resolution': The ROV was offline and undergoing intensive repairs in the workshop for the entirety of October 9, 2026. Repairs were completed by 08:00 on October 10,"
+   }
+  ],
+  "outcome": {
+   "results": [
+    {
+     "task_id": "E1",
+     "status": "needs_more",
+     "reason": "The dive log records a dive on Oct 9, but the visible records do not establish whether gear was deployed; the gear deployment register or other primary record that could test the assertion has not been checked.",
+     "candidates": []
+    },
+    {
+     "task_id": "E2",
+     "status": "needs_more",
+     "reason": "The visible search results identify relevant summary, protocol, and incident documents, but do not provide their substantive contents needed to assess whether an expedition objective was unmet.",
+     "candidates": []
+    },
+    {
+     "task_id": "E3",
+     "status": "needs_more",
+     "reason": "The visible search results identify a permit, protocol, and incident report, but do not show the applicable regulatory requirements or enough record contents to determine non-compliance.",
+     "candidates": []
+    },
+    {
+     "task_id": "E3",
+     "status": "passed",
+     "reason": "The search returned no mentions of Global Oceans Authority.",
+     "candidates": []
+    },
+    {
+     "task_id": "E1",
+     "status": "finding",
+     "reason": "The October 9 dive log entry conflicts with the journal and downtime record, which state the ROV was under repair and no gear was deployed that day.",
+     "candidates": [
+      {
+       "type": "direct_contradiction",
+       "title": "",
+       "description": "Table t1 records a dive at Charlie on 2026-10-09, operated by S. Jenkins, with a maximum depth of 220 m and samples SPL-031 to SPL-038 (A5:F5). The Personal Field Journal states, “Since we couldn't dive” and “We did not deploy any gear.” Downtime & Resolution says the ROV was offline for the entirety of October 9. These statements conflict about whether a dive occurred that day.",
+       "severity": "high",
+       "confidence": 1.0,
+       "status": "definitive",
+       "evidence_needed": [],
+       "evidence": [
+        {
+         "kind": "row",
+         "table": "t1",
+         "ref": "A5:F5",
+         "document": null,
+         "quote": null,
+         "shows": "Records dive D-04 at Charlie on 2026-10-09, operated by S. Jenkins, with max_depth_m 220 and samples_collected SPL-031 to SPL-038.",
+         "role": "contradicting"
+        },
+        {
+         "kind": "quote",
+         "table": null,
+         "ref": null,
+         "document": "Personal Field Journal - Dr. Linnea Vance",
+         "quote": "Oct 9: Extremely frustrating day. Sarah was in the workshop all day dismantling the ROV. Since we couldn't dive, Aris and I spent the day processing the water samples from yesterday and organizing the wet lab. We did not deploy any gear.",
+         "shows": "States no dive occurred and no gear was deployed on October 9.",
+         "role": "contradicting"
+        },
+        {
+         "kind": "quote",
+         "table": null,
+         "ref": null,
+         "document": "Downtime & Resolution",
+         "quote": "The ROV was offline and undergoing intensive repairs in the workshop for the entirety of October 9, 2026. Repairs were completed by 08:00 on October 10, and the vehicle was cleared for subsequent operations.",
+         "shows": "States the ROV was offline for the entirety of October 9.",
+         "role": "supporting"
+        }
+       ],
+       "computed": "Compared the 2026-10-09 row in t1 (dive D-04 recorded) with the journal statement that no dive or gear deployment occurred and the downtime record that the ROV was offline all day; these claims cannot all be true.",
+       "entities": [
+        "D-04",
+        "Charlie",
+        "S. Jenkins",
+        "SPL-031 to SPL-038",
+        "ROV"
+       ],
+       "root_cause": "Conflicting dive record and operational records"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "tasks": [
+   "H1",
+   "H2",
+   "H3"
+  ],
+  "round": 2,
+  "plan": [],
+  "tool_results": [],
+  "outcome": {
+   "results": [
+    {
+     "task_id": "H1",
+     "status": "needs_more",
+     "reason": "The shown search result does not return the Oct 5 field-note statement, and the SQL query failed because the named table was not available. The available table transcription gives turbidity on Oct 5 but does not establish whether visual transects were difficult.",
+     "candidates": []
+    },
+    {
+     "task_id": "H2",
+     "status": "needs_more",
+     "reason": "The summary asserts that 38 targeted samples aligned with permit constraints, but no permit or permit constraints are shown to verify the comparison. Check whether the room contains the permit before determining whether evidence is missing.",
+     "candidates": []
+    },
+    {
+     "task_id": "H3",
+     "status": "needs_more",
+     "reason": "The conclusion claims severe ocean acidification below pH 7.8 was the primary driver of bleaching at Bravo. The provided water-quality rows show pH 8.15 and 8.11 at Bravo, and the SQL query failed; the available evidence does not establish the causal claim. Further investigation could settle whether other relevant measurements or evidence are in the room.",
+     "candidates": []
+    }
+   ]
+  }
+ }
+]
+WORKER_TRACE>>>

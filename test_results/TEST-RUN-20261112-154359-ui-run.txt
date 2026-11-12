@@ -1,0 +1,183 @@
+INVESTIGATOR RUN  20261112-154359  ui-run
+==============================================================================
+
+Status        : completed
+Started       : 2026-11-12 15:43:59   wall time 139s
+Database      : data_room
+Pipeline      : investigator v2 (tables, typed facts, case model, check families, adversarial verifier)
+Options       : {'db_name': 'data_room', 'config': 'ui-run', 'only': ['Daily_Field_Notes_Vance.docx', 'Dive_Log_and_Samples.xlsx', 'Expedition_Protocol_DSCAP26.docx', 'Final_Expedition_Summary.pdf', 'Incident_Report_ROV.docx', 'Lab_Analysis_Report.pdf', 'Permit_GOA_2026_099.pdf', 'Water_Quality_Metrics.xlsx'], 'workers': 4, 'max_tasks': 60, 'families': 'ABCDEFGHI', 'no_verify': False, 'gate': 'fail', 'worker_rounds': 2, 'llm_attempts': 5}
+Documents     : 8 (0 new, 0 updated, 8 unchanged; scan and parsing 0s)
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+Tables        : 2 tables, 8 rows
+Facts         : 97 {'event': 18, 'observation': 44, 'assertion': 19, 'conclusion': 4, 'constraint': 9, 'reference': 3}; 0 rejected (quote not found); 63 stored as claims for family I
+Case model    : 8 document roles, 4 identifier kinds, 2 alias groups, 47 mentions, 13 dated events
+Plan          : 23 worker tasks, 3 candidates from code checks; task outcomes {'finding': 3, 'passed': 12, 'untestable': 12}
+Candidates    : 4; verifier verdicts {'unsupported': 1, 'missing_evidence': 2, 'contextual_difference': 1}; 1 rejected, 0 unverified
+Findings      : 2 saved; by type {'contextual_difference': 1, 'missing_evidence': 1}; by family {'I': 1, 'G': 1}; by severity {'low': 1, 'medium': 1}
+LLM calls     : 34 attempts, 1 failed, 254s in total, 450 credits
+
+==============================================================================
+COVERAGE GATE (every document must produce facts or tables, or have no numbers)
+==============================================================================
+document                          chunks  with numbers  tables  table rows  facts  claims  gate
+--------------------------------  ------  ------------  ------  ----------  -----  ------  ----
+Daily_Field_Notes_Vance.docx      1       1             0       0           16     8       ok
+Dive_Log_and_Samples.xlsx         1       1             1       4           16     12      ok
+Expedition_Protocol_DSCAP26.docx  4       3             0       0           12     9       ok
+Final_Expedition_Summary.pdf      1       1             0       0           9      5       ok
+Incident_Report_ROV.docx          3       3             0       0           9      4       ok
+Lab_Analysis_Report.pdf           1       1             0       0           10     7       ok
+Permit_GOA_2026_099.pdf           1       1             0       0           9      2       ok
+Water_Quality_Metrics.xlsx        1       1             1       4           16     16      ok
+
+==============================================================================
+CASE MODEL
+==============================================================================
+Summary: The data room concerns the DSCAP-26 deep-sea coral assessment expedition, including its protocol, permit, field notes, dive and water-quality logs, incident report, laboratory analysis, and final summary. Its documents address coral health monitoring, sample collection, ROV operations, and compliance with permit restrictions.
+
+Document roles:
+document                          role              summary
+--------------------------------  ----------------  ------------------------------------------------------------------------------------------
+Daily_Field_Notes_Vance.docx      primary_record    Personal field journal recording expedition activities, observations, and the ROV issue.
+Dive_Log_and_Samples.xlsx         primary_record    Dive log recording dates, dive identifiers, sites, ROV operators, maximum depths, and col…
+Expedition_Protocol_DSCAP26.docx  authority         Sets the assessment objective, designated sites, methodology, and schedule.
+Final_Expedition_Summary.pdf      narrative         Summarizes the expedition’s reported completion, sample collection, compliance, and findi…
+Incident_Report_ROV.docx          event_register    Records the ROV thruster failure, resulting downtime, and repair completion.
+Lab_Analysis_Report.pdf           derived_analysis  Reports laboratory findings for coral samples and notes a sample without corresponding fi…
+Permit_GOA_2026_099.pdf           authority         Sets authorized activities, the maximum sample limit, protected-zone restrictions, and EI…
+Water_Quality_Metrics.xlsx        primary_record    Records dated water-quality measurements by site.
+
+Identifier kinds (pattern, distinct identifiers found):
+kind    pattern                                                             distinct ids
+------  ------------------------------------------------------------------  ------------
+sample  (?<![A-Za-z0-9])SPL\-\d{1,8}(?:[-_/][A-Za-z]{1,2})?(?![A-Za-z0-9])  18
+dive    (?<![A-Za-z0-9])D\-\d{1,8}(?:[-_/][A-Za-z]{1,2})?(?![A-Za-z0-9])    8
+sample  SPL-\d+                                                             18
+dive    D-\d+                                                               8
+
+Aliases:
+  Sarah Jenkins = S. Jenkins, Sarah Jenkins, ROV Technician
+  DSCAP-26 = Deep-Sea Coral Assessment Protocol (DSCAP-26), DSCAP-26 expedition field activities
+
+==============================================================================
+FINDINGS
+==============================================================================
+
+--- Finding 1 of 2 ----------------------------------------
+title          : [contextual difference] ROV Nautilus status on October 8 and October 10
+classification : contextual_difference   type: contextual_difference   family: I semantic value comparison
+severity       : low   confidence 0.99   status: definitive   verifier: contextual_difference
+description    : Status: definitive. Type: contextual difference. Check family I: semantic value comparison.
+                 
+                 Incident_Report_ROV.docx states that on October 8 the vehicle was rendered completely inoperable after a thruster failure. Daily_Field_Notes_Vance.docx states on October 10 that the ROV is back online. These are successive dated states, and the later status supersedes the earlier one.
+                 
+                 Verification: The quoted states are compatible as successive events: the ROV became inoperable after the October 8 failure and was back online by October 10. The downtime passage further says repairs were completed by 08:00 on October 10 and the vehicle was cleared for subsequent operations. Explanation considered: The change in status is explained by repairs completed by 08:00 on October 10; the later status follows the October 8 failure. Possibly resolving evidence: Incident_Report_ROV.docx, section 'Downtime & Resolution': repairs were completed by 08:00 on October 10, and the vehicle was cleared for subsequent operations.
+evidence (contextual): The vehicle was rendered completely inoperable.   [chk_734d18beb05c4d64]
+evidence (contextual): Oct 10: ROV is back online.   [chk_3ba3d45a205c4050]
+
+--- Finding 2 of 2 ----------------------------------------
+title          : [missing evidence] Referenced items missing from the data room
+classification : missing_information   type: missing_evidence   family: G reference resolution
+severity       : medium   confidence 0.65   status: needs_investigation   verifier: missing_evidence
+description    : Status: needs investigation. Type: missing evidence. Check family G: reference resolution.
+                 
+                 Both candidates identify a referenced document or report that is not present in the data room.
+                 
+                 Primary symptom: Permit_GOA_2026_099.pdf, page 1 refers to "Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A)", but no file, sheet, heading, caption, table row or identifier in the data room is named like it, and every document was read.
+                 
+                 Related symptoms merged here: Referenced item not in the data room: Incident Report #26-04.
+                 
+                 Verification: The permit quote confirms that it refers to the EIA document and says it is attached as Appendix A, but the provided passages do not establish whether that appendix or a separately named EIA document is present elsewhere in the data room. Its absence cannot be verified from this excerpt.
+needs          : the document or record "Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A)"
+needs          : the document or record "Incident Report #26-04"
+evidence (insufficient): 2. All activities must strictly adhere to the protocols outlined in the Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A).   [chk_fd5f6f2ed3e64912]
+evidence (insufficient): Incident Report #26-04   [chk_da43002475ea4859]
+
+==============================================================================
+CHECK PLAN AND AUDIT LOG (every task and how it ended)
+==============================================================================
+family  name                           finding  passed  untestable  error  skipped
+------  -----------------------------  -------  ------  ----------  -----  -------
+A       constraint compliance          0        5       4           0      0
+B       set and chain reconciliation   1        0       1           0      0
+C       temporal consistency           0        0       1           0      0
+D       recomputation                  0        5       0           0      0
+E       universal and negative claims  0        1       2           0      0
+F       data integrity                 0        1       0           0      0
+G       reference resolution           1        0       0           0      0
+H       conclusion audit               0        0       4           0      0
+I       semantic value comparison      1        0       0           0      0
+
+task    fam  status      calls  cand  what                                                                    why
+------  ---  ----------  -----  ----  ----------------------------------------------------------------------  ----------------------------------------------------------------------
+B-code  B    finding     0      1     identifiers outside the range of another document's list                1 candidates
+F-code  F    passed      0      0     identical series and duplicated keys over every table                   0 candidates
+G-code  G    finding     0      2     3 references resolved in a fixed order                                  1 found in the room, 2 unresolved, 2 reported
+A1      A    untestable  0      0     Rule: Deep-Sea Coral Assessment Protocol (DSCAP-26), methodology | RO…  The room shows four dated ROV dive records, but does not provide a co…
+A2      A    passed      0      0     Rule: Deep-Sea Coral Assessment Protocol (DSCAP-26), ROV dive schedul…  All four ROV dive records shown are dated between Oct 1 and Oct 12, 2…
+A3      A    passed      0      0     Rule: Ocean acidification associated with coral bleaching observed at…  The two water-quality records for Site Bravo show pH values of 8.15 a…
+A4      A    passed      0      0     Rule: Global Oceans Authority - Scientific Research Permit GOA-2026-0…  The permit states valid dates of October 1, 2026 to October 15, 2026,…
+A5      A    passed      0      0     Rule: Global Oceans Authority - Scientific Research Permit GOA-2026-0…  The permit authorizes ROV exploration and limited biological sampling…
+A6      A    untestable  3      0     Rule: Site Charlie | designated protection level = Level 1 Protected …  The Charlie dive record shows samples collected at a site where the p…
+A7      A    untestable  0      0     Rule: Site Charlie | biological sampling or physical interaction = no…  (its candidates had no evidence that could be found in the documents)
+A8      A    untestable  1      0     Rule: All activities under Global Oceans Authority - Scientific Resea…  The Approved Environmental Impact Assessment (EIA) Document Ref: GOA-…
+A9      A    passed      0      0     Rule: Global Oceans Authority - Scientific Research Permit GOA-2026-0…  No record in the provided content establishes a failure to comply bey…
+B1      B    untestable  0      0     sample identifiers differ between Dive_Log_and_Samples.xlsx and Lab_A…  The displayed material identifies the differing sample identifiers bu…
+C1      C    untestable  0      0     Events stated in the documents against each other and against the dat…  The provided content does not include the results of timeline(entity,…
+D1      D    passed      0      0     Stated figure: Dive D-01 at Alpha on 2026-10-02 | maximum depth = 210…  The table lists a maximum depth of 210 m for Dive D-01 at Alpha on 20…
+D2      D    passed      0      0     Stated figure: Dive D-02 at Bravo on 2026-10-05 | maximum depth = 195…  The table lists a maximum depth of 195 m for Dive D-02 at Bravo on 20…
+D3      D    passed      0      0     Stated figure: Dive D-03 at Bravo on 2026-10-08 | maximum depth = 200…  The table lists a maximum depth of 200 m for Dive D-03 at Bravo on 20…
+D4      D    passed      0      0     Stated figure: Dive D-04 at Charlie on 2026-10-09 | maximum depth = 2…  The table lists a maximum depth of 220 m for Dive D-04 at Charlie on …
+D5      D    passed      0      0     Stated figure: DSCAP-26 expedition targeted samples | total collected…  The listed sample ranges contain 10 + 15 + 5 + 8 = 38 samples, matchi…
+E1      E    untestable  6      0     Assertion: Gear deployment; Oct 9 | gear deployed: We did not deploy …  The October 9 dive log entry conflicts with the journal and downtime …
+E2      E    untestable  2      0     Assertion: DSCAP-26 expedition | successful conclusion and objectives…  The visible search results identify relevant summary, protocol, and i…
+E3      E    passed      2      0     Assertion: DSCAP-26 expedition field activities | compliance with Glo…  The search returned no mentions of Global Oceans Authority.
+H1      H    untestable  2      0     Conclusion: Visual transects; Bravo; Oct 5 | difficulty due to turbid…  The shown search result does not return the Oct 5 field-note statemen…
+H2      H    untestable  2      0     Conclusion: DSCAP-26 expedition targeted samples | alignment with per…  The summary asserts that 38 targeted samples aligned with permit cons…
+H3      H    untestable  2      0     Conclusion: Coral bleaching observed at Site Bravo | primary driver: …  The conclusion claims severe ocean acidification below pH 7.8 was the…
+H4      H    untestable  3      0     Conclusion: Sample SPL-044-B | analysis result: it is a fragment of b…  The analysis identifies SPL-044-B as black coral, but the report stat…
+I       I    finding     0      1     pairing and judging of claims: 63 claims in 1 batch(es), 2 groups cov…  1 candidates; 1 consistent or insufficient-evidence results not repor…
+
+==============================================================================
+VERIFIER
+==============================================================================
+1 calls; verdicts {'unsupported': 1, 'missing_evidence': 2, 'contextual_difference': 1}; errors []
+  rejected [B] SPL044B, SPL-044 named in Lab_Analysis_Report.pdf has no record in Dive_Log_and_Samples.x…: The lab batch identifies SPL-044-B in addition to SPL-001 through SPL-038, while the cited dive-log row only shows SPL-031 to SPL-038; the provided evidence does not establish that the dive log contains all sample ident…
+
+==============================================================================
+CONSOLIDATION
+==============================================================================
+3 candidates became 2 findings (0 exact duplicates, 1 root-cause groups)
+  2 findings became one: Referenced items missing from the data room (merged: Referenced item not in the data room: Incident Report #26-04)
+
+==============================================================================
+FAMILY I (semantic value comparison)
+==============================================================================
+63 claims in 1 batch(es), 2 groups covering 4 claims, 9 pairs (7 from nearest neighbours)
+not reported: 1 consistent or insufficient-evidence results
+  insufficient_evidence: Bravo turbidity: ‘exceptionally high’ versus 15 NTU
+
+==============================================================================
+WORKERS
+==============================================================================
+9 batches, 26 model calls, 23 tool calls; 7 candidates dropped (evidence not found or empty), 0 evidence items dropped
+
+==============================================================================
+TIMING AND LLM USE PER STAGE
+==============================================================================
+stage                                          wall   llm attempts  failed  llm time
+---------------------------------------------  -----  ------------  ------  --------
+1. load tables (SQLite), keep cell addresses   0.0s   0             0       0s
+2. extract typed facts                         6.3s   0             0       0s
+3. case model, identifiers, aliases, timeline  3.2s   1             0       3s
+4. plan the checks                             1.5s   1             0       2s
+5a. workers investigate                        50.9s  27            1       173s
+5b. semantic value comparison (family I)       60.5s  3             0       61s
+6. verify adversarially                        11.7s  1             0       12s
+7. consolidate by root cause and save          4.6s   1             0       5s
+
+Failed LLM attempts (1):
+  LlamaExtract job FAILED: An internal service error occurred during processing

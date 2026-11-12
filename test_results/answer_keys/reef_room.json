@@ -1,0 +1,34 @@
+{
+  "room": "Reef survey room (IMPA permit, field survey protocol, dive log and sample register, benthic data, logger data, lab report, deviation register, summary report)",
+  "provisional": true,
+  "note": "Written from a reviewer's list of 23 planted findings (F-01 to F-23). Only the words the reviewer's text gives are used; entries without a match are listed for manual checking. Words are lower case. Improve the words from the real answer key.",
+  "issues": [
+    {"id": "F-01", "title": "Activity outside the permit validity window (permit expiry)", "match": {"all": ["permit"], "any": ["22 march", "2025-03-22", "expir", "validity", "valid until"]}, "families": ["A", "E"]},
+    {"id": "F-02", "title": "Approval SZA-2025-022 never issued, yet six fragments taken at IR-07 and the summary claims approval", "match": {"all": ["sza-2025-022"]}, "families": ["A", "G"]},
+    {"id": "F-03", "title": "Sampler not on the permit's allowed list", "match": {"any": ["varga", "not listed", "not named on", "not on the permit", "unlisted"]}, "families": ["A"]},
+    {"id": "F-04", "title": "IR-07 coordinates differ between two authority documents", "match": {"all": ["ir-07"], "any": ["coordinate", "latitude", "longitude"]}, "families": ["I"]},
+    {"id": "F-05", "title": "A coral fragment longer than the 5 cm limit (CF-IR02-05, 5.5 cm)", "match": {"all": ["cf-ir02-05"]}, "families": ["A"]},
+    {"id": "F-06", "title": "Sample CF-IR06-03 disappears between the sample register and the lab (44 against 48 genotyped)", "match": {"all": ["cf-ir06-03"]}, "families": ["B"]},
+    {"id": "F-07", "title": "IR-08 samples received before they were collected", "match": {"all": ["ir-08"], "any": ["received", "before", "collected"]}, "families": ["C"]},
+    {"id": "F-08", "title": "'No safety incidents' stated while the deviation register records one", "match": {"all": ["safety"], "any": ["incident", "dr-02"]}, "families": ["E"]},
+    {"id": "F-09", "title": "Late notification (DR-02, 77.5 hours against a 48 hour deadline)", "match": {"all": ["dr-02"], "any": ["48", "77.5", "notif", "late"]}, "families": ["A"]},
+    {"id": "F-10", "title": "Duplicated temperature logger data (IR-05 identical to IR-06, serial 20871549 at two sites)", "match": {"any": ["20871549", "identical", "duplicat"]}, "families": ["F", "C", "E"]},
+    {"id": "F-11", "title": "Maximum DHW 6.8 stated against 5.34 in the data", "match": {"any": ["5.34", "dhw"], "all": ["6.8"]}, "families": ["D"]},
+    {"id": "F-12", "title": "IR-03 coral cover 38.6 stated against 33.3 recomputed", "match": {"all": ["38.6", "33.3"]}, "families": ["D"]},
+    {"id": "F-13", "title": "IR-06 bleaching and the 'no severe site' claim", "match": {"all": ["ir-06"], "any": ["bleach", "severe"]}, "families": ["D", "E"]},
+    {"id": "F-14", "title": "48 transects stated, 47 in the data", "match": {"all": ["48", "47"], "any": ["transect"]}, "families": ["D"]},
+    {"id": "F-15", "title": "22.1% against 30.8% from different expeditions used to claim recovery", "match": {"all": ["22.1", "30.8"]}, "families": ["H"]},
+    {"id": "F-16", "title": "Symbiont conclusion unsupported", "match": {"all": ["symbiont"]}, "families": ["H"]},
+    {"id": "F-17", "title": "Crown-of-thorns (COTS) outbreak conclusion unsupported", "match": {"any": ["cots", "crown-of-thorns", "crown of thorns"]}, "families": ["H"]},
+    {"id": "F-18", "title": "'All field blanks clean' against the lab QC table", "match": {"all": ["blank"]}, "families": ["E", "H"]},
+    {"id": "F-19", "title": "Fish assemblage conclusion unsupported", "match": {"all": ["fish"]}, "families": ["H"]},
+    {"id": "F-20", "title": "Protocol v2.1 cited where v2.2 applies", "match": {"all": ["v2.1"]}, "families": ["I", "G"]},
+    {"id": "F-21", "title": "Equipment loss not reflected in the summary", "match": {"all": ["equipment"], "any": ["loss", "lost"]}, "families": ["E"]},
+    {"id": "F-22", "title": "Deviations under-reported in the summary", "match": {"all": ["deviation"], "any": ["under-report", "not reported", "omit", "only"]}, "families": ["E"]},
+    {"id": "F-23", "title": "Decontamination log required by permit condition 3.6 is missing", "match": {"all": ["decontamination"]}, "classes": ["missing_information", "missing_evidence"], "families": ["G", "A"]}
+  ],
+  "traps": [
+    {"id": "L-08", "title": "Permit maximum of 8 per site against an actual maximum of 6 is compliant", "match": {"all": ["8", "6"], "any": ["per site", "fragments"]}, "flag_classes": ["contradiction"]},
+    {"id": "L-role", "title": "Role wording differences (a role with and without its qualifier) are not contradictions", "match": {"any": ["technical officer", "marine operations"]}, "flag_classes": ["contradiction"]}
+  ]
+}
