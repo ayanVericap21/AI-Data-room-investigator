@@ -82,7 +82,7 @@ export default function TestRunPage() {
             select
             size="small"
             id="judge-workers"
-            label="Judge calls at once"
+            label="LLM calls at once (grouping and judging)"
             value={judgeWorkers}
             disabled={active}
             onChange={(e) => setJudgeWorkers(Number(e.target.value))}

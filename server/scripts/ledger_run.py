@@ -46,6 +46,7 @@ from app.models.base import InvestigationStatus, ProcessingStatus, utcnow  # noq
 from app.services.llm_pairing import LLMPairer  # noqa: E402
 from app.services.llama_claims import LlamaClaimExtractor  # noqa: E402
 from app.services.missing_items import MissingItemChecker  # noqa: E402
+from app.services.record_checks import IdentifierChecker  # noqa: E402
 from app.llm.llama_extract import LlamaExtractClient  # noqa: E402
 from app.services.claim_service import EXCERPT_TYPES_SKIPPED, ClaimService, ExtractionSummary  # noqa: E402
 from app.services.document_service import DocumentService  # noqa: E402
@@ -108,7 +109,9 @@ def sec_glance(R):
             f"Chunks        : {sum(d['chunks'] for d in docs)} total; sent to the LLM {sum(d['readable'] for d in docs if d['ok'])} "
             f"(headings are skipped by the extractor: {sum(d['chunks'] - d['readable'] for d in docs)})",
             f"Claims        : {ex.claims_created} recorded, {ex.claims_rejected} rejected (value not found in cited chunk or unknown chunk id), "
-            f"{ex.claims_skipped_as_labels} skipped because the value was only the label of its own row",
+            f"{ex.claims_skipped_as_labels} skipped because the value was only the label of its own row, "
+            f"{ex.claims_ellipsis_expanded} values shortened by the extractor with an ellipsis restored from the source text",
+            *([f"NO CLAIMS     : {', '.join(ex.documents_without_claims)} (text has values, extractor returned none: not treated as fully read)"] if ex.documents_without_claims else []),
             f"Extraction    : up to {R.args.batch_chunks or 'any number of'} chunks per call (and {R.args.batch_chars:,} characters); running vocabulary {R.args.vocabulary}; "
             f"coverage check {R.args.coverage_check}"
             + (f": {ex.coverage_chunks_checked} chunks had {ex.coverage_numbers} numbers without a claim, {ex.coverage_calls} follow-up calls "
@@ -230,6 +233,18 @@ def sec_missing(R):
     return out
 
 
+def sec_records(R):
+    r = getattr(R, "records", None)
+    if r is None:
+        return ["not run"]
+    out = [f"identifier kinds with a list in one document and mentions in another: {r.kinds}; identifiers outside a list's range: {r.candidates}; saved: {r.saved}; rejected by the quote check: {r.rejected}"]
+    if r.skipped_reason:
+        out.append(f"check skipped: {r.skipped_reason}")
+    out += [f"  raised: {x}" for x in r.raised[:20]]
+    out += [f"  rejected: {x}" for x in r.rejections[:10]]
+    return out
+
+
 def sec_llm(R):
     per_phase: dict[str, list] = {}
     for phase, m in phase_rows(R):
@@ -313,8 +328,8 @@ def build_metrics(R, results_path) -> RunMetrics:
         documents=len(docs), documents_fully_read=sum(d["ok"] for d in docs), chunks=sum(d["chunks"] for d in docs),
         claims_recorded=ex.claims_created, claims_rejected=ex.claims_rejected, candidate_pairs=len(R.pairs or []),
         pairs_exact=js.pairs_exact, pairs_judged=js.pairs_judged, verdicts=dict(js.verdict_counts),
-        findings_saved=js.findings_saved + (R.missing.saved if getattr(R, "missing", None) else 0),
-        findings_rejected=js.findings_rejected + (R.missing.rejected if getattr(R, "missing", None) else 0), embedding_calls=len(emb),
+        findings_saved=js.findings_saved + (R.missing.saved if getattr(R, "missing", None) else 0) + (R.records.saved if getattr(R, "records", None) else 0),
+        findings_rejected=js.findings_rejected + (R.missing.rejected if getattr(R, "missing", None) else 0) + (R.records.rejected if getattr(R, "records", None) else 0), embedding_calls=len(emb),
         embedding_texts=sum(m.items for m in emb), extractor_credits=ex.external_credits, pairs_without_clustering=getattr(getattr(R, 'pairing_stats', None), 'pairs_all_combinations', 0),
         coverage_calls=ex.coverage_calls, coverage_claims_added=ex.coverage_claims_added)
     a, s = R.args, R.settings
@@ -348,7 +363,7 @@ def main():
     ap.add_argument("--batch-chars", type=int, default=8000, help="characters of chunks per extraction call")
     ap.add_argument("--judge-batch-chars", type=int, default=12000, help="characters of excerpts per pair-judging call")
     ap.add_argument("--judge-workers", type=int, default=1,
-                    help="pair-judging calls made at the same time (1 = one after another, the default); the answers are still handled in order")
+                    help="pair-grouping and pair-judging calls made at the same time (1 = one after another, the default); the answers are still handled in order")
     ap.add_argument("--pairing", choices=["code", "llm"], default="llm",
                     help="llm = the LLM groups the sorted claims (default); code = candidate pairs from word overlap and embeddings")
     ap.add_argument("--pairing-batch-chars", type=int, default=60000, help="characters of claims per grouping call (--pairing llm)")
@@ -492,7 +507,8 @@ def main():
         t = time.perf_counter()
         print("[match] matching claims across documents", flush=True)
         if args.pairing == "llm":
-            R.pairs, R.pairing_stats = LLMPairer(session, llm, max_chars_per_call=args.pairing_batch_chars, should_stop=stopped, embedder=embedder).run()
+            R.pairs, R.pairing_stats = LLMPairer(session, llm, max_chars_per_call=args.pairing_batch_chars, should_stop=stopped, embedder=embedder,
+                                                workers=args.judge_workers, on_progress=lambda m: print(f"[match] {m}", flush=True)).run()
         else:
             R.pairs = service.candidate_pairs(embedder)
         R.llm_bounds[1] = len(llm.call_metrics)
@@ -514,10 +530,18 @@ def main():
         # ---- stage 3b: items a document refers to that the data room does not hold (no LLM call; the references came with the claims)
         if extractor is not None:
             t = time.perf_counter()
-            R.missing = MissingItemChecker(session, registry).run(extractor.references)
+            R.missing = MissingItemChecker(session, registry).run(extractor.references, not_fully_read=R.extraction.documents_without_claims)
             R.stage["3b. referenced items absent from the data room"] = round((time.perf_counter() - t) * 1000)
             print(f"[missing] {R.missing.references} references, {R.missing.present} found in the room, {R.missing.saved} saved as missing information"
                   + (f" (check skipped: {R.missing.skipped_reason})" if R.missing.skipped_reason else ""), flush=True)
+
+        check_stop()
+        # ---- stage 3c: identifiers named in one document that another document's list of the same kind does not hold (no LLM call)
+        t = time.perf_counter()
+        R.records = IdentifierChecker(session, registry).run(not_fully_read=R.extraction.documents_without_claims)
+        R.stage["3c. identifier reconciliation across documents"] = round((time.perf_counter() - t) * 1000)
+        print(f"[records] {R.records.candidates} identifiers outside the range of another document's list, {R.records.saved} saved"
+              + (f" (check skipped: {R.records.skipped_reason})" if R.records.skipped_reason else ""), flush=True)
 
         check_stop()
         # ---- stage 4: per-document verdicts
@@ -589,6 +613,7 @@ def main():
                       ("FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)", base.sec_findings),
                       ("COVERAGE AND PER-DOCUMENT VERDICTS", sec_documents), ("CLAIM LEDGER", sec_ledger), ("PAIR MATCHING AND JUDGING", sec_pairs), ("EVERY CANDIDATE PAIR AND WHAT HAPPENED TO IT", sec_pair_log),
                       ("REFERENCED ITEMS NOT IN THE DATA ROOM (single-claim missing information)", sec_missing),
+                      ("IDENTIFIER RECONCILIATION ACROSS DOCUMENTS", sec_records),
                       ("LLM CALLS: tokens, context size, latency, failures", sec_llm), ("EMBEDDING CALLS", sec_embeddings), ("FAILURES", sec_failures),
                       ("TIMING", sec_timing), ("KNOWN LIMITS OF THIS RUN", sec_limits)]:
         section(title, fn)

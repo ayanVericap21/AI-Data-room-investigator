@@ -37,6 +37,7 @@ class ExtractionSummary:
     documents_failed: int = 0
     claims_created: int = 0
     claims_rejected: int = 0
+    claims_ellipsis_expanded: int = 0  # claims whose value the extractor shortened with an ellipsis and code restored from the source text
     claims_skipped_as_labels: int = 0  # claims whose value is only the label of their own row (the ID), which is not a value
     llm_calls: int = 0
     coverage_chunks_checked: int = 0  # chunks with at least one number no claim accounted for
@@ -46,6 +47,7 @@ class ExtractionSummary:
     coverage_claims_added: int = 0
     external_calls: int = 0  # documents sent to an external extractor (LlamaExtract)
     external_credits: float = 0.0
+    documents_without_claims: list[str] = field(default_factory=list)  # documents with values in their text for which the extractor returned no claim
     stopped: bool = False
     stop_reason: str | None = None
     rejections: list[str] = field(default_factory=list)

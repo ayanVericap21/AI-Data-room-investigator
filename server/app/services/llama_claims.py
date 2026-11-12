@@ -52,7 +52,7 @@ SCHEMA: dict[str, Any] = {
             "items": {
                 "type": "object",
                 "properties": {
-                    "subject": {"type": "string", "description": "What the value is about. For a table row, the row's identifying label (the entry in its ID or name column), never the table or sheet name"},
+                    "subject": {"type": "string", "description": "What the value is about. For a table row, the row's identifying label (the entry in its ID or name column), never the table or sheet name. When the row is identified by several columns together (an entity and a date or period, a place and a date), the subject names all of them"},
                     "metric": {"type": "string", "description": "The quantity or attribute that has the value"},
                     "value": {"type": "string", "description": "The value exactly as written in the document"},
                     "unit": {"type": "string", "description": "Unit of the value, if stated"},
@@ -83,8 +83,8 @@ SCHEMA: dict[str, Any] = {
 SYSTEM_PROMPT = (
     "Extract every claim that states a value (a number, quantity, amount, date, duration, name, yes/no, status or condition) "
     "so it can be compared with other documents, including values in lists, tables and short fragments. If the same quantity "
-    "is stated more than once, extract each mention. For a table, the subject is the row's identifying label (its ID or name), never the table or sheet name, and the metric is the "
-    "column heading. Copy values and sentences exactly as written; never calculate or infer. "
+    "is stated more than once, extract each mention. For a table, the subject is the row's identifying label (its ID or name), never the table or sheet name; when a row is identified by several columns together (an entity and a date or period, a place and a date), the subject names all of them, so that two rows differing in any identifying column never share a subject; the metric is the "
+    "column heading. Copy values and sentences exactly as written; never calculate or infer, and never shorten or join passages with an ellipsis (...): copy the whole value. "
     "OUTPUT FORMAT (strict): every claim has non-empty string fields subject, metric, value and claim_text, and a value_type that is exactly one of "
     "quantity, date, identifier, name, state or statement. " + VALUE_TYPE_HELP + " No other value_type is allowed. Add unit, period and conditions "
     "only when the document states them; never return a claim without a value, and never invent other fields. "
@@ -163,6 +163,33 @@ def pick_chunk(chunks: list[DocumentChunk], value: Any, claim_text: str, page: i
     return pool[0]
 
 
+_ELLIPSIS = re.compile(r"\.{3,}|…")
+MAX_EXPANDED_VALUE = 500  # characters: a value this long is a passage, not a value
+
+
+def expand_ellipsis(value: Any, chunks: list[DocumentChunk]) -> tuple[DocumentChunk, str] | None:
+    """A value the extractor shortened with an ellipsis ("NO sampling ... is permitted"): when every piece appears in one chunk, in order,
+    return that chunk and the verbatim passage from the first piece to the last, so the stored value is real source text. None otherwise."""
+    if not isinstance(value, str) or not _ELLIPSIS.search(value):
+        return None
+    pieces = [p.strip() for p in _ELLIPSIS.split(value) if len(p.strip()) >= 3]
+    if len(pieces) < 2:
+        return None
+    for chunk in chunks:
+        start, at = None, 0
+        for piece in pieces:
+            span = find_source_span(chunk.content[at:], piece)
+            found = chunk.content.find(span[0], at) if span else -1
+            if found < 0:
+                start = None
+                break
+            start = found if start is None else start
+            at = found + len(span[0])
+        if start is not None and at - start <= MAX_EXPANDED_VALUE:
+            return chunk, chunk.content[start:at]
+    return None
+
+
 class LlamaClaimExtractor:
     def __init__(self, session: Session, client: LlamaExtractClient, data_room_dir: Path,
                  on_progress: ProgressFn | None = None, should_stop: Callable[[], bool] | None = None):
@@ -207,17 +234,27 @@ class LlamaClaimExtractor:
             page, cited = _citation(job.metadata, index, "value")
             if page is None:
                 page, cited = _citation(job.metadata, index, "claim_text")
-            chunk = pick_chunk(chunks, claim.value, claim.claim_text, page, cited, claim.subject)
+            value = claim.value
+            chunk = pick_chunk(chunks, value, claim.claim_text, page, cited, claim.subject)
+            if chunk is None and (expanded := expand_ellipsis(value, chunks)) is not None:
+                chunk, value = expanded  # the extractor shortened the value with an ellipsis; keep the verbatim passage instead
+                summary.claims_ellipsis_expanded += 1
             if chunk is None:
                 self._claims._reject(summary, f"value {claim.value!r} not found in any chunk of {doc.filename}")
                 continue
             extracted.append(ExtractedClaim(
-                chunk_id=chunk.id, subject=claim.subject, metric=claim.metric, value=claim.value, unit=claim.unit,
+                chunk_id=chunk.id, subject=claim.subject, metric=claim.metric, value=value, unit=claim.unit,
                 period=claim.period, conditions=claim.conditions, claim_category=claim.kind,
                 claim_text=claim.claim_text or f"{claim.metric}: {claim.value}"))
         created = self._claims._persist(doc, chunks, ClaimExtractionResult(claims=extracted), summary)
         self.session.commit()
         self._keep_references(parsed, chunks, doc)
+        with_numbers = sum(bool(re.search(r"\d", c.content or "")) for c in chunks)
+        if created == 0 and with_numbers:
+            # a document with numbers in its text and no claim at all is an extraction failure, not an empty document: say so loudly
+            summary.documents_without_claims.append(doc.filename)
+            summary.notes.append(f"{doc.filename}: LlamaExtract returned no claims, but {with_numbers} of its {len(chunks)} chunks contain numbers")
+            self.on_progress(f"WARNING: {doc.filename} produced no claims although its text contains values; it is not treated as fully read", {"document_id": doc.id})
         summary.documents_processed += 1
         self.on_progress(f"Extracted {created} claims from {doc.filename} (LlamaExtract, {job.credits:g} credits)",
                          {"document_id": doc.id, "claims": created})

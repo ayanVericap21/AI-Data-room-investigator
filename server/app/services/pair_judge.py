@@ -26,7 +26,7 @@ from app.schemas.claim import CandidatePair
 from app.tools.submit import find_source_span
 from app.services.candidate_matching import TABLE_TYPES, normalize_unit, subjects_overlap, tokens
 from app.services.numbers import value_supported_by_text
-from app.services.value_rules import compare_values, comparison_note, normalise_text
+from app.services.value_rules import bound_direction, compare_values, comparison_note, normalise_text, one_contains_other, within_limit
 from app.tools.registry import ToolRegistry
 
 logger = logging.getLogger(__name__)
@@ -49,6 +49,7 @@ Rules:
    a. Different subject or metric, or explicit periods or scopes that neither overlap nor nest: same_attribute is false (rule 6). Shared words, digits or phrasing do not make claims comparable.
    b. consistent: the values agree under every reasonable reading (after units, scale, sign, format and spelling are normalised). If the readings split, it is not consistent.
    c. The values conflict under every reasonable reading. BASIS: two values of the same kind for the same item that differ only in basis (planned, budgeted, forecast, target, designed or estimated versus actual, installed, measured, reported or contracted) state the same attribute: set same_attribute true, name both bases in the description, and compare. When the values agree (equal, or within their precision), the claims are consistent whatever their bases. When they differ: different bases are a contextual_difference, the same basis is a contradiction. contextual_difference: the excerpts themselves state a distinguishing context (a different period, scope, condition, definition, version or as-of date) that fully accounts for the gap; name it in the description. contradiction: no such context is stated, or the stated context cannot explain the gap (for example a part larger than its whole). Two documents or editions giving different values for the same thing is a contradiction even if you can imagine a reason; never invent an explanation that is not in the excerpts ("may include tax" is not a quote). A version or an as-of date explains a gap only when an excerpt states the change (an event, the date it took effect, or that a later edition supersedes the earlier one); different document dates alone never explain a gap. A different label is a context difference only when an excerpt states what each figure includes or excludes.
+   c2. PROGRESSION OVER TIME (an addition to c, which still applies in full): when each excerpt itself states the date or stage its own value or status holds at (for example "as of 31 October: not certified", "in progress", "completed on 12 March") and those dates or stages differ, the two claims describe successive states of one thing, not a conflict. Classify it contextual_difference, name both dates or stages in the description, and say the later statement supersedes the earlier. This applies only when both excerpts state their own date or stage; if only one does, or neither, or they are the same date, apply c as written.
    d. missing_information: an excerpt itself states that an item is not included, not attached, outstanding or not available, or a figure needed to decide (the base of a percentage, an anchor date, a fiscal year end) is not given. Name the item in the description. Whether the item exists elsewhere in the collection is checked by code, not by you.
    e. insufficient_evidence: anything else the excerpts cannot settle: a vague or hedged value, an unclear format, a currency without a stated rate, or readings that disagree about the outcome. Say what blocks the test.
 4. For every verdict whose same_attribute is true (consistent and insufficient_evidence too), copy quote_a EXACTLY from excerpt A and quote_b EXACTLY from excerpt B: the shortest passage that shows the value together with the words or unit next to it (at least 8 characters, e.g. "185W/m² power supply", never the bare number).
@@ -152,6 +153,7 @@ class JudgeStats:
     saved: list = field(default_factory=list)  # every finding saved from a verdict, with its claims
     merged: int = 0  # findings folded into another that describes the same discrepancy
     absorbed: int = 0  # insufficient-evidence findings dropped because a consistent finding settles the same fact
+    reclassified_names: int = 0  # contradictions between two names where one contains the other, saved as consistent
     grouped: int = 0  # consistent findings folded into one finding per pair of documents and attribute
     deleted: set = field(default_factory=set)  # ids of findings removed by the steps above
     merge_log: list = field(default_factory=list)
@@ -283,7 +285,7 @@ class PairJudge:
                 for verdict in result.verdicts[:1]:
                     verdict.pair_index = 0
                     self._handle(verdict, batch, claims, chunks, names, stats, retrying=True)
-        self._merge_findings(stats, pairs)
+        self._merge_findings(stats, pairs, claims)
         self._absorb_insufficient(stats, pairs)
         self._group_consistent(stats, claims, names)
         for record in stats.records.values():
@@ -404,11 +406,29 @@ class PairJudge:
             stats.merge_log.append(f"{len(group)} consistent findings between {doc_names[0]} and {doc_names[-1]} about {what} became one")
         self.session.commit()
 
-    def _merge_findings(self, stats: JudgeStats, pairs: list[CandidatePair]) -> None:
+    @staticmethod
+    def _same_label(a: Claim | None, b: Claim | None) -> bool:
+        """Two claims carry the same label: the words of their subject and metric overlap by at least half. Unknown (a claim missing or
+        unlabelled) counts as the same, so only a visible difference keeps findings apart."""
+        if a is None or b is None:
+            return True
+        wa, wb = tokens(a.subject) | tokens(a.metric), tokens(b.subject) | tokens(b.metric)
+        return not wa or not wb or len(wa & wb) / len(wa | wb) >= 0.5
+
+    @staticmethod
+    def _attributes_related(a: Claim, b: Claim) -> bool:
+        """The two claims can be about one attribute: their metric labels share a word, or one's metric appears in the other's subject (the
+        attribute is sometimes the row label). Unknown (a claim without a metric) counts as related."""
+        ma, mb = tokens(a.metric), tokens(b.metric)
+        if not ma or not mb:
+            return True
+        return bool(ma & mb or ma & tokens(b.subject) or mb & tokens(a.subject))
+
+    def _merge_findings(self, stats: JudgeStats, pairs: list[CandidatePair], claims: dict[str, Claim]) -> None:
         """One discrepancy, one finding. Findings of the discrepancy classes whose claims are connected (they share a claim, or two of their
         claims state the same value) describe the same discrepancy: the strongest class is kept, the others' quotes are added to it as evidence,
         and the others are removed."""
-        members = [s for s in stats.saved if s.classification in MERGEABLE]
+        members = [s for s in stats.saved if s.classification in MERGEABLE and s.finding_id not in stats.deleted]
         if len(members) < 2:
             return
         parent: dict[str, str] = {}
@@ -420,17 +440,26 @@ class PairJudge:
                 x = parent[x]
             return x
 
-        def union(x: str, y: str) -> None:
-            parent[find(x)] = find(y)
-
-        for s in members:
-            union(*s.claim_ids)
-        for p in pairs:
-            if p.relation_hint == "exact":  # the same value stated twice is one fact
-                union(p.claim_a_id, p.claim_b_id)
+        # Two findings are one discrepancy only when they are about the same thing: they share a claim (or two of their claims state the same
+        # value) AND the claims that differ between them carry the same label. A "designed" capacity and an "installed" capacity stated
+        # in one place are two facts even if one claim appears in both findings.
+        exact = {frozenset((p.claim_a_id, p.claim_b_id)) for p in pairs if p.relation_hint == "exact"}
+        for i, s in enumerate(members):
+            for t in members[i + 1:]:
+                linked = False
+                for x in s.claim_ids:
+                    for y in t.claim_ids:
+                        if x == y:
+                            other_s = next((c for c in s.claim_ids if c != x), x)
+                            other_t = next((c for c in t.claim_ids if c != y), y)
+                            linked = linked or other_s == other_t or self._same_label(claims.get(other_s), claims.get(other_t))
+                        elif frozenset((x, y)) in exact:  # the same value stated twice is one fact
+                            linked = linked or self._same_label(claims.get(x), claims.get(y))
+                if linked:
+                    parent[find(s.finding_id)] = find(t.finding_id)
         groups: dict[str, list[SavedFinding]] = defaultdict(list)
         for s in members:
-            groups[find(s.claim_ids[0])].append(s)
+            groups[find(s.finding_id)].append(s)
         for group in groups.values():
             if len(group) < 2:
                 continue
@@ -516,12 +545,29 @@ class PairJudge:
             yield current
 
     @staticmethod
+    def _limit_note(a: Claim, b: Claim) -> str:
+        """When one claim's wording makes its value a limit (maximum, permitted, at least ...) and the other is a plain number, say whether
+        that number satisfies the limit. A value inside a limit does not conflict with it."""
+        da, db = bound_direction(f"{a.metric or ''} {a.claim_text or ''}"), bound_direction(f"{b.metric or ''} {b.claim_text or ''}")
+        if bool(da) == bool(db):  # neither, or both are limits: nothing to say
+            return ""
+        limit, other, direction = (a, b, da) if da else (b, a, db)
+        ok = within_limit(limit.value, limit.unit, direction, other.value, other.unit, normalize_unit)
+        if ok is None:
+            return ""
+        word = "maximum" if direction == "upper" else "minimum"
+        return (f"Code check (limit): {'A' if limit is a else 'B'} states a {word} and {'B' if limit is a else 'A'} is a plain number that "
+                f"{'is within' if ok else 'does not satisfy'} it. " + ("A value inside a limit is compliant, not a conflict." if ok else "A value outside a limit breaks it."))
+
+    @staticmethod
     def _prompt(batch, claims, chunks, names) -> str:
         blocks = []
         for i, p in enumerate(batch):
             a, b = claims[p.claim_a_id], claims[p.claim_b_id]
             ca, cb = chunks[a.chunk_id], chunks[b.chunk_id]
             note = comparison_note(a.value, a.unit, b.value, b.unit, a.claim_category, b.claim_category, normalize_unit)
+            limit = PairJudge._limit_note(a, b)
+            note = f"{note} {limit}" if limit else note
             blocks.append(
                 f"### Pair {i}\n{note}\nClaim A ({names.get(a.document_id)}, {_location(ca)}): {_claim_line(a)}\nExcerpt A:\n{ca.content}\n\n"
                 f"Claim B ({names.get(b.document_id)}, {_location(cb)}): {_claim_line(b)}\nExcerpt B:\n{cb.content}")
@@ -607,7 +653,18 @@ class PairJudge:
             stats.verdict_counts["not_comparable"] += 1
             stats.note(p, "judge: not comparable. " + (v.attribute_reasoning.strip() or "(no reason given)"))
             return
+        if v.classification == Classification.insufficient_evidence and not self._attributes_related(a, b):
+            # "not enough evidence to compare" only makes sense for one attribute; two different attributes of one item are not comparable
+            stats.verdict_counts["not_comparable"] += 1
+            stats.note(p, f"judge: insufficient_evidence, dropped as not comparable (metrics {a.metric!r} and {b.metric!r} share no word)")
+            return
         stats.verdict_counts[v.classification.value] += 1
+        if (v.classification in (Classification.contradiction, Classification.contextual_difference) and "name" in (a.claim_category, b.claim_category)
+                and one_contains_other(a.value, b.value)):
+            # one name is the other with more or less detail (a role with or without its qualifier): the same thing, not a conflict
+            v = v.model_copy(update={"classification": Classification.consistent, "severity": Severity.informational,
+                                     "title": f"Consistent: {a.metric or a.subject or 'name'} (one value is the other with more detail)"})
+            stats.reclassified_names += 1
         if v.classification not in REPORTED:
             stats.note(p, f"judge: {v.classification.value} (not a reported class)")
             return

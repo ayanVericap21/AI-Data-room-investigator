@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import logging
 import math
+from concurrent.futures import ThreadPoolExecutor
 from itertools import combinations
 from typing import Callable
 
@@ -116,7 +117,9 @@ class LLMPairer:
     def __init__(self, session: Session, llm: LLMClient, max_chars_per_call: int = 12_000,
                  should_stop: Callable[[], bool] | None = None, embedder: EmbeddingProvider | None = None,
                  neighbors: int = 2, min_similarity: float = 0.72, mutual_floor: float = 0.5, near_similarity: float | None = None, near_rank: int = 5,
-                 orphan_count: int = 3, orphan_floor: float = 0.5):
+                 orphan_count: int = 3, orphan_floor: float = 0.5, workers: int = 1, on_progress: Callable[[str], None] | None = None):
+        self.workers = max(1, workers)  # grouping calls made at the same time; the answers are still handled in batch order
+        self.on_progress = on_progress or (lambda _m: None)
         self.embedder = embedder  # when given, nearest neighbours in other documents are paired too
         self.neighbors = neighbors
         self.min_similarity = min_similarity
@@ -145,21 +148,21 @@ class LLMPairer:
         rows = sorted(self._load(), key=lambda r: _sort_key(r[0]))
         stats = PairingStats(claims=len(rows))
         pairs: dict[tuple[str, str], CandidatePair] = {}
-        for batch in self._batches(rows):
-            if self.should_stop():
+        batches = list(self._batches(rows))
+        for number, (batch, result) in enumerate(self._ask(batches), start=1):
+            if result is None:
                 stats.errors.append("stop requested")
                 break
             stats.batches += 1
+            stats.llm_calls += 1
             refs = {f"c{i}": view for i, (view, _f, _w) in enumerate(batch, start=1)}
-            prompt = "Claims:\n\n" + "\n".join(_line(f"c{i}", v, f, w) for i, (v, f, w) in enumerate(batch, start=1))
-            try:
-                stats.llm_calls += 1
-                result = self.llm.generate_structured_output(prompt, ClaimGroups, system=SYSTEM)
-            except LLMError as exc:
+            if isinstance(result, LLMError):
                 stats.batches_failed += 1
-                stats.errors.append(str(exc)[:200])
-                logger.warning("Claim grouping batch failed", extra={"error": str(exc)})
+                stats.errors.append(str(result)[:200])
+                logger.warning("Claim grouping batch failed", extra={"error": str(result)})
+                self.on_progress(f"grouping call {number} of {len(batches)} failed")
                 continue
+            self.on_progress(f"grouping call {number} of {len(batches)} done")
             used: set[str] = set()
             for group in result.groups:
                 members = []
@@ -191,6 +194,30 @@ class LLMPairer:
             stats.neighbor_pairs = len(pairs) - before
         stats.pairs = len(pairs)
         return list(pairs.values()), stats
+
+    def _ask(self, batches: list):
+        """Yield (batch, answer) in batch order. With several workers the calls run at the same time; an answer is an LLMError when its call
+        failed, and None once a stop was requested (calls still waiting for a worker are skipped)."""
+        def call(batch):
+            if self.should_stop():
+                return None
+            prompt = "Claims:\n\n" + "\n".join(_line(f"c{i}", v, f, w) for i, (v, f, w) in enumerate(batch, start=1))
+            try:
+                return self.llm.generate_structured_output(prompt, ClaimGroups, system=SYSTEM)
+            except LLMError as exc:
+                return exc
+
+        if self.workers <= 1 or len(batches) <= 1:
+            for batch in batches:
+                answer = call(batch)
+                yield batch, answer
+                if answer is None:
+                    return
+            return
+        with ThreadPoolExecutor(max_workers=self.workers) as pool:
+            futures = [(batch, pool.submit(call, batch)) for batch in batches]
+            for batch, future in futures:
+                yield batch, future.result()
 
     def _add_neighbors(self, views: list[ClaimView], pairs: dict[tuple[str, str], CandidatePair]) -> None:
         """Pair each claim with its most similar claims in OTHER documents, whatever their labels say. The claims are embedded

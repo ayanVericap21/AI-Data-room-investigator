@@ -302,6 +302,48 @@ def normalise_text(value: object) -> str:
     return "".join(words) if words else re.sub(r"[\W_]+", "", text)
 
 
+def name_words(value: object) -> frozenset[str]:
+    """The words that identify a name or short phrase: case, accents, punctuation and legal-form words removed."""
+    text = unicodedata.normalize("NFKC", str(value))
+    text = "".join(ch for ch in unicodedata.normalize("NFKD", text) if not unicodedata.combining(ch)).casefold()
+    return frozenset(w for w in re.findall(r"[^\W_]+", text) if w not in LEGAL_FORMS)
+
+
+MAX_CONTAINED_WORDS = 8  # longer texts are statements: an extra clause there can change the meaning
+
+
+def one_contains_other(a: object, b: object) -> bool:
+    """Two different short texts where every word of one is in the other ("Technical Officer" and "Technical Officer (instrumentation)"):
+    the same thing described in more or less detail. False for numbers and dates, for equal texts and for long texts."""
+    if parse_numeric(a) is not None or parse_numeric(b) is not None:
+        return False
+    wa, wb = name_words(a), name_words(b)
+    if not wa or not wb or wa == wb or max(len(wa), len(wb)) > MAX_CONTAINED_WORDS:
+        return False
+    return wa <= wb or wb <= wa
+
+
+_UPPER = re.compile(r"\b(maximum|max|limit|limits|cap|capped|ceiling|at most|no more than|not exceed\w*|up to|permitted|allowed|allowable|quota|upper)\b", re.I)
+_LOWER = re.compile(r"\b(minimum|min|at least|no less than|not less than|floor|lower)\b", re.I)
+
+
+def bound_direction(text: str | None) -> str | None:
+    """"upper" when the wording says the value is a ceiling (maximum, limit, at most, permitted), "lower" for a floor (minimum, at least), else None."""
+    upper, lower = bool(_UPPER.search(text or "")), bool(_LOWER.search(text or ""))
+    return "upper" if upper and not lower else "lower" if lower and not upper else None
+
+
+def within_limit(limit: object, unit_limit: str | None, direction: str, other: object, unit_other: str | None,
+                 normalize: Callable[[str | None], str | None] | None = None) -> bool | None:
+    """Whether a plain number satisfies a limit (True/False); None when either value is not a plain number or the units cannot be reconciled."""
+    nl, no = parse_numeric_pair(limit, unit_limit, other, unit_other)
+    if nl is None or no is None or nl.kind != "exact" or no.kind != "exact":
+        return None
+    fl, fo = _factor(unit_info(unit_limit, normalize), unit_info(unit_other, normalize), nl.unit, no.unit)
+    lim, val = nl.low * fl, no.low * fo
+    return val <= lim if direction == "upper" else val >= lim
+
+
 def normalise_identifier(value: object) -> str:
     """Letters and digits only, case folded: separators never make two identifiers different, and nothing else is ignored."""
     return re.sub(r"[\W_]+", "", unicodedata.normalize("NFKC", str(value)).casefold())
@@ -352,5 +394,7 @@ def comparison_note(a: object, unit_a: str | None, b: object, unit_b: str | None
         return "Code check: the values could not be compared by code."
     if relation == "equal":
         return "Code check: the values agree within their stated precision."
+    if one_contains_other(a, b):
+        return "Code check: the values differ in wording only: every word of the shorter one is in the longer one, so one is the other with more or less detail."
     gap = relative_gap(a, unit_a, b, unit_b, normalize)
     return "Code check: the values differ" + (f" (gap {gap * 100:.1f}% of the larger value)." if gap is not None else ".")

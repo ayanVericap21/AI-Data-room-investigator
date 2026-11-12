@@ -1,0 +1,301 @@
+TEST RUN  20261112-140819  ui-run
+==============================================================================
+
+HOW THIS RUN WAS ACHIEVED
+1. Reading: the documents selected for this run were uploaded to LlamaExtract (LlamaIndex Cloud, cost_effective tier), which returns claims with the page and text they came from; each claim is tied to a stored chunk and kept only if its value appears in that chunk text.
+2. Ledger: accepted claims are stored in the claims table; the claims are sorted by label and sent to the LLM in batches of up to 60,000 characters, which groups the ones that state the same attribute of the same subject (no code pairing, no fixed number of documents or claims assumed).
+3. Judging: pairs that agree exactly count as corroboration; every other pair (conflicting, partial, contextual) goes to the LLM in batches of up to 12,000 characters with both source excerpts.
+4. Findings: a discrepancy is saved only if its two quotes are exact substrings of their chunks (checked in code); per-document verdicts were skipped by request.
+5. Model: cost_effective, through LlamaExtract, up to 5 attempts per call honouring the provider's retry delay; no step, tool-call or finding limits.
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+Run started   : 2026-11-12 14:08:19 (local)   finished: 14:14:04   wall time: 344.9s
+Config        : ui-run
+Database      : data_room (documents were already processed; reused)
+Code version  : git db9f178 + uncommitted changes   python 3.14.5
+Documents     : 8; fully read 8, incomplete 0
+Chunks        : 13 total; sent to the LLM 13 (headings are skipped by the extractor: 0)
+Claims        : 112 recorded, 0 rejected (value not found in cited chunk or unknown chunk id), 8 skipped because the value was only the label of its own row, 0 values shortened by the extractor with an ellipsis restored from the source text
+Extraction    : up to any number of chunks per call (and 8,000 characters); running vocabulary off; coverage check off
+Extractor     : LlamaExtract (cost_effective tier) instead of the LLM: 8 documents uploaded to LlamaIndex Cloud, 60 credits used, 0 documents failed (the batch and coverage settings above do not apply)
+Pairs         : 19 candidates; 0 agreed exactly (not sent to the LLM); 19 judged; verdicts {}
+Findings      : 0 saved with verified quotes; 0 rejected (quotes missing or not exact)
+LLM calls     : 23 provider attempts (22 failed, 0 retries incl. invalid-output retries), 204.5s total, avg 185861ms
+Tokens        : prompt 0  completion 0  thinking 0  cached 0  total 0   (cost not computed: no price per token configured)
+Context/call  : prompt tokens min 0  avg 0  max 0
+
+==============================================================================
+NEW OR CHANGED FILES AND CLAIM RESET
+==============================================================================
+claims deleted at the start of this run: 112 (all claims in this run are newly extracted)
+scan: discovered 8, new 0, updated 0, unchanged 8, missing 0
+      duplicates skipped (same content): none
+
+no new or changed files had to be processed
+
+==============================================================================
+CONTRADICTIONS ONLY (classification = contradiction)
+==============================================================================
+No finding was classified as a contradiction in this run.
+
+==============================================================================
+FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)
+==============================================================================
+Fields follow the Finding schema: title, description, classification, severity, confidence, evidence_status, verification_status, materiality_reasoning, business_impact, unresolved_questions; evidence rows follow the Evidence schema.
+Findings: 2   by classification: {'missing_information': 2}   by severity: {'medium': 2}
+
+--- FINDING 1 of 2  [fnd_fe58ab726c2246fe] ------------------------------
+title                 : Referenced item not in the data room: Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026)
+classification        : missing_information
+severity              : medium
+confidence            : 0.7
+evidence_status       : unavailable
+verification_status   : verified
+description           : Permit_GOA_2026_099.pdf (page 1) refers to "Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026)", but no file, sheet, heading, caption or row label in the data room is named like it, and every document was read.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : ['Where is Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026)?']
+evidence:
+  [1] role=insufficient
+      document : Permit_GOA_2026_099.pdf
+      chunk    : chk_fd5f6f2ed3e64912   (chunk_index 0)
+      location : page 1
+      quote    : "2. All activities must strictly adhere to the protocols outlined in the Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A)."
+      relevance: Refers to Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026)
+      assessment: The document points to this item; it is not in the data room.
+
+--- FINDING 2 of 2  [fnd_33f7a691efd345b5] ------------------------------
+title                 : SPL-044-B named in Lab_Analysis_Report.pdf has no record in Dive_Log_and_Samples.xlsx (SPL-001 to SPL-038)
+classification        : missing_information
+severity              : medium
+confidence            : 0.5
+evidence_status       : unavailable
+verification_status   : verified
+description           : Lab_Analysis_Report.pdf names SPL-044-B, but Dive_Log_and_Samples.xlsx, which lists 8 identifiers of the same kind (SPL-001 to SPL-038), has no record numbered that (1 to 38 is its range). Found by comparing identifiers, not by reading the claims: confirm that the two documents are meant to cover the same set.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : ['Where is the record for SPL-044-B?']
+evidence:
+  [1] role=insufficient
+      document : Lab_Analysis_Report.pdf
+      chunk    : chk_0785e643042b414a   (chunk_index 0)
+      location : page 1
+      quote    : "Marine Pathology Laboratory - Post-Expedition Analysis Date: October 20, 2026 Analyst: Dr. M. Fisher Batch: Samples SPL-001 through SPL-038, plus SPL-044-B"
+      relevance: Names SPL-044-B
+      assessment: Lab_Analysis_Report.pdf names SPL-044-B; it is outside the SPL-001 to SPL-038 range listed in Dive_Log_and_Samples.xlsx.
+  [2] role=insufficient
+      document : Dive_Log_and_Samples.xlsx
+      chunk    : chk_9102fba65a404896   (chunk_index 0)
+      location : sheet Sheet1, cell A1:F5
+      quote    : "[Sheet1!A5:F5] Date: 2026-10-09; Dive_ID: D-04; Site: Charlie; ROV_Operator: S. Jenkins; Max_Depth_m: 220; Samples_Collected: SPL-031 to SPL-038"
+      relevance: The list in Dive_Log_and_Samples.xlsx ends at SPL-038
+      assessment: Dive_Log_and_Samples.xlsx lists 8 identifiers of this kind, from SPL-001 to SPL-038.
+
+
+==============================================================================
+COVERAGE AND PER-DOCUMENT VERDICTS
+==============================================================================
+Coverage: 'read' = chunks the LLM was shown. A document counts as fully read only if every batch succeeded (all-or-nothing per document).
+
+  document                          chunks  read  fully read  claims  LLM calls  tokens  extract s  verdict  reason
+  --------------------------------  ------  ----  ----------  ------  ---------  ------  ---------  -------  ---------------------------------------------
+  Daily_Field_Notes_Vance.docx      1       1     yes         17      0          0       19.3       skipped  verdicts skipped by request (--skip-verdicts)
+  Dive_Log_and_Samples.xlsx         1       1     yes         24      0          0       17.8       skipped  verdicts skipped by request (--skip-verdicts)
+  Expedition_Protocol_DSCAP26.docx  4       4     yes         15      0          0       17.4       skipped  verdicts skipped by request (--skip-verdicts)
+  Final_Expedition_Summary.pdf      1       1     yes         11      0          0       17.5       skipped  verdicts skipped by request (--skip-verdicts)
+  Incident_Report_ROV.docx          3       3     yes         9       0          0       17.3       skipped  verdicts skipped by request (--skip-verdicts)
+  Lab_Analysis_Report.pdf           1       1     yes         9       0          0       20.6       skipped  verdicts skipped by request (--skip-verdicts)
+  Permit_GOA_2026_099.pdf           1       1     yes         7       0          0       21.6       skipped  verdicts skipped by request (--skip-verdicts)
+  Water_Quality_Metrics.xlsx        1       1     yes         20      0          0       19.8       skipped  verdicts skipped by request (--skip-verdicts)
+
+==============================================================================
+CLAIM LEDGER
+==============================================================================
+claims recorded 112, rejected 0
+
+Per document (paired = has a comparable claim elsewhere; corroborated = same value stated elsewhere; unpaired = nothing comparable found):
+  document                          claims  paired  corroborated  unpaired  pairs judged  findings
+  --------------------------------  ------  ------  ------------  --------  ------------  --------
+  Daily_Field_Notes_Vance.docx      17      5       0             12        6             0
+  Dive_Log_and_Samples.xlsx         24      2       0             22        2             0
+  Expedition_Protocol_DSCAP26.docx  15      6       0             9         5             0
+  Final_Expedition_Summary.pdf      11      7       0             4         7             0
+  Incident_Report_ROV.docx          9       4       0             5         7             0
+  Lab_Analysis_Report.pdf           9       1       0             8         1             0
+  Permit_GOA_2026_099.pdf           7       3       0             4         3             0
+  Water_Quality_Metrics.xlsx        20      2       0             18        2             0
+
+Rejected claims by reason (first 15):
+  none
+
+==============================================================================
+PAIR MATCHING AND JUDGING
+==============================================================================
+pairing mode: LLM grouping of sorted claims: 112 claims in 1 batch(es), 1 call(s) (0 failed), 10 groups covering 22 claims (largest 4), 19 pairs (8 added from nearest neighbours in other documents), 0 unknown refs ignored
+  pairing every claim with every other in its group would have made 15 pairs; claims stating the same value are linked as agreement, and one claim per distinct value (22 values) is compared
+  note: claims in different batches are never grouped together (one batch: no such gap in this run)
+candidate pairs: 19
+  by relation hint : {'conflicting': 13, 'contextual': 5, 'exact': 1}
+  by match route   : {'llm': 11, 'embedding': 8}
+  across documents : 16   inside one document: 3
+exact agreements (corroboration, no LLM): 0
+judged by the LLM: 19 in 22 calls (3 batches failed)
+LLM verdicts: {}
+findings saved 0; rejected 0
+single-pair retries 19; verdicts that did not match their pair (echoed values) 0; verdicts without echoed values 0; quotes supplied by code for verdicts that gave none 0
+findings merged because they describe the same discrepancy 0; insufficient-evidence findings absorbed 0; consistent findings grouped 0
+
+Verdicts that did not match their pair (first 20):
+  none
+
+Rejected findings (first 15):
+  none
+
+==============================================================================
+EVERY CANDIDATE PAIR AND WHAT HAPPENED TO IT
+==============================================================================
+19 candidate pairs. Outcomes: {'no verdict returned (batch failed': 19}
+
+  #   claim A                                                                 claim B                                                                 hint         route      what happened
+  --  ----------------------------------------------------------------------  ----------------------------------------------------------------------  -----------  ---------  ------------------------------------------------------------------------------
+  1   In | ROV | offline and undergoing repairs | offline and undergoing ...  In | vehicle | clearance | cleared for subsequent operations            conflicting  llm        no verdict returned (batch failed, run stopped, or the model skipped the pair)
+  2   In | vehicle | clearance | cleared for subsequent operations            In | ROV 'Nautilus' | operability | completely inoperable               conflicting  llm        no verdict returned (batch failed, run stopped, or the model skipped the pair)
+  3   In | vehicle | clearance | cleared for subsequent operations            Da | Oct 10 | ROV status | back online                                  conflicting  llm        no verdict returned (batch failed, run stopped, or the model skipped the pair)
+  4   In | ROV | offline and undergoing repairs | offline and undergoing ...  In | ROV 'Nautilus' | operability | completely inoperable               conflicting  llm        no verdict returned (batch failed, run stopped, or the model skipped the pair)
+  5   In | ROV | offline and undergoing repairs | offline and undergoing ...  Da | Oct 10 | ROV status | back online                                  contextual   llm        no verdict returned (batch failed, run stopped, or the model skipped the pair)
+  6   Da | Oct 10 | ROV status | back online                                  In | ROV 'Nautilus' | operability | completely inoperable               conflicting  llm        no verdict returned (batch failed, run stopped, or the model skipped the pair)
+  7   Ex | Lead Scientist | name | Dr. Aris Thorne                            Fi | Dr. Aris Thorne | role | Lead Scientist                            conflicting  llm        no verdict returned (batch failed, run stopped, or the model skipped the pair)
+  8   In | Incident Report #26-04 | Prepared by | Sarah Jenkins, ROV Tech...  Ex | ROV Technician | name | Sarah Jenkins                              conflicting  llm        no verdict returned (batch failed, run stopped, or the model skipped the pair)
+  9   Da | Oct 5 | turbidity | exceptionally high                             Wa | Bravo, 2026-10-05 | Turbidity_NTU | 15                             contextual   llm        no verdict returned (batch failed, run stopped, or the model skipped the pair)
+  10  Di | D-01, 2026-10-02 | Site | Alpha                                    Da | Oct 2 | dive | First dive at Alpha.                                contextual   llm        no verdict returned (batch failed, run stopped, or the model skipped the pair)
+  11  Di | D-02, 2026-10-05 | Site | Bravo                                    Da | Oct 5 | dive | Dive at Bravo.                                      contextual   llm        no verdict returned (batch failed, run stopped, or the model skipped the pair)
+  12  Da | Personal Field Journal - Dr. Linnea Vance | author | Dr. Linne...  Ex | Marine Biologist | name | Dr. Linnea Vance                         exact        embedding  no verdict returned (batch failed, run stopped, or the model skipped the pair)
+  13  Fi | All field activities | compliance with the Global Oceans Autho...  Pe | all activities | protocol compliance requirement | All activit...  conflicting  embedding  no verdict returned (batch failed, run stopped, or the model skipped the pair)
+  14  Fi | Site Bravo | primary driver of the coral bleaching | severe oc...  La | Alpha Samples (SPL-001 to 010) | condition | Healthy coral pol...  conflicting  embedding  no verdict returned (batch failed, run stopped, or the model skipped the pair)
+  15  Fi | ROV Nautilus | data collection | uninterrupted daily data coll...  Ex | Methodology & Schedule | collected materials | video transects...  conflicting  embedding  no verdict returned (batch failed, run stopped, or the model skipped the pair)
+  16  Fi | DSCAP-26 expedition | targeted samples collected | 38 samples      Pe | permit | maximum samples | 50 samples                              contextual   embedding  no verdict returned (batch failed, run stopped, or the model skipped the pair)
+  17  Pe | Site Charlie | protected zone designation | Level 1 Protected ...  Ex | Site Charlie | Coordinates | 15.30, 145.95                         conflicting  embedding  no verdict returned (batch failed, run stopped, or the model skipped the pair)
+  18  Wa | Bravo, 2026-10-05 | Date | 2026-10-05                              Fi | Date | date | October 25, 2026                                     conflicting  embedding  no verdict returned (batch failed, run stopped, or the model skipped the pair)
+  19  Fi | monitored zones | identified events | significant coral bleach...  Ex | Deep-Sea Coral Assessment Protocol (DSCAP-26) | document title...  conflicting  embedding  no verdict returned (batch failed, run stopped, or the model skipped the pair)
+
+==============================================================================
+REFERENCED ITEMS NOT IN THE DATA ROOM (single-claim missing information)
+==============================================================================
+references returned with the claims: 1; found in the data room: 0; saved as missing information: 1; rejected by the quote check: 0; repeats skipped: 0
+  missing: Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026)
+
+==============================================================================
+IDENTIFIER RECONCILIATION ACROSS DOCUMENTS
+==============================================================================
+identifier kinds with a list in one document and mentions in another: 1; identifiers outside a list's range: 1; saved: 1; rejected by the quote check: 0
+  raised: SPL-044-B
+
+==============================================================================
+LLM CALLS: tokens, context size, latency, failures
+==============================================================================
+Per phase:
+  phase               attempts  failed  prompt tok  completion tok  thinking tok  avg ctx tok  max ctx tok  avg ms  p95 ms  total s
+  ------------------  --------  ------  ----------  --------------  ------------  -----------  -----------  ------  ------  -------
+  group claims (LLM)  1         0       0           0               0             0            0            185861  185861  185.9
+  judge pairs         22        22      0           0               0             -            0            -       -       18.6
+
+Every provider attempt (context = what was sent; tokens as counted by the API):
+  #   phase               at s   result  ctx chars  ctx tokens  cached  completion  thinking  total tok  latency ms  resp chars  error
+  --  ------------------  -----  ------  ---------  ----------  ------  ----------  --------  ---------  ----------  ----------  ------------------------------------------------------------
+  1   group claims (LLM)  151.6  ok      29,030     0           0       0           0         0          185861      665
+  2   judge pairs         339.1  FAIL    16,327     0           0       0           0         0          1099        0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+  3   judge pairs         339.1  FAIL    25,352     0           0       0           0         0          1504        0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+  4   judge pairs         339.1  FAIL    25,895     0           0       0           0         0          1685        0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+  5   judge pairs         340.8  FAIL    14,094     0           0       0           0         0          582         0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+  6   judge pairs         340.8  FAIL    14,275     0           0       0           0         0          659         0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+  7   judge pairs         340.8  FAIL    14,493     0           0       0           0         0          1007        0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+  8   judge pairs         340.8  FAIL    14,178     0           0       0           0         0          1091        0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+  9   judge pairs         341.4  FAIL    14,577     0           0       0           0         0          637         0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+  10  judge pairs         341.4  FAIL    14,396     0           0       0           0         0          825         0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+  11  judge pairs         341.9  FAIL    14,040     0           0       0           0         0          549         0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+  12  judge pairs         342.0  FAIL    14,831     0           0       0           0         0          566         0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+  13  judge pairs         341.8  FAIL    14,521     0           0       0           0         0          1163        0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+  14  judge pairs         342.4  FAIL    15,101     0           0       0           0         0          531         0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+  15  judge pairs         342.3  FAIL    15,047     0           0       0           0         0          767         0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+  16  judge pairs         342.6  FAIL    14,447     0           0       0           0         0          601         0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+  17  judge pairs         343.0  FAIL    15,090     0           0       0           0         0          544         0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+  18  judge pairs         343.2  FAIL    15,281     0           0       0           0         0          551         0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+  19  judge pairs         343.0  FAIL    14,744     0           0       0           0         0          744         0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+  20  judge pairs         343.0  FAIL    15,361     0           0       0           0         0          920         0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+  21  judge pairs         343.7  FAIL    14,840     0           0       0           0         0          567         0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+  22  judge pairs         343.8  FAIL    14,660     0           0       0           0         0          756         0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+  23  judge pairs         343.5  FAIL    14,366     0           0       0           0         0          1278        0           LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"ty...
+
+==============================================================================
+EMBEDDING CALLS
+==============================================================================
+calls 2, failed 0, texts 112 (claim topic texts embedded locally for matching)
+
+  #  texts  chars  latency ms  result  error
+  -  -----  -----  ----------  ------  -----
+  1  64     7,020  981         ok
+  2  48     4,978  307         ok
+
+==============================================================================
+FAILURES
+==============================================================================
+LLM attempt failures:
+  judge pairs: 1099ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+  judge pairs: 1504ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+  judge pairs: 1685ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+  judge pairs: 582ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+  judge pairs: 659ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+  judge pairs: 1007ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+  judge pairs: 1091ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+  judge pairs: 637ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+  judge pairs: 825ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+  judge pairs: 549ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+  judge pairs: 566ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+  judge pairs: 1163ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+  judge pairs: 531ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+  judge pairs: 767ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+  judge pairs: 601ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+  judge pairs: 544ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+  judge pairs: 551ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+  judge pairs: 744ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+  judge pairs: 920ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+  judge pairs: 567ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+  judge pairs: 756ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+  judge pairs: 1278ms LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 100...
+Documents not fully read:
+  none
+Pair-judging problems:
+  LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 10000 characters (got 10509)","input":{"file_i
+  LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 10000 characters (got 10509)","input":{"file_i
+  LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 10000 characters (got 10509)","input":{"file_i
+  LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 10000 characters (got 10509)","input":{"file_i
+  LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 10000 characters (got 10509)","input":{"file_i
+  LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 10000 characters (got 10509)","input":{"file_i
+  LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 10000 characters (got 10509)","input":{"file_i
+  LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 10000 characters (got 10509)","input":{"file_i
+  LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 10000 characters (got 10509)","input":{"file_i
+  LlamaExtract POST /api/v2/extract -> 422: {"detail":[{"type":"value_error","loc":["body"],"msg":"Value error, system_prompt exceeds the maximum length of 10000 characters (got 10509)","input":{"file_i
+
+==============================================================================
+TIMING
+==============================================================================
+  stage                                            duration  share of wall time
+  -----------------------------------------------  --------  ------------------
+  0. scan files, process new or changed ones       0.0s      0%
+  1. read every chunk, extract claims              151.3s    44%
+  2. match claims (LLM grouping of sorted claims)  187.5s    54%
+  3. judge pairs, verify quotes, save findings     5.8s      2%
+  3b. referenced items absent from the data room   0.0s      0%
+  3c. identifier reconciliation across documents   0.0s      0%
+  4. per-document verdicts                         0.0s      0%
+
+==============================================================================
+KNOWN LIMITS OF THIS RUN
+==============================================================================
+- Reading is all-or-nothing per document: if one batch fails after all retries, that document's claims are discarded and it counts as not read.
+- Candidate matching keeps at most 5 partners per claim (an existing default), so some comparable pairs are never judged.
+- The claim-extraction prompt lists business categories (capacity, supply, pricing, ...) and is not yet domain-agnostic.
+- Claims inside one document are also paired and judged; matching quality depends on how the model labels subject/metric/unit/period.
+- Exact agreements are trusted as corroboration without an LLM check.

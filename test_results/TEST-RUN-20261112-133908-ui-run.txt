@@ -1,0 +1,472 @@
+TEST RUN  20261112-133908  ui-run
+==============================================================================
+
+HOW THIS RUN WAS ACHIEVED
+1. Reading: the documents selected for this run were uploaded to LlamaExtract (LlamaIndex Cloud, cost_effective tier), which returns claims with the page and text they came from; each claim is tied to a stored chunk and kept only if its value appears in that chunk text.
+2. Ledger: accepted claims are stored in the claims table; the claims are sorted by label and sent to the LLM in batches of up to 60,000 characters, which groups the ones that state the same attribute of the same subject (no code pairing, no fixed number of documents or claims assumed).
+3. Judging: pairs that agree exactly count as corroboration; every other pair (conflicting, partial, contextual) goes to the LLM in batches of up to 12,000 characters with both source excerpts.
+4. Findings: a discrepancy is saved only if its two quotes are exact substrings of their chunks (checked in code); per-document verdicts were skipped by request.
+5. Model: cost_effective, through LlamaExtract, up to 5 attempts per call honouring the provider's retry delay; no step, tool-call or finding limits.
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+Run started   : 2026-11-12 13:39:08 (local)   finished: 13:46:09   wall time: 420.3s
+Config        : ui-run
+Database      : data_room (documents were already processed; reused)
+Code version  : git db9f178 + uncommitted changes   python 3.14.5
+Documents     : 8; fully read 8, incomplete 0
+Chunks        : 13 total; sent to the LLM 13 (headings are skipped by the extractor: 0)
+Claims        : 112 recorded, 2 rejected (value not found in cited chunk or unknown chunk id), 9 skipped because the value was only the label of its own row
+Extraction    : up to any number of chunks per call (and 8,000 characters); running vocabulary off; coverage check off
+Extractor     : LlamaExtract (cost_effective tier) instead of the LLM: 8 documents uploaded to LlamaIndex Cloud, 60 credits used, 0 documents failed (the batch and coverage settings above do not apply)
+Pairs         : 40 candidates; 0 agreed exactly (not sent to the LLM); 40 judged; verdicts {'not_comparable': 28, 'contextual_difference': 2, 'insufficient_evidence': 7, 'consistent': 3}
+Findings      : 7 saved with verified quotes; 0 rejected (quotes missing or not exact)
+LLM calls     : 6 provider attempts (0 failed, 0 retries incl. invalid-output retries), 245.0s total, avg 40837ms
+Tokens        : prompt 0  completion 0  thinking 0  cached 0  total 0   (cost not computed: no price per token configured)
+Context/call  : prompt tokens min 0  avg 0  max 0
+
+==============================================================================
+NEW OR CHANGED FILES AND CLAIM RESET
+==============================================================================
+claims deleted at the start of this run: 1125 (all claims in this run are newly extracted)
+scan: discovered 8, new 0, updated 0, unchanged 8, missing 0
+      duplicates skipped (same content): none
+
+  new or changed file               status     chunks  extract s  chunk ms  save ms  embed s  note
+  --------------------------------  ---------  ------  ---------  --------  -------  -------  ----
+  Daily_Field_Notes_Vance.docx      processed  1       0.0        0         9        0.6
+  Dive_Log_and_Samples.xlsx         processed  1       0.0        0         9        0.1
+  Expedition_Protocol_DSCAP26.docx  processed  4       0.0        0         9        0.1
+  Final_Expedition_Summary.pdf      processed  1       0.8        0         14       0.1
+  Incident_Report_ROV.docx          processed  3       0.0        0         8        0.1
+  Lab_Analysis_Report.pdf           processed  1       0.2        0         13       0.1
+  Permit_GOA_2026_099.pdf           processed  1       0.1        0         8        0.1
+  Water_Quality_Metrics.xlsx        processed  1       0.0        0         7        0.0
+
+==============================================================================
+CONTRADICTIONS ONLY (classification = contradiction)
+==============================================================================
+No finding was classified as a contradiction in this run.
+
+==============================================================================
+FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)
+==============================================================================
+Fields follow the Finding schema: title, description, classification, severity, confidence, evidence_status, verification_status, materiality_reasoning, business_impact, unresolved_questions; evidence rows follow the Evidence schema.
+Findings: 8   by classification: {'contextual_difference': 2, 'insufficient_evidence': 3, 'consistent': 2, 'missing_information': 1}   by severity: {'low': 5, 'informational': 2, 'medium': 1}
+
+--- FINDING 1 of 8  [fnd_3566a1b1380d4f58] ------------------------------
+title                 : ROV 'Nautilus' status: completely inoperable and cleared for subsequent operations
+classification        : contextual_difference
+severity              : low
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : The Incident_Report_ROV.docx Description states the vehicle was “completely inoperable” after the October 8 failure. Its Downtime & Resolution section states repairs were completed by 08:00 on October 10 and the vehicle was cleared for subsequent operations. These are successive states; the later October 10 statement supersedes the earlier status.
+materiality_reasoning : The excerpts explicitly state the failure and subsequent repair and clearance dates, explaining the status change.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Incident_Report_ROV.docx
+      chunk    : chk_734d18beb05c4d64   (chunk_index 1)
+      location : heading Description
+      quote    : "The vehicle was rendered completely inoperable."
+      relevance: The vehicle was rendered completely inoperable.
+      assessment: Incident_Report_ROV.docx states: The vehicle was rendered completely inoperable. | subject=ROV 'Nautilus'; metric=operational status; value=completely inoperable
+  [2] role=contextual
+      document : Incident_Report_ROV.docx
+      chunk    : chk_b251b7a3c49c4a50   (chunk_index 2)
+      location : heading Downtime & Resolution
+      quote    : "Repairs were completed by 08:00 on October 10, and the vehicle was cleared for subsequent operations."
+      relevance: Repairs were completed by 08:00 on October 10, and the vehicle was cleared for subsequent operations.
+      assessment: Incident_Report_ROV.docx states: Repairs were completed by 08:00 on October 10, and the vehicle was cleared for subsequent operations. | subject=vehicle; metric=operational clearance; value=cleared for subsequent operations; period=October 10
+
+--- FINDING 2 of 8  [fnd_45e5765bb5864b70] ------------------------------
+title                 : insufficient evidence: compliance
+classification        : insufficient_evidence
+severity              : low
+confidence            : 0.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Final_Expedition_Summary.pdf states: All field activities remained fully compliant with the Global Oceans Authority regulations. (page 1). Permit_GOA_2026_099.pdf states: 2. All activities must strictly adhere to the protocols outlined in the Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A). (page 1).
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=insufficient
+      document : Final_Expedition_Summary.pdf
+      chunk    : chk_79029626fb994f0d   (chunk_index 0)
+      location : page 1
+      quote    : "All field activities remained fully compliant with the Global Oceans Authority regulations."
+      relevance: All field activities remained fully compliant with the Global Oceans Authority regulations.
+      assessment: Final_Expedition_Summary.pdf states: All field activities remained fully compliant with the Global Oceans Authority regulations. | subject=All field activities; metric=compliance; value=fully compliant; conditions=with the Global Oceans Authority regulations
+  [2] role=insufficient
+      document : Permit_GOA_2026_099.pdf
+      chunk    : chk_fd5f6f2ed3e64912   (chunk_index 0)
+      location : page 1
+      quote    : "2. All activities must strictly adhere to the protocols outlined in the Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A)."
+      relevance: 2. All activities must strictly adhere to the protocols outlined in the Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A).
+      assessment: Permit_GOA_2026_099.pdf states: 2. All activities must strictly adhere to the protocols outlined in the Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A). | subject=All activities; metric=protocol compliance; value=must strictly adhere to the protocols outlined in the Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A)
+
+--- FINDING 3 of 8  [fnd_5378b48d9c3b42a6] ------------------------------
+title                 : Consistent: Site agrees in 2 places
+classification        : consistent
+severity              : informational
+confidence            : 0.99
+evidence_status       : adequate
+verification_status   : verified
+description           : Daily_Field_Notes_Vance.docx and Dive_Log_and_Samples.xlsx state the same value for Site in 2 places (values: Alpha; Bravo).
+materiality_reasoning : The claims agree on the dive location.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : Dive_Log_and_Samples.xlsx
+      chunk    : chk_9102fba65a404896   (chunk_index 0)
+      location : sheet Sheet1, cell A1:F5
+      quote    : "[Sheet1!A2:F2] Date: 2026-10-02; Dive_ID: D-01; Site: Alpha; ROV_Operator: S. Jenkins; Max_Depth_m: 210; Samples_Collected: SPL-001 to SPL-010"
+      relevance: | 2026-10-02 | D-01    | Alpha   | S. Jenkins   | 210         | SPL-001 to SPL-010 |
+      assessment: Dive_Log_and_Samples.xlsx states: | 2026-10-02 | D-01    | Alpha   | S. Jenkins   | 210         | SPL-001 to SPL-010 | | subject=D-01; metric=Site; value=Alpha
+  [2] role=supporting
+      document : Daily_Field_Notes_Vance.docx
+      chunk    : chk_3ba3d45a205c4050   (chunk_index 0)
+      location : heading Personal Field Journal - Dr. Linnea Vance
+      quote    : "Oct 2: First dive at Alpha"
+      relevance: Oct 2: First dive at Alpha. Beautiful specimens.
+      assessment: Daily_Field_Notes_Vance.docx states: Oct 2: First dive at Alpha. Beautiful specimens. | subject=Oct 2; metric=dive location; value=Alpha; period=Oct 2
+  [3] role=supporting
+      document : Dive_Log_and_Samples.xlsx
+      chunk    : chk_9102fba65a404896   (chunk_index 0)
+      location : sheet Sheet1, cell A1:F5
+      quote    : "[Sheet1!A3:F3] Date: 2026-10-05; Dive_ID: D-02; Site: Bravo; ROV_Operator: S. Jenkins; Max_Depth_m: 195; Samples_Collected: SPL-011 to SPL-025"
+      relevance: | 2026-10-05 | D-02    | Bravo   | S. Jenkins   | 195         | SPL-011 to SPL-025 |
+      assessment: Dive_Log_and_Samples.xlsx states: | 2026-10-05 | D-02    | Bravo   | S. Jenkins   | 195         | SPL-011 to SPL-025 | | subject=D-02; metric=Site; value=Bravo
+  [4] role=supporting
+      document : Daily_Field_Notes_Vance.docx
+      chunk    : chk_3ba3d45a205c4050   (chunk_index 0)
+      location : heading Personal Field Journal - Dr. Linnea Vance
+      quote    : "Oct 5: Dive at Bravo"
+      relevance: Oct 5: Dive at Bravo. I noted the turbidity was exceptionally high today, making visual transects difficult.
+      assessment: Daily_Field_Notes_Vance.docx states: Oct 5: Dive at Bravo. I noted the turbidity was exceptionally high today, making visual transects difficult. | subject=Oct 5; metric=dive location; value=Bravo; period=Oct 5
+
+--- FINDING 4 of 8  [fnd_4f90a9a902c14c50] ------------------------------
+title                 : Ocean acidification pH threshold and measured pH
+classification        : insufficient_evidence
+severity              : low
+confidence            : 0.85
+evidence_status       : adequate
+verification_status   : verified
+description           : Excerpt A states that severe ocean acidification involves pH levels dropping below 7.8 and identifies it as the primary driver of bleaching at Site Bravo. Excerpt B reports pH 8.05 for Charlie on 2026-10-09. The excerpts do not establish that this measurement is for Site Bravo or otherwise comparable to the stated condition. Also reported separately and merged here: insufficient evidence (Site Bravo pH: below 7.8 versus 8.11).
+materiality_reasoning : The excerpts do not show that the measured value and the stated threshold refer to the same site or condition.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=insufficient
+      document : Final_Expedition_Summary.pdf
+      chunk    : chk_79029626fb994f0d   (chunk_index 0)
+      location : page 1
+      quote    : "severe ocean acidification (pH levels dropping below 7.8)"
+      relevance: Data strongly indicates that severe ocean acidification (pH levels dropping below 7.8) is the primary driver of the coral bleaching observed at Site Bravo.
+      assessment: Final_Expedition_Summary.pdf states: Data strongly indicates that severe ocean acidification (pH levels dropping below 7.8) is the primary driver of the coral bleaching observed at Site Bravo. | subject=ocean acidification; metric=pH levels; value=below 7.8; unit=pH; conditions=severe ocean acidification
+  [2] role=insufficient
+      document : Water_Quality_Metrics.xlsx
+      chunk    : chk_429c32a95dc44b8d   (chunk_index 0)
+      location : sheet Sheet1, cell A1:F5
+      quote    : "Date: 2026-10-09; Site: Charlie; Temp_C: 3.8; Salinity_psu: 35.2; pH: 8.05; Turbidity_NTU: 2.8"
+      relevance: | 2026-10-09 | Charlie | 3.8    | 35.2         | 8.05 | 2.8           |
+      assessment: Water_Quality_Metrics.xlsx states: | 2026-10-09 | Charlie | 3.8    | 35.2         | 8.05 | 2.8           | | subject=2026-10-09; metric=pH; value=8.05
+  [3] role=insufficient
+      document : Water_Quality_Metrics.xlsx
+      chunk    : chk_429c32a95dc44b8d   (chunk_index 0)
+      location : sheet Sheet1, cell A1:F5
+      quote    : "[Sheet1!A4:F4] Date: 2026-10-08; Site: Bravo; Temp_C: 4; Salinity_psu: 35; pH: 8.11; Turbidity_NTU: 3.1"
+      relevance: | 2026-10-08 | Bravo   | 4      | 35           | 8.11 | 3.1           |
+      assessment: Water_Quality_Metrics.xlsx states: | 2026-10-08 | Bravo   | 4      | 35           | 8.11 | 3.1           | | subject=2026-10-08; metric=pH; value=8.11
+
+--- FINDING 5 of 8  [fnd_c3bee25d10574c32] ------------------------------
+title                 : Permit maximum of 50 samples and 38 samples collected
+classification        : consistent
+severity              : informational
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : Permit_GOA_2026_099.pdf, page 1, authorizes limited biological sampling with a maximum of 50 samples. Final_Expedition_Summary.pdf, page 1, reports 38 targeted samples collected. The reported collection is within the permit maximum.
+materiality_reasoning : The reported number of samples collected is within the stated permit limit.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=supporting
+      document : Permit_GOA_2026_099.pdf
+      chunk    : chk_fd5f6f2ed3e64912   (chunk_index 0)
+      location : page 1
+      quote    : "limited biological sampling (max 50 samples)"
+      relevance: Authorized Activities: ROV exploration and limited biological sampling (max 50 samples).
+      assessment: Permit_GOA_2026_099.pdf states: Authorized Activities: ROV exploration and limited biological sampling (max 50 samples). | subject=permit; metric=maximum samples; value=50; unit=samples; conditions=Authorized Activities: ROV exploration and limited biological sampling
+  [2] role=supporting
+      document : Final_Expedition_Summary.pdf
+      chunk    : chk_79029626fb994f0d   (chunk_index 0)
+      location : page 1
+      quote    : "A total of 38 targeted samples were collected"
+      relevance: A total of 38 targeted samples were collected, perfectly aligning with our permit constraints.
+      assessment: Final_Expedition_Summary.pdf states: A total of 38 targeted samples were collected, perfectly aligning with our permit constraints. | subject=DSCAP-26 expedition; metric=samples collected; value=38; unit=samples; conditions=targeted
+
+--- FINDING 6 of 8  [fnd_024e52022e6948a0] ------------------------------
+title                 : ROV status: back online versus offline during October 9
+classification        : contextual_difference
+severity              : low
+confidence            : 1.0
+evidence_status       : adequate
+verification_status   : verified
+description           : The journal states “Oct 10: ROV is back online”; the incident report says the ROV was offline for the entirety of October 9, 2026, with repairs completed by 08:00 on October 10. The stated dates and stages describe successive states, and the later statement supersedes the earlier downtime status.
+materiality_reasoning : The statements describe the ROV at successive times and do not indicate a discrepancy.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : Daily_Field_Notes_Vance.docx
+      chunk    : chk_3ba3d45a205c4050   (chunk_index 0)
+      location : heading Personal Field Journal - Dr. Linnea Vance
+      quote    : "Oct 10: ROV is back online."
+      relevance: Oct 10: ROV is back online.
+      assessment: Daily_Field_Notes_Vance.docx states: Oct 10: ROV is back online. | subject=ROV; metric=status; value=back online; period=Oct 10
+  [2] role=contextual
+      document : Incident_Report_ROV.docx
+      chunk    : chk_b251b7a3c49c4a50   (chunk_index 2)
+      location : heading Downtime & Resolution
+      quote    : "The ROV was offline and undergoing intensive repairs in the workshop for the entirety of October 9, 2026."
+      relevance: The ROV was offline and undergoing intensive repairs in the workshop for the entirety of October 9, 2026.
+      assessment: Incident_Report_ROV.docx states: The ROV was offline and undergoing intensive repairs in the workshop for the entirety of October 9, 2026. | subject=ROV; metric=downtime period; value=the entirety of October 9, 2026
+
+--- FINDING 7 of 8  [fnd_c274702718e441d1] ------------------------------
+title                 : Oct 5 turbidity at Bravo: “exceptionally high” versus 15 NTU
+classification        : insufficient_evidence
+severity              : low
+confidence            : 0.82
+evidence_status       : adequate
+verification_status   : verified
+description           : The field journal states “exceptionally high” turbidity on Oct 5 at Bravo; the Water Quality Metrics sheet reports Turbidity_NTU: 15 for 2026-10-05 at Bravo. The qualitative description has no stated threshold, so the excerpts do not establish whether 15 NTU conflicts with it.
+materiality_reasoning : The excerpts provide a qualitative description and a numeric measurement but no threshold linking them.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=insufficient
+      document : Daily_Field_Notes_Vance.docx
+      chunk    : chk_3ba3d45a205c4050   (chunk_index 0)
+      location : heading Personal Field Journal - Dr. Linnea Vance
+      quote    : "turbidity was exceptionally high today"
+      relevance: Oct 5: Dive at Bravo. I noted the turbidity was exceptionally high today, making visual transects difficult.
+      assessment: Daily_Field_Notes_Vance.docx states: Oct 5: Dive at Bravo. I noted the turbidity was exceptionally high today, making visual transects difficult. | subject=Oct 5; metric=turbidity; value=exceptionally high; period=Oct 5
+  [2] role=insufficient
+      document : Water_Quality_Metrics.xlsx
+      chunk    : chk_429c32a95dc44b8d   (chunk_index 0)
+      location : sheet Sheet1, cell A1:F5
+      quote    : "[Sheet1!A3:F3] Date: 2026-10-05; Site: Bravo; Temp_C: 4.2; Salinity_psu: 34.9; pH: 8.15; Turbidity_NTU: 15"
+      relevance: | 2026-10-05 | Bravo   | 4.2    | 34.9         | 8.15 | 15            |
+      assessment: Water_Quality_Metrics.xlsx states: | 2026-10-05 | Bravo   | 4.2    | 34.9         | 8.15 | 15            | | subject=2026-10-05; metric=Turbidity_NTU; value=15; unit=NTU
+
+--- FINDING 8 of 8  [fnd_10ef891f1cc74249] ------------------------------
+title                 : Referenced items not in the data room: Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026); Appendix A
+classification        : missing_information
+severity              : medium
+confidence            : 0.7
+evidence_status       : unavailable
+verification_status   : verified
+description           : Permit_GOA_2026_099.pdf (page 1) refers to "Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026)" and "Appendix A", but no file, sheet or heading in the data room is named like them, and every document was read.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : ['Where is Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026)?', 'Where is Appendix A?']
+evidence:
+  [1] role=insufficient
+      document : Permit_GOA_2026_099.pdf
+      chunk    : chk_fd5f6f2ed3e64912   (chunk_index 0)
+      location : page 1
+      quote    : "2. All activities must strictly adhere to the protocols outlined in the Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026, attached as Appendix A)."
+      relevance: Refers to Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026); Appendix A
+      assessment: The document points to this item; it is not in the data room.
+
+
+==============================================================================
+COVERAGE AND PER-DOCUMENT VERDICTS
+==============================================================================
+Coverage: 'read' = chunks the LLM was shown. A document counts as fully read only if every batch succeeded (all-or-nothing per document).
+
+  document                          chunks  read  fully read  claims  LLM calls  tokens  extract s  verdict  reason
+  --------------------------------  ------  ----  ----------  ------  ---------  ------  ---------  -------  ---------------------------------------------
+  Daily_Field_Notes_Vance.docx      1       1     yes         14      0          0       25.6       skipped  verdicts skipped by request (--skip-verdicts)
+  Dive_Log_and_Samples.xlsx         1       1     yes         20      0          0       17.5       skipped  verdicts skipped by request (--skip-verdicts)
+  Expedition_Protocol_DSCAP26.docx  4       4     yes         13      0          0       67.2       skipped  verdicts skipped by request (--skip-verdicts)
+  Final_Expedition_Summary.pdf      1       1     yes         12      0          0       18.2       skipped  verdicts skipped by request (--skip-verdicts)
+  Incident_Report_ROV.docx          3       3     yes         12      0          0       18.2       skipped  verdicts skipped by request (--skip-verdicts)
+  Lab_Analysis_Report.pdf           1       1     yes         13      0          0       17.5       skipped  verdicts skipped by request (--skip-verdicts)
+  Permit_GOA_2026_099.pdf           1       1     yes         8       0          0       17.5       skipped  verdicts skipped by request (--skip-verdicts)
+  Water_Quality_Metrics.xlsx        1       1     yes         20      0          0       17.6       skipped  verdicts skipped by request (--skip-verdicts)
+
+==============================================================================
+CLAIM LEDGER
+==============================================================================
+claims recorded 112, rejected 2
+
+Per document (paired = has a comparable claim elsewhere; corroborated = same value stated elsewhere; unpaired = nothing comparable found):
+  document                          claims  paired  corroborated  unpaired  pairs judged  findings
+  --------------------------------  ------  ------  ------------  --------  ------------  --------
+  Daily_Field_Notes_Vance.docx      14      7       0             7         4             4
+  Dive_Log_and_Samples.xlsx         20      5       0             15        3             2
+  Expedition_Protocol_DSCAP26.docx  13      6       0             7         10            0
+  Final_Expedition_Summary.pdf      12      7       0             5         15            4
+  Incident_Report_ROV.docx          12      7       0             5         14            2
+  Lab_Analysis_Report.pdf           13      5       0             8         10            0
+  Permit_GOA_2026_099.pdf           8       5       0             3         10            2
+  Water_Quality_Metrics.xlsx        20      6       0             14        6             3
+
+Rejected claims by reason (first 15):
+  - value 'NO biological sampling ... is permitted' not found in any chunk of Permit_GOA_2026_099.pdf
+  - value 'NO ... physical interaction is permitted' not found in any chunk of Permit_GOA_2026_099.pdf
+
+==============================================================================
+PAIR MATCHING AND JUDGING
+==============================================================================
+pairing mode: LLM grouping of sorted claims: 112 claims in 1 batch(es), 1 call(s) (0 failed), 25 groups covering 71 claims (largest 6), 40 pairs (11 added from nearest neighbours in other documents), 0 unknown refs ignored
+  pairing every claim with every other in its group would have made 82 pairs; claims stating the same value are linked as agreement, and one claim per distinct value (64 values) is compared
+  note: claims in different batches are never grouped together (one batch: no such gap in this run)
+candidate pairs: 40
+  by relation hint : {'conflicting': 28, 'exact': 3, 'contextual': 9}
+  by match route   : {'llm': 29, 'embedding': 11}
+  across documents : 38   inside one document: 2
+exact agreements (corroboration, no LLM): 0
+judged by the LLM: 40 in 5 calls (0 batches failed)
+LLM verdicts: {'not_comparable': 28, 'contextual_difference': 2, 'insufficient_evidence': 7, 'consistent': 3}
+findings saved 7; rejected 0
+single-pair retries 0; verdicts that did not match their pair (echoed values) 0; verdicts without echoed values 0; quotes supplied by code for verdicts that gave none 1
+findings merged because they describe the same discrepancy 1; insufficient-evidence findings absorbed 0; consistent findings grouped 1
+  - 2 findings about one discrepancy became one insufficient_evidence: Ocean acidification pH threshold and measured pH (merged: insufficient_evidence)
+  - 2 consistent findings between Daily_Field_Notes_Vance.docx and Dive_Log_and_Samples.xlsx about Site became one
+
+Verdicts that did not match their pair (first 20):
+  none
+
+Rejected findings (first 15):
+  none
+
+==============================================================================
+EVERY CANDIDATE PAIR AND WHAT HAPPENED TO IT
+==============================================================================
+40 candidate pairs. Outcomes: {'judge': 40}
+
+  #   claim A                                                                 claim B                                                                 hint         route      what happened
+  --  ----------------------------------------------------------------------  ----------------------------------------------------------------------  -----------  ---------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+  1   La | Marine Pathology Laboratory - Post-Expedition Analysis | Analy...  Fi | DSCAP-26 Final Expedition Summary | prepared by | Dr. Aris Thorne  conflicting  llm        judge: not comparable. Claim A identifies the analyst of the laboratory report, while Claim B identifies the preparer of the expedition summary.
+  2   Ex | Deep-Sea Coral Assessment Protocol (DSCAP-26) | Marine Biologi...  Da | Personal Field Journal - Dr. Linnea Vance | author/name | Dr. ...  exact        llm        judge: not comparable. Claim A names the protocol’s Marine Biologist, while Claim B names the personal field journal’s author; the excerpts do not state they...
+  3   In | ROV 'Nautilus' | operational status | completely inoperable        In | vehicle | operational clearance | cleared for subsequent opera...  conflicting  llm        judge: contextual_difference (low), saved: ROV 'Nautilus' status: completely inoperable and cleared for subsequent operations
+  4   Fi | All field activities | compliance | fully compliant                Pe | All activities | protocol compliance | must strictly adhere to...  contextual   llm        judge: insufficient_evidence (low), saved: insufficient evidence: compliance
+  5   Ex | Deep-Sea Coral Assessment Protocol (DSCAP-26) | Date | Septemb...  Fi | DSCAP-26 Final Expedition Summary | date | October 25, 2026        conflicting  llm        judge: not comparable. Claim A gives the protocol document date; Claim B gives the final expedition summary date, so they date different documents.
+  6   Ex | Deep-Sea Coral Assessment Protocol (DSCAP-26) | Date | Septemb...  La | Marine Pathology Laboratory - Post-Expedition Analysis | Date ...  conflicting  llm        judge: not comparable. Claim A gives the protocol document date; Claim B gives the post-expedition analysis report date, so they date different documents.
+  7   Ex | Deep-Sea Coral Assessment Protocol (DSCAP-26) | Date | Septemb...  In | Incident Report #26-04 | Incident Date | October 8, 2026           conflicting  llm        judge: not comparable. Claim A gives the protocol document date; Claim B gives the incident date, so they measure different dates.
+  8   Ex | Deep-Sea Coral Assessment Protocol (DSCAP-26) | Date | Septemb...  In | Incident Report #26-04 | Date of Report | October 10, 2026         conflicting  llm        judge: not comparable. Claim A is the date of the protocol; Claim B is the date of the incident report.
+  9   Ex | Deep-Sea Coral Assessment Protocol (DSCAP-26) | Date | Septemb...  Pe | permit | Valid Dates | October 1, 2026 to October 15, 2026         conflicting  llm        judge: not comparable. Claim A is the date of the protocol; Claim B is the permit's validity period.
+  10  La | Marine Pathology Laboratory - Post-Expedition Analysis | Date ...  Fi | DSCAP-26 Final Expedition Summary | date | October 25, 2026        conflicting  llm        judge: not comparable. Claim A is the date of the laboratory analysis report; Claim B is the date of the final expedition summary.
+  11  Fi | DSCAP-26 Final Expedition Summary | date | October 25, 2026        In | Incident Report #26-04 | Incident Date | October 8, 2026           conflicting  llm        judge: not comparable. Claim A is the summary date; Claim B is the incident date for a different subject.
+  12  In | Incident Report #26-04 | Date of Report | October 10, 2026         Fi | DSCAP-26 Final Expedition Summary | date | October 25, 2026        conflicting  llm        judge: not comparable. Claim A is the report date of Incident Report #26-04; Claim B is the date of the DSCAP-26 Final Expedition Summary.
+  13  Fi | DSCAP-26 Final Expedition Summary | date | October 25, 2026        Pe | permit | Valid Dates | October 1, 2026 to October 15, 2026         conflicting  llm        judge: not comparable. Claim A is the summary date; Claim B is the permit validity period.
+  14  La | Marine Pathology Laboratory - Post-Expedition Analysis | Date ...  In | Incident Report #26-04 | Incident Date | October 8, 2026           conflicting  llm        judge: insufficient_evidence, counted, not saved (no quotes from the model, and the claims' subjects do not match)
+  15  In | Incident Report #26-04 | Date of Report | October 10, 2026         La | Marine Pathology Laboratory - Post-Expedition Analysis | Date ...  conflicting  llm        judge: not comparable. Claim A states the report date of Incident Report #26-04; Claim B states the date of the Marine Pathology Laboratory analysis.
+  16  La | Marine Pathology Laboratory - Post-Expedition Analysis | Date ...  Pe | permit | Valid Dates | October 1, 2026 to October 15, 2026         conflicting  llm        judge: not comparable. Claim A states the date of the laboratory analysis; Claim B states the permit’s validity period.
+  17  In | Incident Report #26-04 | Date of Report | October 10, 2026         In | Incident Report #26-04 | Incident Date | October 8, 2026           conflicting  llm        judge: not comparable. Claim A states the report date; Claim B states the incident date.
+  18  Pe | permit | Valid Dates | October 1, 2026 to October 15, 2026         In | Incident Report #26-04 | Incident Date | October 8, 2026           conflicting  llm        judge: insufficient_evidence, counted, not saved (no quotes from the model, and the claims' subjects do not match)
+  19  In | Incident Report #26-04 | Date of Report | October 10, 2026         Pe | permit | Valid Dates | October 1, 2026 to October 15, 2026         conflicting  llm        judge: not comparable. Claim A states the incident report date, while Claim B states the permit validity period.
+  20  Di | D-04 | Site | Charlie                                              Pe | Site Charlie | designation | Level 1 Protected Zone                conflicting  llm        judge: not comparable. Claim A identifies the site of dive D-04, while Claim B states Site Charlie’s protected-zone designation.
+  21  Di | D-01 | Site | Alpha                                                Da | Oct 2 | dive location | Alpha                                      exact        llm        judge: consistent (informational), saved: Dive location/site: Alpha and Alpha
+  22  Di | D-02 | Site | Bravo                                                Da | Oct 5 | dive location | Bravo                                      exact        llm        judge: consistent (informational), saved: Dive location/site: Bravo and Bravo
+  23  Da | Oct 8 | morning dive | successful                                  In | ROV 'Nautilus' | failure | a catastrophic failure of the port-...  contextual   llm        judge: insufficient_evidence, dropped as not comparable (metrics 'morning dive' and 'failure' share no word)
+  24  In | ROV 'Nautilus' | failure | a catastrophic failure of the port-...  Da | Sarah | reported issue | a thruster issue                          contextual   llm        judge: not comparable. Claim A describes a catastrophic failure of a specific thruster on the ROV, while Claim B describes a thruster issue reported by Sarah.
+  25  Fi | ocean acidification | pH levels | below 7.8 pH                     Wa | 2026-10-02 | pH | 8.12                                             contextual   llm        judge: not comparable. Claim A states a pH threshold associated with ocean acidification at Site Bravo, while Claim B reports a pH measurement for Alpha on 2...
+  26  Fi | ocean acidification | pH levels | below 7.8 pH                     Wa | 2026-10-05 | pH | 8.15                                             contextual   llm        judge: not comparable. Claim A states a pH threshold associated with ocean acidification at Site Bravo, while Claim B reports a pH measurement for Bravo on 2...
+  27  Fi | ocean acidification | pH levels | below 7.8 pH                     Wa | 2026-10-08 | pH | 8.11                                             contextual   llm        judge: insufficient_evidence (low), saved: Site Bravo pH: below 7.8 versus 8.11 [merged into: Ocean acidification pH threshold and measured pH]
+  28  Fi | ocean acidification | pH levels | below 7.8 pH                     Wa | 2026-10-09 | pH | 8.05                                             contextual   llm        judge: insufficient_evidence (low), saved: Ocean acidification pH threshold and measured pH [merged into: Ocean acidification pH threshold and measured pH]
+  29  In | Sarah Jenkins | occupation | ROV Technician                        Ex | Deep-Sea Coral Assessment Protocol (DSCAP-26) | ROV Technician...  conflicting  llm        judge: not comparable. Claim A states Sarah Jenkins's occupation; Claim B names the ROV Technician in the protocol.
+  30  Ex | Deep-Sea Coral Assessment Protocol (DSCAP-26) | Marine Biologi...  La | Marine Pathology Laboratory - Post-Expedition Analysis | Date ...  conflicting  embedding  judge: not comparable. Claim A names the Marine Biologist; Claim B gives the date of the post-expedition analysis report.
+  31  La | Alpha Samples (SPL-001 to 010) | finding | Healthy coral polyp...  Fi | monitored zones | coral bleaching events | significant             conflicting  embedding  judge: insufficient_evidence, dropped as not comparable (metrics 'finding' and 'coral bleaching events' share no word)
+  32  Ex | Methodology & Schedule | Collected materials | video transects...  Fi | ROV Nautilus | data collection | uninterrupted daily               conflicting  embedding  judge: not comparable. Claim A specifies materials collected, while Claim B describes the frequency and continuity of data collection.
+  33  Di | D-02 | Samples_Collected | SPL-011 to SPL-025                      La | Bravo Samples (SPL-011 to 030) | finding | Moderate stress ind...  conflicting  embedding  judge: not comparable. Claim A identifies sample IDs collected on dive D-02, while Claim B reports an analysis finding for the Bravo sample group.
+  34  La | Charlie Samples (SPL-031 to 038) | finding | Severe tissue deg...  Di | D-04 | Samples_Collected | SPL-031 to SPL-038                      conflicting  embedding  judge: insufficient_evidence, counted, not saved (no quotes from the model, and the claims' subjects do not match)
+  35  Pe | permit | maximum samples | 50 samples                              Fi | DSCAP-26 expedition | samples collected | 38 samples               contextual   embedding  judge: consistent (informational), saved: Permit maximum of 50 samples and 38 samples collected
+  36  Fi | All field activities | compliance | fully compliant                Pe | Scientific Research Permit | issuing organization | Global Oce...  contextual   embedding  judge: not comparable. Claim A measures compliance of field activities; claim B identifies the permit’s issuing organization.
+  37  Ex | Site Charlie | Coordinates | 15.30, 145.95                         Pe | Site Charlie | designation | Level 1 Protected Zone                conflicting  embedding  judge: not comparable. Claim A gives Site Charlie’s coordinates; claim B states its protected-zone designation.
+  38  Da | ROV | status | back online                                         In | ROV | downtime period | the entirety of October 9, 2026            conflicting  embedding  judge: contextual_difference (low), saved: ROV status: back online versus offline during October 9
+  39  Da | Oct 5 | turbidity | exceptionally high                             Wa | 2026-10-05 | Turbidity_NTU | 15 NTU                                conflicting  embedding  judge: insufficient_evidence (low), saved: Oct 5 turbidity at Bravo: “exceptionally high” versus 15 NTU
+  40  Ex | Methodology & Schedule | Schedule | Oct 1 - Oct 12, 2026           Wa | 2026-10-08 | Site | Bravo                                          conflicting  embedding  judge: not comparable. Claim A gives the expedition schedule; claim B identifies the site for a water-quality record.
+
+==============================================================================
+REFERENCED ITEMS NOT IN THE DATA ROOM (single-claim missing information)
+==============================================================================
+references returned with the claims: 2; found in the data room: 0; saved as missing information: 1; rejected by the quote check: 0; repeats skipped: 0
+  missing: Approved Environmental Impact Assessment (EIA) Document (Ref: GOA-EIA-2026)
+  missing: Appendix A
+
+==============================================================================
+LLM CALLS: tokens, context size, latency, failures
+==============================================================================
+Per phase:
+  phase               attempts  failed  prompt tok  completion tok  thinking tok  avg ctx tok  max ctx tok  avg ms  p95 ms  total s
+  ------------------  --------  ------  ----------  --------------  ------------  -----------  -----------  ------  ------  -------
+  group claims (LLM)  1         0       0           0               0             0            0            201440  201440  201.4
+  judge pairs         5         0       0           0               0             0            0            8716    11420   43.6
+
+Every provider attempt (context = what was sent; tokens as counted by the API):
+  #  phase               at s   result  ctx chars  ctx tokens  cached  completion  thinking  total tok  latency ms  resp chars  error
+  -  ------------------  -----  ------  ---------  ----------  ------  ----------  --------  ---------  ----------  ----------  -----
+  1  group claims (LLM)  202.1  ok      28,124     0           0       0           0         0          201440      2,044
+  2  judge pairs         404.6  ok      25,766     0           0       0           0         0          8098        4,728
+  3  judge pairs         404.6  ok      25,721     0           0       0           0         0          8104        3,521
+  4  judge pairs         404.6  ok      25,156     0           0       0           0         0          8384        3,812
+  5  judge pairs         404.6  ok      24,489     0           0       0           0         0          11420       3,749
+  6  judge pairs         412.7  ok      19,760     0           0       0           0         0          7575        3,187
+
+==============================================================================
+EMBEDDING CALLS
+==============================================================================
+calls 10, failed 0, texts 125 (claim topic texts embedded locally for matching)
+
+  #   texts  chars  latency ms  result  error
+  --  -----  -----  ----------  ------  -----
+  1   1      680    556         ok
+  2   1      714    33          ok
+  3   4      863    36          ok
+  4   1      806    34          ok
+  5   3      752    20          ok
+  6   1      580    24          ok
+  7   1      671    31          ok
+  8   1      556    35          ok
+  9   64     7,313  527         ok
+  10  48     4,552  275         ok
+
+==============================================================================
+FAILURES
+==============================================================================
+LLM attempt failures:
+  none
+Documents not fully read:
+  none
+Pair-judging problems:
+  none
+
+==============================================================================
+TIMING
+==============================================================================
+  stage                                            duration  share of wall time
+  -----------------------------------------------  --------  ------------------
+  0. scan files, process new or changed ones       2.5s      1%
+  1. read every chunk, extract claims              199.3s    47%
+  2. match claims (LLM grouping of sorted claims)  202.5s    48%
+  3. judge pairs, verify quotes, save findings     15.8s     4%
+  3b. referenced items absent from the data room   0.0s      0%
+  4. per-document verdicts                         0.0s      0%
+
+==============================================================================
+KNOWN LIMITS OF THIS RUN
+==============================================================================
+- Reading is all-or-nothing per document: if one batch fails after all retries, that document's claims are discarded and it counts as not read.
+- Candidate matching keeps at most 5 partners per claim (an existing default), so some comparable pairs are never judged.
+- The claim-extraction prompt lists business categories (capacity, supply, pricing, ...) and is not yet domain-agnostic.
+- Claims inside one document are also paired and judged; matching quality depends on how the model labels subject/metric/unit/period.
+- Exact agreements are trusted as corroboration without an LLM check.

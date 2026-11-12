@@ -1,0 +1,193 @@
+TEST RUN  20261112-124039  ui-run
+==============================================================================
+
+HOW THIS RUN WAS ACHIEVED
+1. Reading: the documents selected for this run were uploaded to LlamaExtract (LlamaIndex Cloud, cost_effective tier), which returns claims with the page and text they came from; each claim is tied to a stored chunk and kept only if its value appears in that chunk text.
+2. Ledger: accepted claims are stored in the claims table; the claims are sorted by label and sent to the LLM in batches of up to 60,000 characters, which groups the ones that state the same attribute of the same subject (no code pairing, no fixed number of documents or claims assumed).
+3. Judging: pairs that agree exactly count as corroboration; every other pair (conflicting, partial, contextual) goes to the LLM in batches of up to 12,000 characters with both source excerpts.
+4. Findings: a discrepancy is saved only if its two quotes are exact substrings of their chunks (checked in code); per-document verdicts were skipped by request.
+5. Model: cost_effective, through LlamaExtract, up to 5 attempts per call honouring the provider's retry delay; no step, tool-call or finding limits.
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+>>> THIS RUN WAS STOPPED BEFORE IT FINISHED: everything below covers only the part that ran. <<<
+Run started   : 2026-11-12 12:40:39 (local)   finished: 13:05:34   wall time: 1495.1s
+Config        : ui-run
+Database      : data_room (documents were already processed; reused)
+Code version  : git db9f178 + uncommitted changes   python 3.14.5
+Documents     : 8; fully read 8, incomplete 0
+Chunks        : 217 total; sent to the LLM 214 (headings are skipped by the extractor: 3)
+Claims        : 1125 recorded, 3 rejected (value not found in cited chunk or unknown chunk id), 14 skipped because the value was only the label of its own row
+Extraction    : up to any number of chunks per call (and 8,000 characters); running vocabulary off; coverage check off
+Extractor     : LlamaExtract (cost_effective tier) instead of the LLM: 8 documents uploaded to LlamaIndex Cloud, 162 credits used, 0 documents failed (the batch and coverage settings above do not apply)
+Pairs         : 65 candidates; 0 agreed exactly (not sent to the LLM); 0 judged; verdicts {}
+Findings      : 0 saved with verified quotes; 0 rejected (quotes missing or not exact)
+LLM calls     : 6 provider attempts (0 failed, 0 retries incl. invalid-output retries), 645.7s total, avg 107613ms
+Tokens        : prompt 0  completion 0  thinking 0  cached 0  total 0   (cost not computed: no price per token configured)
+Context/call  : prompt tokens min 0  avg 0  max 0
+
+==============================================================================
+NEW OR CHANGED FILES AND CLAIM RESET
+==============================================================================
+claims deleted at the start of this run: 234 (all claims in this run are newly extracted)
+scan: discovered 8, new 0, updated 0, unchanged 8, missing 0
+      duplicates skipped (same content): none
+
+  new or changed file                                  status     chunks  extract s  chunk ms  save ms  embed s  note
+  ---------------------------------------------------  ---------  ------  ---------  --------  -------  -------  ----
+  01_IMPA_Research_Permit_IMPA-RP-2025-0147.pdf        processed  7       1.5        0         68       0.8
+  02_Field_Survey_Protocol_MIMS-REG-PRT-007_v2.2.docx  processed  24      0.1        0         63       1.1
+  03_Dive_Log_and_Sample_Register_IR-2025-03.xlsx      processed  32      0.1        2         78       1.5
+  04_Benthic_Survey_Data_IR-2025-03.xlsx               processed  44      0.0        1         74       2.1
+  05_Temperature_Logger_and_SST_Data.xlsx              processed  80      0.1        6         104      3.7
+  06_CGL_Laboratory_Report_CGL-R-25-0412.pdf           processed  12      1.4        0         66       0.6
+  07_Deviation_and_Incident_Register_IR-2025-03.docx   processed  8       0.0        0         60       0.4
+  08_Expedition_Summary_Report_IR-2025-03.pdf          processed  10      0.8        0         57       0.6
+
+==============================================================================
+CONTRADICTIONS ONLY (classification = contradiction)
+==============================================================================
+No finding was classified as a contradiction in this run.
+
+==============================================================================
+FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)
+==============================================================================
+[section failed: AttributeError: 'types.SimpleNamespace' object has no attribute 'termination']
+
+==============================================================================
+COVERAGE AND PER-DOCUMENT VERDICTS
+==============================================================================
+Coverage: 'read' = chunks the LLM was shown. A document counts as fully read only if every batch succeeded (all-or-nothing per document).
+
+  document                                             chunks  read  fully read  claims  LLM calls  tokens  extract s  verdict  reason
+  ---------------------------------------------------  ------  ----  ----------  ------  ---------  ------  ---------  -------  ------
+  01_IMPA_Research_Permit_IMPA-RP-2025-0147.pdf        7       7     yes         113     0          0       87.5       -
+  02_Field_Survey_Protocol_MIMS-REG-PRT-007_v2.2.docx  24      22    yes         184     0          0       257.4      -
+  03_Dive_Log_and_Sample_Register_IR-2025-03.xlsx      32      32    yes         292     0          0       148.3      -
+  04_Benthic_Survey_Data_IR-2025-03.xlsx               44      44    yes         67      0          0       37.9       -
+  05_Temperature_Logger_and_SST_Data.xlsx              80      80    yes         0       0          0       56.4       -
+  06_CGL_Laboratory_Report_CGL-R-25-0412.pdf           12      12    yes         234     0          0       107.4      -
+  07_Deviation_and_Incident_Register_IR-2025-03.docx   8       7     yes         111     0          0       77.0       -
+  08_Expedition_Summary_Report_IR-2025-03.pdf          10      10    yes         124     0          0       61.3       -
+
+==============================================================================
+CLAIM LEDGER
+==============================================================================
+claims recorded 1125, rejected 3
+
+Per document (paired = has a comparable claim elsewhere; corroborated = same value stated elsewhere; unpaired = nothing comparable found):
+  document                                             claims  paired  corroborated  unpaired  pairs judged  findings
+  ---------------------------------------------------  ------  ------  ------------  --------  ------------  --------
+  01_IMPA_Research_Permit_IMPA-RP-2025-0147.pdf        113     0       0             0         0             0
+  02_Field_Survey_Protocol_MIMS-REG-PRT-007_v2.2.docx  184     0       0             0         0             0
+  03_Dive_Log_and_Sample_Register_IR-2025-03.xlsx      292     0       0             0         0             0
+  04_Benthic_Survey_Data_IR-2025-03.xlsx               67      0       0             0         0             0
+  05_Temperature_Logger_and_SST_Data.xlsx              0       0       0             0         0             0
+  06_CGL_Laboratory_Report_CGL-R-25-0412.pdf           234     0       0             0         0             0
+  07_Deviation_and_Incident_Register_IR-2025-03.docx   111     0       0             0         0             0
+  08_Expedition_Summary_Report_IR-2025-03.pdf          124     0       0             0         0             0
+
+Rejected claims by reason (first 15):
+  - value 'collection of coral fragments (*Pocillopora verrucosa*) for genetic analysis' not found in any chunk of 01_IMPA_Research_Permit_IMPA-RP-2025-0147.pdf
+  - value 'not standardised' not found in any chunk of 06_CGL_Laboratory_Report_CGL-R-25-0412.pdf
+  - value '15 Mar 2025 08:35' not found in any chunk of 07_Deviation_and_Incident_Register_IR-2025-03.docx
+
+==============================================================================
+PAIR MATCHING AND JUDGING
+==============================================================================
+pairing mode: LLM grouping of sorted claims: 1125 claims in 6 batch(es), 6 call(s) (0 failed), 63 groups covering 134 claims (largest 4), 65 pairs (0 added from nearest neighbours in other documents), 0 unknown refs ignored
+  pairing every claim with every other in its group would have made 80 pairs; claims stating the same value are linked as agreement, and one claim per distinct value (97 values) is compared
+  note: claims in different batches are never grouped together (more than one batch in this run)
+candidate pairs: 65
+  by relation hint : {'contextual': 8, 'exact': 40, 'partial': 2, 'conflicting': 15}
+  by match route   : {'llm': 65}
+  across documents : 50   inside one document: 15
+exact agreements (corroboration, no LLM): 0
+judged by the LLM: 0 in 0 calls (0 batches failed)
+LLM verdicts: {}
+findings saved 0; rejected 0
+single-pair retries 0; verdicts that did not match their pair (echoed values) 0; verdicts without echoed values 0; quotes supplied by code for verdicts that gave none 0
+findings merged because they describe the same discrepancy 0; insufficient-evidence findings absorbed 0; consistent findings grouped 0
+
+Verdicts that did not match their pair (first 20):
+  none
+
+Rejected findings (first 15):
+  none
+
+==============================================================================
+EVERY CANDIDATE PAIR AND WHAT HAPPENED TO IT
+==============================================================================
+0 candidate pairs. Outcomes: {}
+
+  #  claim A  claim B  hint  route  what happened
+  -  -------  -------  ----  -----  -------------
+
+==============================================================================
+REFERENCED ITEMS NOT IN THE DATA ROOM (single-claim missing information)
+==============================================================================
+not run (needs the LlamaExtract extractor, which returns the references)
+
+==============================================================================
+LLM CALLS: tokens, context size, latency, failures
+==============================================================================
+Per phase:
+  phase               attempts  failed  prompt tok  completion tok  thinking tok  avg ctx tok  max ctx tok  avg ms  p95 ms  total s
+  ------------------  --------  ------  ----------  --------------  ------------  -----------  -----------  ------  ------  -------
+  group claims (LLM)  6         0       0           0               0             0            0            107613  224643  645.7
+
+Every provider attempt (context = what was sent; tokens as counted by the API):
+  #  phase               at s    result  ctx chars  ctx tokens  cached  completion  thinking  total tok  latency ms  resp chars  error
+  -  ------------------  ------  ------  ---------  ----------  ------  ----------  --------  ---------  ----------  ----------  -----
+  1  group claims (LLM)  849.3   ok      62,387     0           0       0           0         0          84675       292
+  2  group claims (LLM)  934.0   ok      62,252     0           0       0           0         0          75474       775
+  3  group claims (LLM)  1009.5  ok      62,044     0           0       0           0         0          77561       333
+  4  group claims (LLM)  1087.1  ok      62,405     0           0       0           0         0          98721       959
+  5  group claims (LLM)  1185.8  ok      62,165     0           0       0           0         0          224643      968
+  6  group claims (LLM)  1410.4  ok      26,466     0           0       0           0         0          84602       784
+
+==============================================================================
+EMBEDDING CALLS
+==============================================================================
+calls 9, failed 0, texts 217 (claim topic texts embedded locally for matching)
+
+  #  texts  chars   latency ms  result  error
+  -  -----  ------  ----------  ------  -----
+  1  7      5,531   779         ok
+  2  24     12,381  1097        ok
+  3  32     29,973  1416        ok
+  4  44     37,006  1959        ok
+  5  64     56,621  2807        ok
+  6  16     14,645  684         ok
+  7  12     7,121   525         ok
+  8  8      4,006   345         ok
+  9  10     6,376   502         ok
+
+==============================================================================
+FAILURES
+==============================================================================
+LLM attempt failures:
+  none
+Documents not fully read:
+  none
+Pair-judging problems:
+  none
+
+==============================================================================
+TIMING
+==============================================================================
+  stage                                            duration  share of wall time
+  -----------------------------------------------  --------  ------------------
+  0. scan files, process new or changed ones       15.5s     1%
+  1. read every chunk, extract claims              833.1s    56%
+  2. match claims (LLM grouping of sorted claims)  646.1s    43%
+
+==============================================================================
+KNOWN LIMITS OF THIS RUN
+==============================================================================
+- Reading is all-or-nothing per document: if one batch fails after all retries, that document's claims are discarded and it counts as not read.
+- Candidate matching keeps at most 5 partners per claim (an existing default), so some comparable pairs are never judged.
+- The claim-extraction prompt lists business categories (capacity, supply, pricing, ...) and is not yet domain-agnostic.
+- Claims inside one document are also paired and judged; matching quality depends on how the model labels subject/metric/unit/period.
+- Exact agreements are trusted as corroboration without an LLM check.
