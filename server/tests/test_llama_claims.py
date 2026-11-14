@@ -220,3 +220,46 @@ def test_a_short_pdf_and_a_document_that_is_not_a_pdf_are_read_in_one_job(sessio
     ex = LlamaClaimExtractor(session, FakeClient({"claims": []}), Path("/data_room"), pages_per_job=5)
     assert ex._page_ranges(room.deck) == [] and ex._page_ranges(room.capex) == []
     assert LlamaClaimExtractor(session, FakeClient({}), Path("/data_room"), pages_per_job=1)._page_ranges(room.deck) == ["1-1", "2-2"]
+
+
+# ---- what the extraction call says beyond the value --------------------------------------------------------------------------------------
+def test_the_tags_the_extraction_call_returns_are_stored_with_the_claim(session, room):  # noqa: F811
+    client = FakeClient({"claims": [claim(basis="planned", precision="approximate", anchor="event start", complete=True, about="document", quantifier="none")]})
+    extractor(session, room, client).extract_document(room.deck, ExtractionSummary())
+    assert session.scalars(select(Claim)).one().assumptions == ["@about: document", "@basis: planned", "@precision: approximate", "@quantifier: none", "@anchor: event start", "@complete: list"]
+
+
+def test_a_claim_with_only_defaults_stores_no_tags(session, room):  # noqa: F811
+    extractor(session, room, FakeClient({"claims": [claim(about="content", precision="exact")]})).extract_document(room.deck, ExtractionSummary())
+    assert not session.scalars(select(Claim)).one().assumptions
+
+
+def test_a_year_that_is_part_of_the_subjects_name_is_not_a_date(session, room):  # noqa: F811
+    summary = ExtractionSummary()
+    extractor(session, room, FakeClient({"claims": [claim(subject="Plant Forum 2024", metric="event date", value="2024", value_type="date", unit=None,
+                                                          claim_text="EBITDA margin for 2024 was 18% of revenue.")]})).extract_document(room.deck, summary)
+    assert session.scalar(select(Claim)) is None and summary.claims_skipped_by_rule == 1
+
+
+def test_a_disclaimer_sentence_gives_neither_a_claim_nor_a_reference(session, room):  # noqa: F811
+    sentence = "This report does not replace the audited accounts, the venue contract or the delegate feedback forms."
+    client = FakeClient({"claims": [claim(subject="report", metric="replacement", value="does not replace", unit=None, claim_text=sentence, value_type="statement")],
+                         "references": [{"item": "audited accounts", "quote": sentence}]})
+    ex = extractor(session, room, client)
+    summary = ExtractionSummary()
+    ex.extract_document(room.deck, summary)
+    assert session.scalar(select(Claim)) is None and ex.references == [] and summary.claims_skipped_by_rule == 1
+
+
+def test_the_issuer_goes_into_the_purpose_and_the_main_entity_stays_what_the_document_is_about():
+    from app.services.llama_claims import LlamaProfile
+    profile = LlamaProfile(main_entity="Lakeside Health Forum 2025", purpose="Reports the costs.", issuer="Norvale Medical Society").to_profile()
+    assert profile.main_entity == "Lakeside Health Forum 2025" and profile.purpose == "Reports the costs. Issued by Norvale Medical Society."
+
+
+def test_tags_never_make_two_claims_differ_in_context():
+    from app.schemas.claim import ClaimView
+    from app.services.candidate_matching import compare_attributes
+    a = ClaimView(id="a", document_id="d1", chunk_id="c1", subject="x", metric="m", value="1", assumptions=["@basis: actual"])
+    b = ClaimView(id="b", document_id="d2", chunk_id="c2", subject="x", metric="m", value="2", assumptions=[])
+    assert compare_attributes(a, b).assumptions_differ is False

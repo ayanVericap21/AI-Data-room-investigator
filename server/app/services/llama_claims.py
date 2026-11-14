@@ -21,6 +21,7 @@ from app.llm.llama_extract import LlamaExtractClient, LlamaExtractError, LlamaJo
 from app.models import Claim, Document, DocumentChunk
 from app.schemas.claim import ClaimExtractionResult, ExtractedClaim
 from app.services.claim_service import EXCERPT_TYPES_SKIPPED, ClaimService, ExtractionSummary
+from app.services.claim_tags import make_tags
 from app.services.doc_profiles import DocProfile
 from app.services.missing_items import DocReference
 from app.services.numbers import value_supported_by_text
@@ -54,22 +55,32 @@ SCHEMA: dict[str, Any] = {
             "items": {
                 "type": "object",
                 "properties": {
-                    "subject": {"type": "string", "description": "What the value is about. For a table row, the row's identifying label (the entry in its ID or name column), never the table or sheet name. When the row is identified by several columns together (an entity and a date or period, a place and a date), the subject names all of them"},
-                    "metric": {"type": "string", "description": "The quantity or attribute that has the value"},
-                    "value": {"type": "string", "description": "The value exactly as written in the document"},
+                    "subject": {"type": "string", "description": "The specific thing the value belongs to (the item, room, party, invoice, hall, document), not the project or event the whole document is about unless the value is a property of that event itself. For a table row, the row's identifying label (the entry in its ID or name column), never the table or sheet name. When the row is identified by several columns together (an entity and a date or period, a place and a date), the subject names all of them"},
+                    "metric": {"type": "string", "description": "A short noun phrase naming the attribute that has the value, worded the same way every time the same attribute appears; it names what is compared (catering spend against budget)"},
+                    "value": {"type": "string", "description": "The value exactly as written in the document. For an assertion about how many (all, none, some, not all) the quantifier as written. For a list of names or items in one sentence, the whole list as written"},
                     "unit": {"type": "string", "description": "Unit of the value, if stated"},
-                    "period": {"type": "string", "description": "Period or date the value applies to, if stated"},
+                    "period": {"type": "string", "description": "Period or date the value applies to, if stated. A relative period (day 2, week 3, within 30 days of handover, after completion) is written here as the document words it, together with its anchor, and is never a claim of its own"},
                     "conditions": {"type": "string", "description": "Scope or condition limiting the value, if stated"},
                     "claim_text": {"type": "string", "description": "The sentence or line that states it, copied from the document"},
                     "value_type": {"type": "string", "enum": list(VALUE_TYPES),
                                    "description": VALUE_TYPE_HELP},
+                    "about": {"type": "string", "enum": ["content", "document"],
+                              "description": "document when the claim is about the document itself (its title, type, number, version, revision, its own date, who wrote it); content when it is about what the document covers"},
+                    "basis": {"type": "string", "enum": ["actual", "revised", "planned", "contracted", "forecast", "estimated", "limit"],
+                              "description": "How the sentence words the value: actual (achieved, occurred, final), revised, planned, contracted, forecast, estimated, or limit (maximum, minimum, at least). Leave out when the sentence says nothing"},
+                    "precision": {"type": "string", "enum": ["exact", "approximate", "vague"],
+                                  "description": "approximate for about, around, over, at least; vague for words with no number (broadly in line, significant); otherwise exact"},
+                    "quantifier": {"type": "string", "enum": ["all", "none", "some", "most", "not_all"],
+                                   "description": "For an assertion about how many: all, none, some, most or not_all. The metric names what it covers (workshops recorded)"},
+                    "anchor": {"type": "string", "description": "Required whenever period or value is relative to an event (day 2, week 3, within 30 days of handover, after completion): the event or date it is counted from, as the document names it, or the event the document is about when it says only day 2 or week 3"},
+                    "complete": {"type": "boolean", "description": "For a list claim: true when the text says the list is complete (in full, all, only) or states how many there are"},
                 },
                 "required": ["subject", "metric", "value", "claim_text", "value_type"],
             },
         },
         "references": {
             "type": "array",
-            "description": "Every document, annex, schedule, exhibit, attachment, table, report, approval, certificate or record that the text says exists elsewhere, is attached or included, or is missing, not provided, not yet received, pending or outstanding. Not a section of this same document, and not a kind of document named in a general disclaimer.",
+            "description": "Every document, annex, schedule, exhibit, attachment, table, report, approval, certificate or record that the text says exists elsewhere, is attached or included, or is missing, not provided, not yet received, pending or outstanding. Not a section of this same document, not a kind of document named in a general disclaimer, and nothing from a sentence that only says what the document is not or does not replace.",
             "items": {
                 "type": "object",
                 "properties": {
@@ -83,7 +94,8 @@ SCHEMA: dict[str, Any] = {
             "type": "object",
             "description": "A short description of the whole document, so that its claims can be read in context.",
             "properties": {
-                "main_entity": {"type": "string", "description": "The organisation, project, product, person or event the document is mainly about, by name"},
+                "main_entity": {"type": "string", "description": "The organisation, project, product, person or event the document is mainly about, by name (what it is about, not who wrote it)"},
+                "issuer": {"type": "string", "description": "Who wrote or issued the document, by name, only if it states one"},
                 "document_type": {"type": "string", "description": "What kind of document it is, for example permit, contract, financial model, lab report, presentation, register, minutes"},
                 "purpose": {"type": "string", "description": "What the document is for, in one sentence"},
                 "date": {"type": "string", "description": "The document's date or version, only if it states one"},
@@ -109,7 +121,19 @@ SYSTEM_PROMPT = (
     "Do not list a section of the same document, and do not list a kind of document that a general disclaimer names (for example a statement that the document is not an audit report or a filing). "
     "Return an empty references list when there are none. "
     "Also return profile: a short description of the whole document (main_entity, document_type, purpose, date, status, scope), "
-    "stating only what the document itself says; leave date and status empty when it gives none.")
+    "stating only what the document itself says; leave date and status empty when it gives none. "
+    "SUBJECT AND METRIC: the subject is the specific thing the value belongs to (the item, room, party, invoice, hall, document), not the project or event the whole document is about, "
+    "unless the value is a property of that event itself. The metric is a short noun phrase naming the attribute, worded the same way every time the same attribute appears, and it names "
+    "what is compared (catering spend against budget, not just catering spend). A year that is part of a name (Forum 2025) is not a date: never return it as one. "
+    "DOCUMENT DETAILS: a claim about the document itself (title, type, number, version, revision, its own date, who wrote it) has about = document and the document as its subject; every other claim has about = content. "
+    "BASIS: set basis when the sentence words the value as actual (achieved, occurred, final), revised, planned, contracted, forecast, estimated or a limit (maximum, minimum, at least); leave it out otherwise. "
+    "PRECISION: approximate for about, around, over, at least; vague for words with no number (broadly in line, significant); otherwise exact. "
+    "QUANTIFIER: for an assertion about how many (all, none, some, most, not all) the value is the quantifier as written, quantifier repeats it (all, none, some, most or not_all), and the metric names what it covers (workshops recorded). "
+    "FACTS INSIDE A CLAUSE: when a sentence states a fact inside a clause or qualifier (an external caterer, a subcontractor, an exception), return that fact as its own claim as well (external caterer used: yes). "
+    "LISTS: a list of names or items in one sentence is ONE claim: the value is the whole list as written and the metric names what the items are; set complete to true when the text says the list is complete "
+    "(in full, all, only) or states how many there are; a count stated in the sentence is a separate claim. "
+    "RELATIVE DATES: a period or date counted from an event (day 2, week 3, within 30 days of handover, after completion) goes in period of the claim it belongs to, never as a claim of its own, and anchor always names the event it is counted from: the event the document names, or the event the document is about when it says only day 2 or week 3. "
+    "DISCLAIMERS: ignore a sentence that only says what the document is not or does not replace: return no claim and no reference for it.")
 
 
 class LlamaClaim(BaseModel):
@@ -121,6 +145,16 @@ class LlamaClaim(BaseModel):
     conditions: str | None = None
     claim_text: str = ""
     value_type: str | None = None
+    about: str | None = None
+    basis: str | None = None
+    precision: str | None = None
+    quantifier: str | None = None
+    anchor: str | None = None
+    complete: bool | None = None
+
+    @property
+    def tags(self) -> list[str]:
+        return make_tags(self.about, self.basis, self.precision, self.quantifier, self.anchor, self.complete)
 
     @property
     def kind(self) -> str | None:
@@ -142,9 +176,13 @@ class LlamaProfile(BaseModel):
     date: str | None = None
     status: str | None = None
     scope: str | None = None
+    issuer: str | None = None  # who wrote it: kept in the purpose, so the main entity is what the document is about
 
     def to_profile(self) -> DocProfile:
-        return DocProfile(**{k: (v or "").strip() for k, v in self.model_dump().items()})
+        fields = {k: (v or "").strip() for k, v in self.model_dump().items() if k != "issuer"}
+        if (self.issuer or "").strip():
+            fields["purpose"] = f"{fields['purpose']} Issued by {self.issuer.strip()}.".strip()
+        return DocProfile(**fields)
 
 
 class LlamaClaims(BaseModel):
@@ -165,6 +203,17 @@ def _citation(metadata: dict[str, Any], index: int, field: str) -> tuple[int | N
         return None, ""
     text = entry.get("matching_text") or ""
     return entry.get("page"), "" if re.fullmatch(r"claims\.\d+\.\w+", text) else text  # an internal path, not source text
+
+
+# a sentence that only says what the document is not, or does not replace: it states no value and names nothing the room should contain
+DISCLAIMER = re.compile(r"\b(?:does|do|did)\s+not\s+(?:replace|supersede|constitute|amount\s+to|purport)\b|\b(?:is|are)\s+not\s+(?:an?|the)\s+(?:audit|audited|substitute|offer|filing)\b|"
+                        r"\bnot\s+(?:intended|meant)\s+to\s+(?:replace|be)\b|\bno\s+substitute\s+for\b", re.IGNORECASE)
+
+
+def _year_in_name(claim: "LlamaClaim") -> bool:
+    """A "date" that is only the year written in the subject's name (event date 2025 about "Lakeside Health Forum 2025"): part of a name, not a date."""
+    value = str(claim.value or "").strip()
+    return claim.kind == "date" and bool(re.fullmatch(r"\d{4}", value)) and value in (claim.subject or "")
 
 
 def _is_own_label(claim: "LlamaClaim") -> bool:
@@ -335,6 +384,9 @@ class LlamaClaimExtractor:
             if _is_own_label(claim):
                 summary.claims_skipped_as_labels += 1
                 continue
+            if _year_in_name(claim) or DISCLAIMER.search(claim.claim_text or ""):
+                summary.claims_skipped_by_rule += 1
+                continue
             page, cited = _citation(job.metadata, index, "value")
             if page is None:
                 page, cited = _citation(job.metadata, index, "claim_text")
@@ -348,7 +400,7 @@ class LlamaClaimExtractor:
                 continue
             extracted.append(ExtractedClaim(
                 chunk_id=chunk.id, subject=claim.subject, metric=claim.metric, value=value, unit=claim.unit,
-                period=claim.period, conditions=claim.conditions, claim_category=claim.kind,
+                period=claim.period, conditions=claim.conditions, claim_category=claim.kind, assumptions=claim.tags,
                 claim_text=claim.claim_text or f"{claim.metric}: {claim.value}"))
         created = self._claims._persist(doc, chunks, ClaimExtractionResult(claims=extracted), summary)
         self.session.commit()
@@ -367,7 +419,7 @@ class LlamaClaimExtractor:
         """Remember each reference with the chunk whose text holds its sentence (the exact source text); one that cannot be placed is dropped."""
         for ref in parsed.references:
             item, quote = ref.item.strip(), ref.quote.strip()
-            if not item or len(quote) < 8:
+            if not item or len(quote) < 8 or DISCLAIMER.search(quote):
                 continue
             for chunk in chunks:
                 span = find_source_span(chunk.content, quote)

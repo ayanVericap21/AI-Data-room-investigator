@@ -301,3 +301,28 @@ def test_severity_is_critical_for_a_large_gap_when_the_rest_of_the_rule_group_is
     assert contradiction_severity(claims) == "high" and contradiction_severity(claims, [obligation]) == "critical"
     found = {f.kind: f for f in find_relations(SPEND)}
     assert found["average_total"].severity == "critical"
+
+
+# ---- the judge reads the extraction call's tags ---------------------------------------------------------------------------------------
+def test_the_basis_the_extraction_call_names_decides_a_planned_and_an_actual_figure_without_the_model(session, room):  # noqa: F811
+    plan = claim_in(session, "plan.pdf", "Start: 1 March 2025.", "1 March 2025", subject="works", metric="start date", category="date", assumptions=["@basis: planned"])
+    actual = claim_in(session, "log.pdf", "Start: 3 March 2025.", "3 March 2025", subject="works", metric="start date", category="date", assumptions=["@basis: actual"])
+    llm = MockLLMClient([])
+    stats = judge(session, room, llm).run([candidate(plan, actual)])
+    assert llm.prompts == [] and stats.groups_basis == 1
+
+
+def test_a_claim_the_extraction_call_marks_as_about_its_document_is_never_compared_with_content(session, room):  # noqa: F811
+    a = claim_in(session, "a.pdf", "Signed by A. Rao.", "A. Rao", subject="agreement", metric="signatory", category="name", assumptions=["@about: document"])
+    b = claim_in(session, "b.pdf", "Signed by B. Khan.", "B. Khan", subject="agreement", metric="signatory", category="name", assumptions=["@about: document"])
+    llm = MockLLMClient([])
+    stats = judge(session, room, llm).run([candidate(a, b)])
+    assert llm.prompts == [] and stats.groups_labels == 1
+
+
+def test_a_vague_or_approximate_value_is_never_agreed_in_code(session, room):  # noqa: F811
+    a = claim_in(session, "a.pdf", "Spend is broadly 500 units.", "500 units", metric="spend", assumptions=["@precision: vague"])
+    b = claim_in(session, "b.pdf", "Spend is 500 units.", "500 units", metric="spend")
+    llm = MockLLMClient([{"verdicts": []}, {"verdicts": []}])
+    stats = judge(session, room, llm).run([candidate(a, b)])
+    assert stats.groups_agreed == 0 and llm.prompts

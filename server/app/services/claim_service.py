@@ -38,6 +38,7 @@ class ExtractionSummary:
     claims_created: int = 0
     claims_rejected: int = 0
     claims_ellipsis_expanded: int = 0  # claims whose value the extractor shortened with an ellipsis and code restored from the source text
+    claims_skipped_by_rule: int = 0  # a year inside a name returned as a date, and disclaimer sentences
     claims_skipped_as_labels: int = 0  # claims whose value is only the label of their own row (the ID), which is not a value
     llm_calls: int = 0
     coverage_chunks_checked: int = 0  # chunks with at least one number no claim accounted for

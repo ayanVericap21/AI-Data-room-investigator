@@ -124,7 +124,7 @@ def sec_glance(R):
             f"Chunks        : {sum(d['chunks'] for d in docs)} total; sent to the LLM {sum(d['readable'] for d in docs if d['ok'])} "
             f"(headings are skipped by the extractor: {sum(d['chunks'] - d['readable'] for d in docs)})",
             f"Claims        : {ex.claims_created} recorded, {ex.claims_rejected} rejected (value not found in cited chunk or unknown chunk id), "
-            f"{ex.claims_skipped_as_labels} skipped because the value was only the label of its own row, "
+            f"{ex.claims_skipped_as_labels} skipped because the value was only the label of its own row, {ex.claims_skipped_by_rule} skipped as a year inside a name or a disclaimer sentence, "
             f"{ex.claims_ellipsis_expanded} values shortened by the extractor with an ellipsis restored from the source text",
             *([f"NO CLAIMS     : {', '.join(ex.documents_without_claims)} (text has values, extractor returned none: not treated as fully read)"] if ex.documents_without_claims else []),
             f"Extraction    : up to {R.args.batch_chunks or 'any number of'} chunks per call (and {R.args.batch_chars:,} characters); running vocabulary {R.args.vocabulary}; "

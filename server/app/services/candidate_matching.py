@@ -20,6 +20,7 @@ from collections import defaultdict
 
 from app.schemas.claim import AttributeComparison, Candidate, ClaimView
 from app.services import value_rules
+from app.services.claim_tags import plain
 from app.services.identifiers import entity_ids
 
 STOPWORDS = {
@@ -128,7 +129,7 @@ def compare_attributes(a: ClaimView, b: ClaimView) -> AttributeComparison:
         period_match=match(pa, pb),
         value_relation=relation,
         conditions_differ=_norm_text(a.conditions) != _norm_text(b.conditions),
-        assumptions_differ=frozenset(map(_norm_text, a.assumptions)) != frozenset(map(_norm_text, b.assumptions)),
+        assumptions_differ=frozenset(map(_norm_text, plain(a.assumptions))) != frozenset(map(_norm_text, plain(b.assumptions))),
     )
 
 

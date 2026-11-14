@@ -28,6 +28,7 @@ from app.models.base import Classification, Severity
 from app.schemas.claim import Candidate
 from app.tools.submit import find_source_span
 from app.services.blocking import GENERIC, KINDS
+from app.services.claim_tags import EARLIER_BASES, LATER_BASES, tags_of
 from app.services.candidate_matching import TABLE_TYPES, normalize_period, normalize_unit, subjects_overlap, tokens
 from app.services.doc_profiles import render_cards
 from app.services.identifiers import entity_labels
@@ -279,8 +280,9 @@ def _shown(claim: Claim) -> str:
 
 
 def _claim_line(c: Claim) -> str:
+    tags = ", ".join(f"{k}: {v}" for k, v in tags_of(c.assumptions).items())
     attrs = {k: v for k, v in (("subject", c.subject), ("metric", c.metric), ("value", c.value), ("unit", c.unit),
-                               ("period", c.period), ("conditions", c.conditions)) if v not in (None, "")}
+                               ("period", c.period), ("conditions", c.conditions), ("extraction notes", tags)) if v not in (None, "")}
     return f"{c.claim_text} | " + "; ".join(f"{k}={v}" for k, v in attrs.items())
 
 
@@ -513,7 +515,7 @@ class ClaimGroupJudge:
     def _all_agree(self, g: Group) -> bool:
         """Code finds every claim of the group to state the same value about the same subject. A hedged value ("about 0.5 million") is never decided here:
         the judge reads it."""
-        if any(HEDGE.search(str(self._claims[i].value)) for i in g.claim_ids):
+        if any(HEDGE.search(str(self._claims[i].value)) or "precision" in tags_of(self._claims[i].assumptions) for i in g.claim_ids):
             return False
         first = self._claims[g.claim_ids[0]]
         return all(subjects_overlap(first.subject, self._claims[i].subject)
@@ -532,6 +534,8 @@ class ClaimGroupJudge:
     def _is_metadata(self, c: Claim) -> bool:
         """The claim is about its own document, not about what the document covers: a title, a type, a revision, or the document's own date (the claim's
         subject is words of the document's heading and its label says "date", "as of", "prepared by"). Documents differ in these by nature."""
+        if tags_of(c.assumptions).get("about") == "document":
+            return True  # the extraction call said so
         metric = tokens(c.metric)
         if not metric:
             return False
@@ -601,6 +605,11 @@ class ClaimGroupJudge:
 
     def _basis_tag(self, c: Claim) -> str | None:
         """"later" when the claim's own clause words its figure as the actual, final or revised one, "earlier" when as planned, required or contracted."""
+        basis = tags_of(c.assumptions).get("basis")
+        if basis in LATER_BASES:
+            return "later"
+        if basis in EARLIER_BASES:
+            return "earlier"
         text = self._clause(c)
         later, earlier = LATER_BASIS.search(text), EARLIER_BASIS.search(text)
         return "later" if later and not earlier else "earlier" if earlier and not later else None
