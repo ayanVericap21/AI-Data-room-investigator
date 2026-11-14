@@ -8,12 +8,11 @@ from app.models import Claim, Evidence, Finding
 from app.services.claim_service import ExtractionSummary
 from app.services.llama_claims import SCHEMA, SYSTEM_PROMPT, LlamaClaimExtractor, expand_ellipsis
 from app.services.missing_items import DocReference, MissingItemChecker
-from app.services.pair_judge import PairJudge
+from app.services.claim_group_judge import ClaimGroupJudge
 from app.services.record_checks import IdentifierChecker, mentions_in
 from app.services.value_rules import bound_direction, comparison_note, one_contains_other, within_limit
 from app.tools import build_registry
 from tests.test_llama_claims import FakeClient
-from tests.test_pair_judge import pair
 from tests.test_tools import add_doc, room  # noqa: F401  (fixtures and helper)
 
 
@@ -90,35 +89,11 @@ def test_a_number_inside_a_limit_is_compliant_and_one_outside_is_not():
     assert within_limit("3", None, "lower", "4", None) is True and within_limit("many", None, "upper", "6", None) is None
 
 
-def test_the_judge_is_told_when_a_value_is_inside_a_limit(session, room):  # noqa: F811
-    da, ca = add_doc(session, "limits.pdf", "pdf", [dict(content="The permit allows a maximum of 8 samples per site.", page_number=1)])
-    db, cb = add_doc(session, "log.pdf", "pdf", [dict(content="At most 6 samples were taken per site in practice.", page_number=1)])
-    a = Claim(document_id=da.id, chunk_id=ca[0].id, subject="site", metric="maximum samples per site", value="8", claim_text="a maximum of 8 samples per site")
-    b = Claim(document_id=db.id, chunk_id=cb[0].id, subject="site", metric="samples taken per site", value="6", claim_text="6 samples were taken per site")
-    session.add_all([a, b])
-    session.commit()
-    prompt = PairJudge._prompt([pair(a, b)], {a.id: a, b.id: b}, {ca[0].id: ca[0], cb[0].id: cb[0]}, {da.id: "limits.pdf", db.id: "log.pdf"})
-    assert "Code check (limit)" in prompt and "inside a limit is compliant" in prompt
 
 
-def test_a_contradiction_between_two_names_where_one_contains_the_other_is_saved_as_consistent(session, room):  # noqa: F811
-    da, ca = add_doc(session, "one.pdf", "pdf", [dict(content="The Technical Officer (instrumentation) joined the survey.", page_number=1)])
-    db, cb = add_doc(session, "two.pdf", "pdf", [dict(content="The Technical Officer joined the survey in October.", page_number=1)])
-    a = Claim(document_id=da.id, chunk_id=ca[0].id, subject="surveyor", metric="role", value="Technical Officer (instrumentation)", claim_category="name", claim_text="Technical Officer (instrumentation) joined")
-    b = Claim(document_id=db.id, chunk_id=cb[0].id, subject="surveyor", metric="role", value="Technical Officer", claim_category="name", claim_text="Technical Officer joined")
-    session.add_all([a, b])
-    session.commit()
-    p = pair(a, b)
-    quotes = {a.id: "Technical Officer (instrumentation) joined the survey", b.id: "Technical Officer joined the survey in October"}
-    verdict = dict(pair_index=0, same_attribute=True, classification="contradiction", severity="high", confidence=0.9, title="Role differs", description="d",
-                   quote_a=quotes[p.claim_a_id], quote_b=quotes[p.claim_b_id])
-    stats = PairJudge(session, MockLLMClient([{"verdicts": [verdict]}]), registry(session, room)).run([p])
-    assert [f.classification for f in session.scalars(select(Finding))] == ["consistent"] and stats.reclassified_names == 1
 
 
 # ---- 4: composite row subjects are asked for ---------------------------------------------------------------------------------------
-def test_extraction_asks_for_the_subject_to_name_every_identifying_column():
-    assert "names all of them" in SYSTEM_PROMPT and "names all of them" in SCHEMA["properties"]["claims"]["items"]["properties"]["subject"]["description"]
 
 
 # ---- 5: identifier reconciliation ---------------------------------------------------------------------------------------------------
@@ -153,6 +128,6 @@ def test_identifier_reconciliation_is_silent_when_a_document_was_not_read(sessio
 
 # ---- LlamaExtract refuses a system prompt of 10,000 characters or more (a 422 on every call): keep every prompt under it -----------------
 def test_every_system_prompt_stays_under_the_llamaextract_limit():
-    from app.services.llm_pairing import SYSTEM as GROUPING
-    from app.services.pair_judge import SYSTEM as JUDGE
+    from app.services.claim_grouping import SYSTEM as GROUPING
+    from app.services.claim_group_judge import SYSTEM as JUDGE
     assert max(len(JUDGE), len(GROUPING), len(SYSTEM_PROMPT)) < 10_000

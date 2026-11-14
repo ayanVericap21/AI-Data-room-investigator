@@ -135,6 +135,6 @@ def test_model_names_come_from_the_code_and_not_from_the_environment_but_keys_st
     monkeypatch.setenv("LLM_API_KEY", "k-123")
     monkeypatch.setattr(config, "_load_dotenv", lambda: None)
     settings = config.load_settings()
-    assert (settings.llm_model, settings.llm_provider, settings.embedding_provider) == ("cost_effective", "llamaextract", "local")
+    assert (settings.llm_model, settings.llm_provider, settings.embedding_provider) == ("gemini-3.5-flash-lite", "google", "local")
     assert settings.embedding_model == "sentence-transformers/all-MiniLM-L6-v2" and settings.embedding_dimensions == 384
     assert settings.llm_api_key == "k-123"  # keys are the one thing read from the environment

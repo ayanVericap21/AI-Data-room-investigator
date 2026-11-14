@@ -97,8 +97,8 @@ def test_normalise_text_removes_case_accents_spacing_punctuation_and_legal_forms
     assert normalise_text("ACME Ltd.") == "acme" == normalise_text("Acme, Limited")
 
 
-# ---- wired into the pair hints ---------------------------------------------------
-def test_pair_hints_use_the_rules():
+# ---- wired into the candidate hints ---------------------------------------------------
+def test_candidate_hints_use_the_rules():
     assert relation_hint(compare_attributes(view("a", value="10.2", unit="million"), view("b", doc="x", value="10,213,000", unit=None))) == "exact"
     assert relation_hint(compare_attributes(view("a", value=30, unit="t"), view("b", doc="x", value=30000, unit="kg"))) == "exact"
     assert relation_hint(compare_attributes(view("a", value=412, unit=None), view("b", doc="x", value=388, unit=None))) == "conflicting"

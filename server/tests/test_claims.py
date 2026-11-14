@@ -7,7 +7,7 @@ from app.llm.errors import LLMTransientError
 from app.llm.mock import MockLLMClient
 from app.models import Claim, Document, DocumentChunk
 from app.schemas.claim import ClaimExtractionResult, ClaimView, ExtractedClaim
-from app.services.candidate_matching import (compare_attributes, generate_candidate_pairs, normalize_period,
+from app.services.candidate_matching import (compare_attributes, generate_candidates, normalize_period,
                                               normalize_unit, relation_hint)
 from app.services.claim_service import ClaimService
 from app.services.numbers import numbers_in_text, parse_number, value_supported_by_text
@@ -150,49 +150,49 @@ def test_partial_match_example_from_spec_is_contextual_not_finding():
     comp = compare_attributes(a, b)
     assert comp.unit_match and comp.period_match and comp.value_relation == "different" and comp.conditions_differ
     assert relation_hint(comp) == "contextual"
-    pairs = generate_candidate_pairs([a, b])
-    assert len(pairs) == 1 and pairs[0].relation_hint == "contextual"
+    candidates = generate_candidates([a, b])
+    assert len(candidates) == 1 and candidates[0].relation_hint == "contextual"
 
 
 def test_hints_exact_conflicting_partial():
-    assert generate_candidate_pairs([view("a"), view("b")])[0].relation_hint == "exact"
-    assert generate_candidate_pairs([view("a"), view("b", value=25000)])[0].relation_hint == "conflicting"
-    assert generate_candidate_pairs([view("a", unit=None), view("b", value=25000, unit=None)])[0].relation_hint == "conflicting"
-    assert generate_candidate_pairs([view("a"), view("b", value=None)])[0].relation_hint == "partial"
-    assert generate_candidate_pairs([view("a", unit="eur"), view("b", value=25000)])[0].relation_hint == "partial"  # units that cannot be converted
-    assert generate_candidate_pairs([view("a", value=30, unit="t"), view("b", value=30000, unit="kg")])[0].relation_hint == "exact"  # kg and tonne convert
+    assert generate_candidates([view("a"), view("b")])[0].relation_hint == "exact"
+    assert generate_candidates([view("a"), view("b", value=25000)])[0].relation_hint == "conflicting"
+    assert generate_candidates([view("a", unit=None), view("b", value=25000, unit=None)])[0].relation_hint == "conflicting"
+    assert generate_candidates([view("a"), view("b", value=None)])[0].relation_hint == "partial"
+    assert generate_candidates([view("a", unit="eur"), view("b", value=25000)])[0].relation_hint == "partial"  # units that cannot be converted
+    assert generate_candidates([view("a", value=30, unit="t"), view("b", value=30000, unit="kg")])[0].relation_hint == "exact"  # kg and tonne convert
 
 
-def test_unrelated_claims_are_not_paired():
+def test_unrelated_claims_are_not_grouped():
     a = view("a")
     b = view("b", subject="Office lease", metric="Monthly rent", value=5000, unit="USD", period="monthly")
-    assert generate_candidate_pairs([a, b]) == []
+    assert generate_candidates([a, b]) == []
 
 
-def test_same_chunk_claims_are_paired_but_never_a_claim_with_itself_and_pairs_are_deduplicated():
+def test_same_chunk_claims_are_grouped_but_never_a_claim_with_itself_and_candidates_are_deduplicated():
     a, b = view("a", chunk="same"), view("b", chunk="same")
-    assert len(generate_candidate_pairs([a, b])) == 1  # a passage can contradict itself
-    assert generate_candidate_pairs([a]) == []
-    pairs = generate_candidate_pairs([view("a"), view("b"), view("c")])
-    keys = {frozenset((p.claim_a_id, p.claim_b_id)) for p in pairs}
-    assert len(pairs) == len(keys) == 3
+    assert len(generate_candidates([a, b])) == 1  # a passage can contradict itself
+    assert generate_candidates([a]) == []
+    candidates = generate_candidates([view("a"), view("b"), view("c")])
+    keys = {frozenset((p.claim_id, p.candidate_id)) for p in candidates}
+    assert len(candidates) == len(keys) == 3
 
 
-def test_partner_cap_limits_pairs_per_claim():
+def test_partner_cap_limits_candidates_per_claim():
     claims = [view(f"c{i}") for i in range(10)]
-    pairs = generate_candidate_pairs(claims, max_partners_per_claim=2)
+    candidates = generate_candidates(claims, max_partners_per_claim=2)
     from collections import Counter
-    counts = Counter(x for p in pairs for x in (p.claim_a_id, p.claim_b_id))
+    counts = Counter(x for p in candidates for x in (p.claim_id, p.candidate_id))
     assert max(counts.values()) <= 2  # hard cap per claim
-    assert len(pairs) <= 10
-    assert generate_candidate_pairs(claims, max_pairs=3).__len__() == 3
+    assert len(candidates) <= 10
+    assert generate_candidates(claims, max_candidates=3).__len__() == 3
 
 
 def test_missing_attributes_fall_back_to_available_field():
     a = view("a", subject=None)
     b = view("b", subject=None, value=25000)
-    assert len(generate_candidate_pairs([a, b])) == 1
-    assert generate_candidate_pairs([view("x", metric=None, subject=None), view("y", metric=None, subject=None)]) == []
+    assert len(generate_candidates([a, b])) == 1
+    assert generate_candidates([view("x", metric=None, subject=None), view("y", metric=None, subject=None)]) == []
 
 
 # ---- running vocabulary ----------------------------------------------------

@@ -34,8 +34,13 @@ class Settings(BaseModel):
     app_port: int = 8000
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/data_room"
 
-    llm_provider: str = "llamaextract"  # llamaextract | google | ollama (a model on this machine) | mock
-    llm_model: str = "cost_effective"  # for llamaextract this is the tier; for the others a model name
+    llm_provider: str = "google"  # groq | google | llamaextract | ollama (a model on this machine) | mock
+    llm_model: str = "gemini-3.5-flash-lite"  # for llamaextract this is the tier; for the others a model name
+    llm_requests_per_minute: int = Field(default=30, ge=1)  # the provider's request limit; Groq calls are spaced to stay under it
+    llm_tokens_per_minute: int = Field(default=8000, ge=1)  # the provider's token limit (what Groq's response headers report for this key)
+    # Groq models tried when the preferred one is rate limited or out of quota (each model has its own limits). Chat models only: the prompt-guard
+    # models are classifiers and reject chat requests.
+    llm_fallback_models: list[str] = Field(default_factory=lambda: ["openai/gpt-oss-20b", "qwen/qwen3.8-27b"])
     llm_base_url: str = "http://localhost:11434"  # where Ollama listens
     llm_context_tokens: int = Field(default=16384, ge=2048)  # context window requested from Ollama for every call
     # Set to false to refuse every hosted API (Google, LlamaExtract) and keep a run entirely on this machine.
@@ -67,7 +72,7 @@ class Settings(BaseModel):
 
 # Chosen in code, never from the environment, so a stale .env line cannot change them. Everything else (keys, the
 # database URL, paths) is still read from the environment.
-CODE_DEFINED = {"llm_provider", "llm_model", "llm_base_url", "llm_context_tokens", "allow_third_party_apis",
+CODE_DEFINED = {"llm_provider", "llm_model", "llm_requests_per_minute", "llm_tokens_per_minute", "llm_fallback_models", "llm_base_url", "llm_context_tokens", "allow_third_party_apis",
                 "embedding_provider", "embedding_model", "embedding_dimensions"}
 
 

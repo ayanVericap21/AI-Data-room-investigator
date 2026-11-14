@@ -43,17 +43,27 @@ export interface Chunk {
 
 export type RelationHint = "exact" | "partial" | "conflicting" | "contextual";
 
-export interface CandidatePair {
-  claim_a_id: string;
-  claim_b_id: string;
-  topic_score: number;
+/** Another claim that may state the same fact as the claim it is listed under. */
+export interface CandidateLink {
+  claim: Claim;
   relation_hint: RelationHint;
-  matched_by: "lexical" | "embedding";
+  topic_score: number;
+  matched_by: "lexical" | "embedding" | "llm" | "identifier" | "rule";
 }
 
-export interface CandidateList {
-  items: CandidatePair[];
-  total: number;
+export interface GroupedClaim {
+  claim: Claim;
+  candidates: CandidateLink[];
+}
+
+/** A fact and the claims that may state it, each with its candidates. */
+export interface ClaimGroup {
+  claims: GroupedClaim[];
+}
+
+export interface ClaimGroupList {
+  items: ClaimGroup[];
+  total: number; // groups
 }
 
 export interface Job {

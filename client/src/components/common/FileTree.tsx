@@ -1,4 +1,4 @@
-import { Box, Checkbox, Collapse, IconButton, Typography } from "@mui/material";
+import { Box, Checkbox, Collapse, IconButton, Tooltip, Typography } from "@mui/material";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import FolderOutlinedIcon from "@mui/icons-material/FolderOutlined";
@@ -40,7 +40,9 @@ function Row({ node, depth, ...rest }: Props & { node: TreeNode; depth: number }
           slotProps={{ input: { "aria-label": node.isFile ? `Include ${node.path}` : `Include everything in ${node.path}` } }}
         />
         {node.isFile ? <InsertDriveFileOutlinedIcon fontSize="small" sx={{ mr: 1 }} /> : <FolderOutlinedIcon fontSize="small" sx={{ mr: 1 }} />}
-        <Typography variant="body2" noWrap title={node.path}>{node.name}</Typography>
+        <Tooltip title={node.path} enterDelay={300} placement="top-start">
+          <Typography variant="body2" noWrap sx={{ minWidth: 0, flex: node.isFile ? 1 : "0 1 auto" }}>{node.name}</Typography>
+        </Tooltip>
         {!node.isFile && (
           <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>{chosen}/{files.length}</Typography>
         )}

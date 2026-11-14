@@ -17,7 +17,7 @@ from app.llm.metrics import CallMetric
 from app.llm.mock import MockLLMClient
 from app.main import create_app
 from app.services.claim_service import ExtractionSummary
-from app.services.pair_judge import JudgeStats
+from app.services.claim_group_judge import JudgeStats
 from tests.test_tools import room  # noqa: F401  (fixture)
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "ledger_run.py"
@@ -42,14 +42,14 @@ def finished_run(**overrides):
     llm.retry_count = 1
     embedder = MockEmbeddingProvider(dimensions=4)
     embedder.call_metrics.append(CallMetric(kind="embedding", latency_ms=20, items=5))
-    judge = JudgeStats(pairs_exact=2, pairs_judged=3, findings_saved=1, findings_rejected=2)
+    judge = JudgeStats(groups_total=5, groups_agreed=2, groups_judged=3, findings_saved=1, findings_rejected=2)
     judge.verdict_counts.update({"contradiction": 1, "not_comparable": 2})
     run = SimpleNamespace(
         llm=llm, embedder=embedder, doc_stats={"a": dict(chunks=4, readable=4, ok=True), "b": dict(chunks=2, readable=2, ok=False)},
-        extraction=ExtractionSummary(claims_created=7, claims_rejected=1), judge=judge, pairs=[object()] * 5, wall_s=12.34,
+        extraction=ExtractionSummary(claims_created=7, claims_rejected=1), judge=judge, candidates=[object()] * 9, wall_s=12.34,
         started=datetime(2026, 11, 11, 10, 0, 0), finished=datetime(2026, 11, 11, 10, 0, 12), config="ui-run", error=None, stopped=False,
-        result=SimpleNamespace(investigation_id="inv_1"), llm_bounds=[2, 2, 3], stage={"1. read": 8000, "3. judge": 4000},
-        args=SimpleNamespace(extractor="llm", pairing="llm", vocabulary="off", coverage_check="off", batch_chunks=0, batch_chars=8000),
+        result=SimpleNamespace(investigation_id="inv_1"), llm_bounds=[2, 2, 2, 2, 2, 3], stage={"1. read": 8000, "3. judge": 4000},
+        args=SimpleNamespace(extractor="llm", grouping="llm", vocabulary="off", coverage_check="off", batch_chunks=0, batch_chars=8000),
         settings=SimpleNamespace(llm_model="m", embedding_model="e"))
     for key, value in overrides.items():
         setattr(run, key, value)
@@ -60,14 +60,14 @@ def test_the_script_builds_the_same_numbers_the_results_file_shows(script):
     m = script.build_metrics(finished_run(), Path("/x/TEST-RUN-1.txt"))
     assert (m.investigation_id, m.state, m.wall_s) == ("inv_1", "completed", 12.3)
     assert (m.counts.documents, m.counts.documents_fully_read, m.counts.chunks, m.counts.claims_recorded, m.counts.claims_rejected) == (2, 1, 6, 7, 1)
-    assert (m.counts.candidate_pairs, m.counts.pairs_exact, m.counts.pairs_judged, m.counts.findings_saved) == (5, 2, 3, 1)
+    assert (m.counts.candidates, m.counts.claim_groups, m.counts.groups_agreed, m.counts.groups_judged, m.counts.findings_saved) == (9, 5, 2, 3, 1)
     assert m.counts.verdicts == {"contradiction": 1, "not_comparable": 2} and m.counts.embedding_texts == 5
     assert (m.llm.attempts, m.llm.failed, m.llm.retries, m.llm.total_s) == (3, 1, 1, 4.5)
     assert (m.llm.min_context_tokens, m.llm.avg_context_tokens, m.llm.max_context_tokens) == (100, 200, 300)
     assert (m.llm.prompt_tokens, m.llm.completion_tokens) == (400, 120) or m.llm.total_tokens == 0  # tokens come from the client's own counter
-    assert [(p.phase, p.attempts, p.failed) for p in m.phases] == [("extract claims", 2, 0), ("judge pairs", 1, 1)]
+    assert [(p.phase, p.attempts, p.failed) for p in m.phases] == [("extract claims", 2, 0), ("judge claim groups", 1, 1)]
     assert [(s.stage, s.seconds, s.percent) for s in m.stages] == [("1. read", 8.0, 64.8), ("3. judge", 4.0, 32.4)]
-    assert m.settings.pairing == "llm" and m.settings.batch_chunks is None
+    assert m.settings.grouping == "llm" and m.settings.batch_chunks is None
 
 
 def test_a_stopped_or_failed_run_says_so(script):

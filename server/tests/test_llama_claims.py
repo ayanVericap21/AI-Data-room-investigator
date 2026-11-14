@@ -115,3 +115,108 @@ def test_the_client_uploads_creates_polls_and_never_leaks_the_key(tmp_path):
     assert err.value.code == 402 and "secret-key" not in str(err.value) and "out of credits" in str(err.value)
     with pytest.raises(LlamaExtractError):
         LlamaExtractClient("")
+
+
+def test_the_profile_the_extraction_returns_is_kept_and_null_fields_are_tolerated(session, room):  # noqa: F811
+    result = {"claims": [claim()], "profile": {"main_entity": " Pune plant ", "document_type": "presentation", "purpose": None, "date": None, "status": None, "scope": "capacity"}}
+    ex = extractor(session, room, FakeClient(result))
+    ex.extract_document(room.deck, ExtractionSummary())
+    name, profile = ex.profiles[room.deck.id]
+    assert name == "deck.pdf" and profile.main_entity == "Pune plant" and profile.document_type == "presentation" and profile.purpose == "" and profile.scope == "capacity"
+
+
+def test_an_empty_or_missing_profile_is_not_kept(session, room):  # noqa: F811
+    ex = extractor(session, room, FakeClient({"claims": [claim()], "profile": {"main_entity": None}}))
+    ex.extract_document(room.deck, ExtractionSummary())
+    assert ex.profiles == {}
+    ex = extractor(session, room, FakeClient({"claims": [claim()]}))
+    ex.extract_document(room.deck, ExtractionSummary())
+    assert ex.profiles == {}
+
+
+def test_the_extraction_prompt_stays_under_the_service_limit_and_asks_for_the_profile():
+    from app.services.llama_claims import SCHEMA, SYSTEM_PROMPT
+    assert len(SYSTEM_PROMPT) < 10_000 and "profile" in SYSTEM_PROMPT and set(SCHEMA["properties"]) == {"claims", "references", "profile"}
+
+
+def test_every_documents_job_is_started_ahead_and_each_result_is_still_stored_in_order(session, room):  # noqa: F811
+    import threading
+    import time
+
+    class Slow(FakeClient):
+        def __init__(self, *a, **k):
+            super().__init__(*a, **k)
+            self.in_flight = self.peak = 0
+            self._lock = threading.Lock()
+
+        def extract(self, path, schema, **kwargs):
+            with self._lock:
+                self.in_flight += 1
+                self.peak = max(self.peak, self.in_flight)
+            time.sleep(0.1)
+            with self._lock:
+                self.in_flight -= 1
+            return super().extract(path, schema, **kwargs)
+
+    client = Slow({"claims": [claim()]})
+    ex = extractor(session, room, client)
+    ex.prefetch([room.deck, room.capex, room.lease], workers=3)
+    summary = ExtractionSummary()
+    ex.extract_document(room.deck, summary)  # the jobs of the other documents are already running
+    assert client.peak >= 2 and len(client.calls) <= 3
+    ex.extract_document(room.capex, summary)
+    ex.extract_document(room.lease, summary)
+    ex.close()
+    assert len(client.calls) == 3 and summary.external_calls == 3  # no document was extracted twice
+
+
+def test_one_worker_reads_the_documents_one_by_one(session, room):  # noqa: F811
+    client = FakeClient({"claims": [claim()]})
+    ex = extractor(session, room, client)
+    ex.prefetch([room.deck, room.capex], workers=1)
+    assert client.calls == []
+    ex.extract_document(room.deck, ExtractionSummary())
+    assert len(client.calls) == 1
+
+
+class RangeClient:
+    """Answers each page range with the claim stated on those pages, and records what was uploaded and which ranges were asked for."""
+
+    def __init__(self, by_pages):
+        self.by_pages, self.uploads, self.ranges = by_pages, [], []
+
+    def upload(self, path):
+        self.uploads.append(Path(path).name)
+        return "file-1"
+
+    def extract(self, path, schema, file_id=None, **kwargs):
+        pages = kwargs["extra_configuration"]["target_pages"]
+        self.ranges.append((file_id, pages))
+        value, text, page = self.by_pages[pages]
+        return LlamaJob(job_id=f"job-{pages}", status="COMPLETED", credits=4.0, result={"claims": [claim(value=value, claim_text=text)]},
+                        metadata={"field_metadata": {"document_metadata": {"claims": [{"value": citation(page, value)}]}}})
+
+
+def test_a_long_pdf_is_read_in_page_ranges_uploaded_once_and_each_claim_keeps_its_own_page(session, room):  # noqa: F811
+    client = RangeClient({"1-1": ("120,000", "capacity is 120,000 tonnes per year", 1), "2-2": ("18%", "EBITDA margin for 2024 was 18% of revenue.", 2)})
+    ex = LlamaClaimExtractor(session, client, Path("/data_room"), pages_per_job=1)
+    ex.prefetch([room.deck], workers=4)
+    summary = ExtractionSummary()
+    ex.extract_document(room.deck, summary)
+    ex.close()
+    rows = {r.value: r.chunk_id for r in session.scalars(select(Claim))}
+    assert client.uploads == ["deck.pdf"] and sorted(client.ranges) == [("file-1", "1-1"), ("file-1", "2-2")]
+    assert rows == {"120,000": room.deck_p1, "18%": room.deck_p2} and summary.external_credits == 8.0
+
+
+def test_a_failed_page_range_fails_the_whole_document():
+    from app.services.llama_claims import merge_jobs
+    ok = LlamaJob(job_id="a", status="COMPLETED", result={"claims": []})
+    bad = LlamaJob(job_id="b", status="FAILED", error="boom")
+    assert merge_jobs([ok, bad]) is bad and merge_jobs([ok]) is ok
+
+
+def test_a_short_pdf_and_a_document_that_is_not_a_pdf_are_read_in_one_job(session, room):  # noqa: F811
+    ex = LlamaClaimExtractor(session, FakeClient({"claims": []}), Path("/data_room"), pages_per_job=5)
+    assert ex._page_ranges(room.deck) == [] and ex._page_ranges(room.capex) == []
+    assert LlamaClaimExtractor(session, FakeClient({}), Path("/data_room"), pages_per_job=1)._page_ranges(room.deck) == ["1-1", "2-2"]

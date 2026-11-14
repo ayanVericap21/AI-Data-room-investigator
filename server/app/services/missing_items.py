@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 from app.models import Document, DocumentChunk
 from app.models.base import ProcessingStatus
 from app.services.candidate_matching import TABLE_TYPES
+from app.services.severity import missing_severity
 from app.tools.registry import ToolRegistry
 
 logger = logging.getLogger(__name__)
@@ -50,8 +51,13 @@ class MissingStats:
     rejections: list[str] = field(default_factory=list)
 
 
+def _stem(word: str) -> str:
+    """A plural and its singular are one word (purchase orders, purchase order)."""
+    return word[:-1] if len(word) > 3 and word.endswith("s") and not word.endswith("ss") else word
+
+
 def _words(text: str | None) -> frozenset[str]:
-    return frozenset(w for w in re.findall(r"[a-z0-9]+", (text or "").lower()) if w not in _FILLER)
+    return frozenset(_stem(w) for w in re.findall(r"[a-z0-9]+", (text or "").lower()) if w not in _FILLER)
 
 
 def _item_keys(item: str) -> list[frozenset[str]]:
@@ -129,7 +135,17 @@ class MissingItemChecker:
                 if is_row:
                     pool.append((chunk.id, _words(text[:240]), text.lower()))
                 elif not (text[-1] in ".!?" and len(text.split()) >= SENTENCE_WORDS):
-                    pool.append((chunk.id, tuple(w for w in re.findall(r"[a-z0-9]+", text.lower()) if w not in _FILLER), text.lower()))
+                    pool.append((chunk.id, tuple(_stem(w) for w in re.findall(r"[a-z0-9]+", text.lower()) if w not in _FILLER), text.lower()))
+            if chunk.chunk_index == 0:
+                # a document that opens with a header ("DOC-05 | Invoice INV-7781 | dated 5 May 2025.") is named by the parts of that header
+                first = next((" ".join(line.split()) for line in (chunk.content or "").splitlines() if line.strip()), "")
+                header = re.split(r"(?<=[.!?])\s+(?=[A-Z])", first, maxsplit=1)[0]  # not at "No. 3": a full stop before a digit ends nothing
+                if " | " in header:
+                    if len(header.split()) <= 30:
+                        pool.append((chunk.id, _words(header), ""))  # the whole header: "Progress Report No. 3 Revision A" is spread over its parts
+                    for part in header.split(" | "):
+                        if 0 < len(part.split()) <= 8:
+                            pool.append((chunk.id, _words(part), ""))
         return pool
 
     def _save(self, groups: list[list[DocReference]], names: dict[str, str], stats: MissingStats) -> None:
@@ -151,7 +167,7 @@ class MissingItemChecker:
                                      "relevance_reason": f"Refers to {r.item}", "support_assessment": "The document points to this item; it is not in the data room."})
         also = sorted({names.get(r.document_id, "?") for g in groups for r in g} - {names.get(ref.document_id)})
         result = self.registry.execute("submit_finding", {
-            "title": title[:300], "classification": "missing_information", "severity": "medium", "confidence": 0.7,
+            "title": title[:500], "classification": "missing_information", "severity": missing_severity(*[r.quote for g in groups for r in g]), "confidence": 0.7,
             "evidence_status": "unavailable",
             "description": f"{names.get(ref.document_id)} ({where}) refers to {' and '.join(chr(34) + i + chr(34) for i in items)}, but no file, sheet, heading, caption or row label in the data room is named like "
                            f"{'them' if len(items) > 1 else 'it'}, and every document was read."

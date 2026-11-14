@@ -8,6 +8,7 @@ highest) has no record in the list: it is saved as ``missing_information`` with 
 end, through ``submit_finding`` (so both quotes are verified like every other).
 
 An identifier inside the list's range that the list lacks is not raised: documents often hold different subsets of a series.
+An identifier a line only gives as a limit ("up to 10 samples (RC-01 through RC-10)", "a maximum of ART-160") is a quota, not a record, and is not read.
 Nothing is raised unless the whole room was read.
 """
 from __future__ import annotations
@@ -21,6 +22,7 @@ from sqlalchemy.orm import Session
 
 from app.models import Document, DocumentChunk
 from app.models.base import ProcessingStatus
+from app.services.identifiers import ID as _ID, ceiling_idents, is_record_id
 from app.tools.registry import ToolRegistry
 
 logger = logging.getLogger(__name__)
@@ -28,9 +30,6 @@ logger = logging.getLogger(__name__)
 MIN_LIST = 5  # distinct identifiers of one kind that make a document's own list of that kind
 MAX_FINDINGS = 15
 MAX_LISTED = 5  # identifiers named in one finding
-_ID = re.compile(r"(?<![A-Za-z0-9])([A-Za-z]{1,6})([-_])(\d{2,6})(?:[-_]([A-Za-z0-9]{1,4}))?(?![A-Za-z0-9])")
-_NOT_AN_ID = {"table", "tab", "fig", "figure", "page", "pg", "section", "sec", "annex", "appendix", "version", "ver", "rev", "no", "ref", "item",
-              "step", "ch", "chapter", "clause", "art", "para", "line", "row", "col", "iso", "pp", "vol", "eq", "ex"}
 
 
 @dataclass(frozen=True)
@@ -55,10 +54,11 @@ class RecordStats:
 def mentions_in(content: str, chunk_id: str) -> list[tuple[tuple[str, str], Mention]]:
     out = []
     for line in (content or "").splitlines():
+        ceilings = ceiling_idents(line)
         for m in _ID.finditer(line):
             prefix, sep, digits, _suffix = m.groups()
-            if prefix.lower() in _NOT_AN_ID or (len(digits) == 4 and 1900 <= int(digits) <= 2100):
-                continue  # a section label or a year, not a record
+            if not is_record_id(prefix, digits) or m.group(0).upper() in ceilings:
+                continue  # a section label, a year, or a limit the line gives: not a record
             out.append(((prefix.upper(), sep), Mention(m.group(0), int(digits), chunk_id, line)))
     return out
 

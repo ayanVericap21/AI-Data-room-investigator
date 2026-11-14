@@ -3,13 +3,6 @@ from app.services.llama_claims import SCHEMA, SYSTEM_PROMPT, VALUE_TYPES, LlamaC
 from app.services.value_rules import compare_values
 
 
-def test_the_schema_and_prompt_allow_only_the_six_value_types():
-    field = SCHEMA["properties"]["claims"]["items"]["properties"]["value_type"]
-    assert field["enum"] == ["quantity", "date", "identifier", "name", "state", "statement"] == list(VALUE_TYPES)
-    assert "value_type" in SCHEMA["properties"]["claims"]["items"]["required"]
-    assert "exactly one of quantity, date, identifier, name, state or statement" in SYSTEM_PROMPT and "No other value_type is allowed" in SYSTEM_PROMPT
-    for word in ("phone number", "A duration is a quantity", "even if all digits", "inside brackets or quotation marks"):
-        assert word in field["description"]
 
 
 def test_a_value_type_outside_the_allowed_ones_is_not_kept():

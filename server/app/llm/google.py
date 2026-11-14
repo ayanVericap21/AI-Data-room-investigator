@@ -30,10 +30,10 @@ def retry_delay_seconds(response: httpx.Response) -> float | None:
 def _check(response: httpx.Response) -> dict:
     if response.status_code == 429 or response.status_code >= 500:
         raise LLMTransientError(
-            f"Google API {response.status_code}: {response.text[:200]}", retry_after=retry_delay_seconds(response),
+            f"Google API {response.status_code}: {response.text}", retry_after=retry_delay_seconds(response),
         )
     if response.status_code >= 400:
-        raise LLMPermanentError(f"Google API {response.status_code}: {response.text[:300]}")
+        raise LLMPermanentError(f"Google API {response.status_code}: {response.text}")
     return response.json()
 
 

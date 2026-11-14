@@ -14,7 +14,7 @@ class DataRoomFilesOut(BaseModel):
 
 class StartRunIn(BaseModel):
     documents: list[str] = Field(min_length=1, description="Paths from /api/test-run/files to read in this run.")
-    judge_workers: int = Field(1, ge=1, le=16, description="Pair-judging model calls made at the same time (1 = one after another).")
+    judge_workers: int = Field(1, ge=1, le=16, description="Grouping and judging model calls made at the same time (1 = one after another).")
 
 
 class UpdatesOut(BaseModel):

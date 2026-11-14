@@ -136,7 +136,7 @@ class LLMClient(ABC):
                 response_chars: int = 0) -> None:
         self.call_metrics.append(CallMetric(
             kind="llm", latency_ms=round((time.perf_counter() - started) * 1000), ok=error is None,
-            error=str(error)[:200] if error else None,
+            error=str(error) if error else None,
             prompt_tokens=usage.prompt_tokens if usage else 0, completion_tokens=usage.completion_tokens if usage else 0,
             thinking_tokens=usage.thinking_tokens if usage else 0, total_tokens=usage.total_tokens if usage else 0,
             cached_tokens=usage.cached_tokens if usage else 0, prompt_chars=getattr(self._tls, "prompt_chars", 0),

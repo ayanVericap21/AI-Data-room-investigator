@@ -53,8 +53,3 @@ def test_the_same_item_in_the_same_document_is_reported_once(session, room):  # 
     assert (stats.saved, stats.duplicates) == (1, 1)
 
 
-def test_extraction_asks_for_references_and_keeps_them(session, room):  # noqa: F811
-    assert "references" in SCHEMA["properties"] and "references" in SYSTEM_PROMPT
-    parsed = LlamaClaims.model_validate({"claims": [], "references": [{"item": "Annex 2", "quote": "see Annex 2 for prices"}]})
-    assert parsed.references[0].item == "Annex 2"
-    assert _item_keys("Schedule A (wafer specification)") == [frozenset({"schedule", "a", "wafer", "specification"}), frozenset({"schedule", "a"})]

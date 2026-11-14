@@ -49,11 +49,11 @@ class RunCounts(BaseModel):
     chunks: int = 0
     claims_recorded: int = 0
     claims_rejected: int = 0
-    candidate_pairs: int = 0
+    candidates: int = 0  # links between two claims that may state one fact
+    claim_groups: int = 0
+    groups_agreed: int = 0  # every claim states the same value: not sent to the LLM
+    groups_judged: int = 0
     extractor_credits: float = 0.0  # LlamaExtract credits used (0 for the LLM extractor)
-    pairs_without_clustering: int = 0  # LLM pairing: every claim of a group with every other
-    pairs_exact: int = 0
-    pairs_judged: int = 0
     verdicts: dict[str, int] = {}
     findings_saved: int = 0
     findings_rejected: int = 0
@@ -65,7 +65,7 @@ class RunCounts(BaseModel):
 
 class RunSettings(BaseModel):
     extractor: str = "llm"  # llm | llamaextract
-    pairing: str
+    grouping: str = ""  # results files from older runs lack this field and still load
     vocabulary: str
     coverage_check: str
     batch_chunks: int | None = None

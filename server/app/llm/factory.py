@@ -7,6 +7,7 @@ from app.llm.base import LLMClient
 from app.llm.embeddings import EmbeddingProvider, MockEmbeddingProvider
 from app.llm.errors import LLMConfigError
 from app.llm.google import GoogleEmbeddingProvider, GoogleLLMClient
+from app.llm.groq import GroqLLMClient
 from app.llm.llama_extract import LlamaExtractClient
 from app.llm.llama_llm import LlamaExtractLLMClient
 from app.llm.local import DEFAULT_LOCAL_MODEL, LocalEmbeddingProvider
@@ -40,6 +41,15 @@ def get_llm_client(settings: Settings) -> LLMClient:
         if not settings.llm_model:
             raise LLMConfigError("LLM_MODEL is not set")
         return GoogleLLMClient(model=settings.llm_model, api_key=settings.llm_api_key)
+    if provider == "groq":
+        if not settings.allow_third_party_apis:
+            raise LLMConfigError(THIRD_PARTY_OFF.format(what="Groq"))
+        if not settings.llm_api_key:
+            raise LLMConfigError("LLM_API_KEY is not set")
+        if not settings.llm_model:
+            raise LLMConfigError("LLM_MODEL is not set")
+        return GroqLLMClient(model=settings.llm_model, api_key=settings.llm_api_key, fallback_models=settings.llm_fallback_models,
+                              requests_per_minute=settings.llm_requests_per_minute, tokens_per_minute=settings.llm_tokens_per_minute)
     raise LLMConfigError(f"Unsupported LLM_PROVIDER '{settings.llm_provider}'")
 
 

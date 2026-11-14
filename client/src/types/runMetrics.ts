@@ -28,7 +28,7 @@ export interface RunMetrics {
   results_file: string;
   settings: {
     extractor: string;
-    pairing: string;
+    grouping: string;
     vocabulary: string;
     coverage_check: string;
     batch_chunks: number | null;
@@ -42,11 +42,11 @@ export interface RunMetrics {
     chunks: number;
     claims_recorded: number;
     claims_rejected: number;
-    candidate_pairs: number;
-    pairs_without_clustering: number;
+    candidates: number;
+    claim_groups: number;
+    groups_agreed: number;
+    groups_judged: number;
     extractor_credits: number;
-    pairs_exact: number;
-    pairs_judged: number;
     verdicts: Record<string, number>;
     findings_saved: number;
     findings_rejected: number;

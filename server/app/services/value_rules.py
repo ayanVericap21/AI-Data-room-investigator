@@ -184,7 +184,7 @@ def _unit_words(unit: str | None) -> frozenset[str]:
     return frozenset(re.findall(r"[a-z0-9²³]+", unicodedata.normalize("NFKC", unit or "").lower()))
 
 
-def parse_numeric_pair(a: object, unit_a: str | None, b: object, unit_b: str | None) -> tuple[Num | None, Num | None]:
+def parse_two_numbers(a: object, unit_a: str | None, b: object, unit_b: str | None) -> tuple[Num | None, Num | None]:
     """Both values as intervals. A unit written inside a value is ignored when it is the claim's unit ("12,000" with unit WSPM and
     "12,000 WSPM"), and so are extra words that both values share ("12,000 wafers" and "12000 wafers")."""
     ignore = _unit_words(unit_a) | _unit_words(unit_b)
@@ -336,7 +336,7 @@ def bound_direction(text: str | None) -> str | None:
 def within_limit(limit: object, unit_limit: str | None, direction: str, other: object, unit_other: str | None,
                  normalize: Callable[[str | None], str | None] | None = None) -> bool | None:
     """Whether a plain number satisfies a limit (True/False); None when either value is not a plain number or the units cannot be reconciled."""
-    nl, no = parse_numeric_pair(limit, unit_limit, other, unit_other)
+    nl, no = parse_two_numbers(limit, unit_limit, other, unit_other)
     if nl is None or no is None or nl.kind != "exact" or no.kind != "exact":
         return None
     fl, fo = _factor(unit_info(unit_limit, normalize), unit_info(unit_other, normalize), nl.unit, no.unit)
@@ -367,7 +367,7 @@ def compare_values(a: object, unit_a: str | None, b: object, unit_b: str | None,
         if AMBIGUOUS in (da, db):
             return "unknown"
         return "equal" if da[0] <= db[1] and db[0] <= da[1] else "different"
-    na, nb = parse_numeric_pair(a, unit_a, b, unit_b)
+    na, nb = parse_two_numbers(a, unit_a, b, unit_b)
     if na is not None and nb is not None:
         fa, fb = _factor(unit_info(unit_a, normalize), unit_info(unit_b, normalize), na.unit, nb.unit)
         return _compare_numbers(na.scaled(fa), nb.scaled(fb))
@@ -377,7 +377,7 @@ def compare_values(a: object, unit_a: str | None, b: object, unit_b: str | None,
 def relative_gap(a: object, unit_a: str | None, b: object, unit_b: str | None,
                  normalize: Callable[[str | None], str | None] | None = None) -> Decimal | None:
     """How far apart two plain numbers are, as a share of the larger one (0.05 = 5 %); None when code cannot say."""
-    na, nb = parse_numeric_pair(a, unit_a, b, unit_b)
+    na, nb = parse_two_numbers(a, unit_a, b, unit_b)
     if na is None or nb is None or "range" in (na.kind, nb.kind) or "bound" in (na.kind, nb.kind):
         return None
     fa, fb = _factor(unit_info(unit_a, normalize), unit_info(unit_b, normalize), na.unit, nb.unit)

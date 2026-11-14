@@ -27,7 +27,7 @@ export default function RunMetricsPanel({ metrics: m }: { metrics: RunMetrics })
       <Stack direction="row" spacing={1} sx={{ mb: 1.5, flexWrap: "wrap", rowGap: 1 }}>
         <Chip size="small" label={m.state} color={m.state === "completed" ? "success" : m.state === "stopped" ? "warning" : "error"} />
         <Chip size="small" variant="outlined" label={`extractor: ${m.settings.extractor}`} />
-        <Chip size="small" variant="outlined" label={`pairing: ${m.settings.pairing}`} />
+        <Chip size="small" variant="outlined" label={`grouping: ${m.settings.grouping}`} />
         <Chip size="small" variant="outlined" label={`vocabulary: ${m.settings.vocabulary}`} />
         <Chip size="small" variant="outlined" label={`coverage check: ${m.settings.coverage_check}`} />
         <Chip size="small" variant="outlined" label={`chunks per call: ${m.settings.batch_chunks ?? "by size"}`} />
@@ -38,8 +38,7 @@ export default function RunMetricsPanel({ metrics: m }: { metrics: RunMetrics })
         <Stat label="Total time" value={duration(m.wall_s)} detail={`LLM time ${duration(m.llm.total_s)}`} />
         <Stat label="Documents" value={`${m.counts.documents_fully_read} / ${m.counts.documents}`} detail={`fully read · ${n(m.counts.chunks)} chunks`} />
         <Stat label="Claims" value={n(m.counts.claims_recorded)} detail={`${n(m.counts.claims_rejected)} rejected`} />
-        <Stat label="Candidate pairs" value={n(m.counts.candidate_pairs)} detail={`${n(m.counts.pairs_exact)} exact · ${n(m.counts.pairs_judged)} judged`
-          + (m.counts.pairs_without_clustering > 0 ? ` · ${n(m.counts.pairs_without_clustering)} before grouping by value` : "")} />
+        <Stat label="Claim groups" value={n(m.counts.claim_groups)} detail={`${n(m.counts.candidates)} candidates · ${n(m.counts.groups_agreed)} agreed · ${n(m.counts.groups_judged)} judged`} />
         <Stat label="Findings" value={n(m.counts.findings_saved)} detail={`${n(m.counts.findings_rejected)} rejected (quotes not verified)`} />
         <Stat label="LLM calls" value={n(m.llm.attempts)} detail={`${m.llm.failed} failed · ${m.llm.retries} retries`} />
         <Stat label="Latency per call" value={`${n(m.llm.avg_ms)} ms avg`} detail={`p95 ${n(m.llm.p95_ms)} ms · max ${n(m.llm.max_ms)} ms`} />

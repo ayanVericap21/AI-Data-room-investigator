@@ -3,7 +3,7 @@
 Status: [ ] not started, [~] in progress, [x] done. 299 offline tests pass. No real LlamaExtract call has been made with any of the new prompts or schema fields.
 
 ## Task 1: help soon, fixes something real
-- [x] 1a. Claim type is no longer a hard pairing gate (kept as a label; the grouping prompt shows it for information and says not to keep claims apart because of it)
+- [x] 1a. Claim type is no longer a hard grouping gate (kept as a label; the grouping prompt shows it for information and says not to keep claims apart because of it)
 - [x] 1b. Severity defined in the judge prompt (mapping per category; the gap comes from code)
 - [x] 1c. Five category definitions rewritten as a decision order in the judge prompt
 - [x] 1d. Quote check normalises Unicode, quote and dash variants, zero-width characters and line-break hyphenation (stored text is still the source's own)
@@ -12,7 +12,7 @@ Status: [ ] not started, [~] in progress, [x] done. 299 offline tests pass. No r
 - [x] 2a. Numerical in code (`value_rules.py`): precision intervals, "about" (+/-10%), bounds, ranges, scale words, units of one dimension, bracketed negatives
 - [x] 2b. Date in code: formats, intervals at stated precision, quarters and halves, ambiguous day/month = unknown, bare year only when both claims are typed date, durations as numbers with units
 - [x] 2c. Textual in code: identifiers, phone numbers and names compare equal after case, accents, spacing, punctuation and legal-form words are removed
-- [x] 2d. Wired in: `compare_attributes` uses the rules (so exact / conflicting hints change); the judge sees a "Code check" line per pair with the gap
+- [x] 2d. Wired in: `compare_attributes` uses the rules (so exact / conflicting hints change); the judge sees a "Code check" line per candidate with the gap
 - [x] 2e. Per-type rules written into the judge prompt (currency, percent vs points, fiscal periods, relative dates, polarity, statements stay with the judge)
 
 ## Task 3: single-claim missing-information check

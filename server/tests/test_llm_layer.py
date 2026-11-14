@@ -110,7 +110,7 @@ def test_google_429_wait_time_is_read_from_the_json_body_or_header():
 
 
 def test_third_party_apis_can_be_switched_off_and_the_local_provider_needs_a_model():
-    assert Settings().allow_third_party_apis is True and Settings().llm_provider == "llamaextract"  # hosted APIs are allowed by default
+    assert Settings().allow_third_party_apis is True and Settings().llm_provider == "google"  # hosted APIs are allowed by default
     with pytest.raises(LLMConfigError, match="Third-party APIs are disabled"):
         get_llm_client(Settings(llm_provider="google", llm_model="m", llm_api_key="k", allow_third_party_apis=False))
     with pytest.raises(LLMConfigError, match="Third-party APIs are disabled"):

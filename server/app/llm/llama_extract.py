@@ -102,9 +102,10 @@ class LlamaExtractClient:
                 raise LlamaExtractError(f"Extraction job {job_id} did not finish within {self.max_wait:.0f}s")
             time.sleep(self.poll_seconds)
 
-    def extract(self, path: Path, schema: dict[str, Any], **kwargs: Any) -> LlamaJob:
+    def extract(self, path: Path, schema: dict[str, Any], file_id: str | None = None, **kwargs: Any) -> LlamaJob:
+        """Upload ``path`` (unless ``file_id`` names a file already uploaded), run one extraction job and wait for it."""
         started = time.monotonic()
-        job = self.wait(self.create_job(self.upload(path), schema, **kwargs))
+        job = self.wait(self.create_job(file_id or self.upload(path), schema, **kwargs))
         usage = job.get("usage") or {}
         billed = (job.get("metadata") or {}).get("usage") or {}
         return LlamaJob(

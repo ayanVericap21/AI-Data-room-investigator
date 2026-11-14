@@ -5,8 +5,8 @@ import time
 from app.llm.base import LLMClient, RawResponse
 from app.llm.errors import LLMPermanentError
 from app.models import Claim
-from app.services.llm_pairing import LLMPairer
-from tests.test_pair_judge import make_claims, room  # noqa: F401  (fixtures/helpers)
+from app.services.claim_grouping import ClaimGrouper
+from tests.test_claim_group_judge import make_claims, room  # noqa: F401  (fixtures/helpers)
 
 
 class SlowGroups(LLMClient):
@@ -50,15 +50,15 @@ def several_batches(session, room, extra=4):  # noqa: F811
 def test_workers_make_grouping_calls_at_the_same_time_and_one_worker_does_not(session, room):  # noqa: F811
     several_batches(session, room)
     fast, slow = SlowGroups(), SlowGroups()
-    _, fast_stats = LLMPairer(session, fast, max_chars_per_call=1, workers=4).run()  # every claim in its own batch
-    LLMPairer(session, slow, max_chars_per_call=1, workers=1).run()
+    _, fast_stats = ClaimGrouper(session, fast, max_chars_per_call=1, workers=4).run()  # every claim in its own batch
+    ClaimGrouper(session, slow, max_chars_per_call=1, workers=1).run()
     assert fast_stats.batches == 6 and fast_stats.llm_calls == 6 and fast.peak >= 2 and slow.peak == 1
 
 
 def test_a_failed_call_does_not_stop_the_other_batches_when_calls_run_together(session, room):  # noqa: F811
     several_batches(session, room, extra=2)
     messages: list[str] = []
-    _, stats = LLMPairer(session, EveryOtherFails(), max_chars_per_call=1, workers=1, on_progress=messages.append).run()  # calls 2 and 4 fail
+    _, stats = ClaimGrouper(session, EveryOtherFails(), max_chars_per_call=1, workers=1, on_progress=messages.append).run()  # calls 2 and 4 fail
     assert stats.batches == 4 and stats.batches_failed == 2
     assert len(messages) == 4 and "grouping call 1 of 4 done" in messages[0] and "failed" in messages[1]
 
@@ -66,5 +66,5 @@ def test_a_failed_call_does_not_stop_the_other_batches_when_calls_run_together(s
 def test_a_stop_request_skips_the_calls_still_waiting(session, room):  # noqa: F811
     several_batches(session, room)
     llm = SlowGroups()
-    _, stats = LLMPairer(session, llm, max_chars_per_call=1, workers=2, should_stop=lambda: True).run()
+    _, stats = ClaimGrouper(session, llm, max_chars_per_call=1, workers=2, should_stop=lambda: True).run()
     assert stats.llm_calls == 0 and "stop requested" in stats.errors

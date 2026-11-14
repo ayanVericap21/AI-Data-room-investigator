@@ -20,8 +20,8 @@ from app.llm.errors import LLMInvalidOutputError, LLMTransientError
 from app.llm.prompts import claim_extraction
 from app.models import Claim, Document, DocumentChunk, Evidence, FindingClaim
 from app.models.base import ProcessingStatus
-from app.schemas.claim import CandidatePair, ClaimExtractionResult, ClaimOut, ClaimView, ExtractedClaim, SourceRef
-from app.services.candidate_matching import generate_candidate_pairs, table_key, topic_text
+from app.schemas.claim import Candidate, ClaimExtractionResult, ClaimOut, ClaimView, ExtractedClaim, SourceRef
+from app.services.candidate_matching import generate_candidates, table_key, topic_text
 from app.services.numbers import numbers_in_text, numbers_with_context, parse_number, value_supported_by_text
 from app.services.vocabulary import RunningVocabulary
 
@@ -261,17 +261,23 @@ class ClaimService:
         total = self.session.scalar(count) or 0
         rows = self.session.execute(base.order_by(Document.filename, DocumentChunk.chunk_index, Claim.created_at)
                                     .limit(limit).offset(offset))
-        items = []
-        for claim, filename, chunk in rows:
-            out = ClaimOut.model_validate({
-                **{k: getattr(claim, k) for k in ClaimOut.model_fields if k != "source"},
-                "source": SourceRef(document_id=claim.document_id, filename=filename, chunk_id=chunk.id,
-                                    content_type=chunk.content_type, page_number=chunk.page_number,
-                                    sheet_name=chunk.sheet_name, cell_reference=chunk.cell_reference,
-                                    heading=chunk.heading),
-            })
-            items.append(out)
-        return items, total
+        return [self._claim_out(claim, filename, chunk) for claim, filename, chunk in rows], total
+
+    @staticmethod
+    def _claim_out(claim: Claim, filename: str, chunk: DocumentChunk) -> ClaimOut:
+        return ClaimOut.model_validate({
+            **{k: getattr(claim, k) for k in ClaimOut.model_fields if k != "source"},
+            "source": SourceRef(document_id=claim.document_id, filename=filename, chunk_id=chunk.id, content_type=chunk.content_type,
+                                page_number=chunk.page_number, sheet_name=chunk.sheet_name, cell_reference=chunk.cell_reference, heading=chunk.heading),
+        })
+
+    def claims_by_ids(self, ids: set[str]) -> dict[str, ClaimOut]:
+        """The listed claims with their sources, whatever their number (the list above is paged)."""
+        if not ids:
+            return {}
+        rows = self.session.execute(select(Claim, Document.filename, DocumentChunk).join(Document, Document.id == Claim.document_id)
+                                    .join(DocumentChunk, DocumentChunk.id == Claim.chunk_id).where(Claim.id.in_(ids)))
+        return {claim.id: self._claim_out(claim, filename, chunk) for claim, filename, chunk in rows}
 
     def claim_views(self) -> list[ClaimView]:
         stmt = select(Claim, DocumentChunk.content_type, DocumentChunk.sheet_name, DocumentChunk.page_number) \
@@ -283,10 +289,10 @@ class ClaimService:
                           value_type=c.claim_category, table_key=table_key(c.document_id, kind, sheet, page))
                 for c, kind, sheet, page in self.session.execute(stmt)]
 
-    def candidate_pairs(self, embedder: EmbeddingProvider | None = None, **options) -> list[CandidatePair]:
+    def candidates(self, embedder: EmbeddingProvider | None = None, **options) -> list[Candidate]:
         """Deterministic candidate generation; embeddings (if given) add a synonym route."""
         views = self.claim_views()
         vectors = None
         if embedder is not None and views:
             vectors = dict(zip((v.id for v in views), embedder.embed([topic_text(v) for v in views], task="document")))
-        return generate_candidate_pairs(views, vectors=vectors, **options)
+        return generate_candidates(views, vectors=vectors, **options)

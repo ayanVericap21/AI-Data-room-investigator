@@ -9,17 +9,19 @@ from __future__ import annotations
 
 import logging
 import re
+from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Callable
 
 from pydantic import BaseModel
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
-from app.llm.llama_extract import LlamaExtractClient, LlamaExtractError
+from app.llm.llama_extract import LlamaExtractClient, LlamaExtractError, LlamaJob
 from app.models import Claim, Document, DocumentChunk
 from app.schemas.claim import ClaimExtractionResult, ExtractedClaim
 from app.services.claim_service import EXCERPT_TYPES_SKIPPED, ClaimService, ExtractionSummary
+from app.services.doc_profiles import DocProfile
 from app.services.missing_items import DocReference
 from app.services.numbers import value_supported_by_text
 from app.tools.submit import find_source_span
@@ -48,7 +50,7 @@ SCHEMA: dict[str, Any] = {
     "properties": {
         "claims": {
             "type": "array",
-            "description": "Every stated value in the document that could be compared with another document.",
+            "description": "Every stated value in the document that could be compared with another value, in this document or in another one.",
             "items": {
                 "type": "object",
                 "properties": {
@@ -77,12 +79,24 @@ SCHEMA: dict[str, Any] = {
                 "required": ["item", "quote"],
             },
         },
+        "profile": {
+            "type": "object",
+            "description": "A short description of the whole document, so that its claims can be read in context.",
+            "properties": {
+                "main_entity": {"type": "string", "description": "The organisation, project, product, person or event the document is mainly about, by name"},
+                "document_type": {"type": "string", "description": "What kind of document it is, for example permit, contract, financial model, lab report, presentation, register, minutes"},
+                "purpose": {"type": "string", "description": "What the document is for, in one sentence"},
+                "date": {"type": "string", "description": "The document's date or version, only if it states one"},
+                "status": {"type": "string", "description": "Draft, final, signed or superseded, only if the document states it"},
+                "scope": {"type": "string", "description": "What the document covers and what it does not, in one sentence"},
+            },
+        },
     },
 }
 
 SYSTEM_PROMPT = (
     "Extract every claim that states a value (a number, quantity, amount, date, duration, name, yes/no, status or condition) "
-    "so it can be compared with other documents, including values in lists, tables and short fragments. If the same quantity "
+    "so it can be compared with other values, whether stated elsewhere in the same document or in other documents, including values in lists, tables and short fragments. If the same quantity "
     "is stated more than once, extract each mention. For a table, the subject is the row's identifying label (its ID or name), never the table or sheet name; when a row is identified by several columns together (an entity and a date or period, a place and a date), the subject names all of them, so that two rows differing in any identifying column never share a subject; the metric is the "
     "column heading. Copy values and sentences exactly as written; never calculate or infer, and never shorten or join passages with an ellipsis (...): copy the whole value. "
     "OUTPUT FORMAT (strict): every claim has non-empty string fields subject, metric, value and claim_text, and a value_type that is exactly one of "
@@ -90,10 +104,12 @@ SYSTEM_PROMPT = (
     "only when the document states them; never return a claim without a value, and never invent other fields. "
     "Do not return a claim whose value is just the label that identifies its own row or item (the ID or name in the row's first column): that label is the subject, not a value. "
     "Also return references: each document, annex, schedule, exhibit, attachment, table, report, approval, certificate, record or other item that the text says exists "
-    "elsewhere, is attached, is included, or is missing, not included, not provided, not available, not yet received, pending, in process or outstanding, "
+    "elsewhere, is attached, is included, or is missing, not included, not provided, not available, available only on request, on file, provided separately, not yet received, pending, in process or outstanding, "
     "with item (its name as written) and quote (the sentence that refers to it, copied exactly). "
     "Do not list a section of the same document, and do not list a kind of document that a general disclaimer names (for example a statement that the document is not an audit report or a filing). "
-    "Return an empty references list when there are none.")
+    "Return an empty references list when there are none. "
+    "Also return profile: a short description of the whole document (main_entity, document_type, purpose, date, status, scope), "
+    "stating only what the document itself says; leave date and status empty when it gives none.")
 
 
 class LlamaClaim(BaseModel):
@@ -118,9 +134,23 @@ class LlamaReference(BaseModel):
     quote: str = ""
 
 
+class LlamaProfile(BaseModel):
+    """The extraction service returns null for a field it cannot fill, so every field may be missing."""
+    main_entity: str | None = None
+    document_type: str | None = None
+    purpose: str | None = None
+    date: str | None = None
+    status: str | None = None
+    scope: str | None = None
+
+    def to_profile(self) -> DocProfile:
+        return DocProfile(**{k: (v or "").strip() for k, v in self.model_dump().items()})
+
+
 class LlamaClaims(BaseModel):
     claims: list[LlamaClaim] = []
     references: list[LlamaReference] = []
+    profile: LlamaProfile | None = None  # what the document is about, in the same call (compared with the separate describing calls)
 
 
 def _squash(text: str) -> str:
@@ -190,9 +220,33 @@ def expand_ellipsis(value: Any, chunks: list[DocumentChunk]) -> tuple[DocumentCh
     return None
 
 
+def merge_jobs(jobs: list[LlamaJob]) -> LlamaJob:
+    """The page-range jobs of one document as one job: claims and references in page order, each claim keeping its own citation (the pages the
+    service cites are the document's own page numbers). If any range failed, that job stands for the document, which then fails as a whole."""
+    if len(jobs) == 1:
+        return jobs[0]
+    failed = next((j for j in jobs if j.status != "COMPLETED" or not isinstance(j.result, dict)), None)
+    if failed is not None:
+        return failed
+    claims: list = []
+    references: list = []
+    cited: list = []  # the citations of the claims, in the same order, so a claim's index finds its own
+    for j in jobs:
+        part = j.result.get("claims") or []
+        claims += part
+        references += j.result.get("references") or []
+        own = (((j.metadata or {}).get("field_metadata") or {}).get("document_metadata") or {}).get("claims") or []
+        cited += (list(own) + [{}] * len(part))[:len(part)]
+    profile = next((j.result.get("profile") for j in jobs if j.result.get("profile")), None)  # the first range describes the document
+    return LlamaJob(job_id=",".join(j.job_id for j in jobs), status="COMPLETED", result={"claims": claims, "references": references, "profile": profile},
+                    metadata={"field_metadata": {"document_metadata": {"claims": cited}}}, credits=sum(j.credits for j in jobs),
+                    pages_billed=sum(j.pages_billed for j in jobs), latency_ms=max(j.latency_ms for j in jobs))
+
+
 class LlamaClaimExtractor:
     def __init__(self, session: Session, client: LlamaExtractClient, data_room_dir: Path,
-                 on_progress: ProgressFn | None = None, should_stop: Callable[[], bool] | None = None):
+                 on_progress: ProgressFn | None = None, should_stop: Callable[[], bool] | None = None, pages_per_job: int = 0):
+        self.pages_per_job = pages_per_job  # a PDF longer than this is read in page ranges, one job each, started together (0 = one job per document)
         self.session = session
         self.client = client
         self.root = data_room_dir
@@ -200,6 +254,53 @@ class LlamaClaimExtractor:
         self.should_stop = should_stop or (lambda: False)
         self._claims = ClaimService(session)  # reused for the value check and storing
         self.references: list[DocReference] = []  # items the documents point to; checked for absence after the run's claims are judged
+        self.profiles: dict[str, tuple[str, DocProfile]] = {}  # document id -> (file name, profile) as the extraction call described it
+        self._pool: ThreadPoolExecutor | None = None
+        self._jobs: dict[str, list[Future]] = {}  # document id -> its extraction jobs (one, or one per page range), started ahead by ``prefetch``
+
+    def _page_ranges(self, doc: Document) -> list[str]:
+        """The page ranges a PDF is read in ("1-4", "5-8", ...), or none when it is short enough for one job (or is not a PDF)."""
+        if not self.pages_per_job or doc.file_type != "pdf":
+            return []
+        last = self.session.scalar(select(func.max(DocumentChunk.page_number)).where(DocumentChunk.document_id == doc.id)) or 0
+        if last <= self.pages_per_job:
+            return []
+        return [f"{start}-{min(start + self.pages_per_job - 1, last)}" for start in range(1, last + 1, self.pages_per_job)]
+
+    def prefetch(self, docs: list[Document], workers: int) -> None:
+        """Start the extraction jobs of all the documents at once, a long PDF as several page-range jobs. The service does the reading, so the
+        waiting overlaps; the results are still stored one document at a time by ``extract_document``, which finds its jobs here and waits for them."""
+        if workers <= 1:
+            return
+        self._pool = ThreadPoolExecutor(max_workers=workers)
+        for doc in docs:
+            if self.should_stop():
+                break
+            path = (self.root / doc.filename).resolve()
+            ranges = self._page_ranges(doc)
+            if not ranges:
+                self._jobs[doc.id] = [self._pool.submit(self.client.extract, path, SCHEMA, system_prompt=SYSTEM_PROMPT)]
+                continue
+            try:
+                file_id = self.client.upload(path)  # uploaded once, read by every range
+            except Exception as exc:  # reported when the document is stored
+                failed: Future = Future()
+                failed.set_exception(exc)
+                self._jobs[doc.id] = [failed]
+                continue
+            self._jobs[doc.id] = [self._pool.submit(self.client.extract, path, SCHEMA, file_id=file_id, system_prompt=SYSTEM_PROMPT,
+                                                    extra_configuration={"target_pages": pages}) for pages in ranges]
+
+    def close(self) -> None:
+        if self._pool is not None:
+            self._pool.shutdown(wait=False, cancel_futures=True)
+            self._pool, self._jobs = None, {}
+
+    def _job(self, doc: Document, path: Path) -> LlamaJob:
+        futures = self._jobs.pop(doc.id, None)
+        if futures is None:
+            return self.client.extract(path, SCHEMA, system_prompt=SYSTEM_PROMPT)
+        return merge_jobs([f.result() for f in futures])
 
     def extract_document(self, doc: Document, summary: ExtractionSummary, force: bool = False) -> None:
         if self.should_stop():
@@ -212,7 +313,7 @@ class LlamaClaimExtractor:
             if c.content_type not in EXCERPT_TYPES_SKIPPED]
         try:
             summary.external_calls += 1
-            job = self.client.extract(path, SCHEMA, system_prompt=SYSTEM_PROMPT)
+            job = self._job(doc, path)
         except LlamaExtractError as exc:
             self._fail(doc, summary, str(exc))
             if exc.code == 402:  # out of credits: the next documents would fail the same way
@@ -224,6 +325,9 @@ class LlamaClaimExtractor:
             return
 
         parsed = LlamaClaims.model_validate(job.result)
+        profile = parsed.profile.to_profile() if parsed.profile is not None else None
+        if profile is not None and not profile.empty:
+            self.profiles[doc.id] = (doc.filename, profile)
         extracted: list[ExtractedClaim] = []
         for index, claim in enumerate(parsed.claims):
             if claim.value in (None, ""):

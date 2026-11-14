@@ -66,7 +66,7 @@ class EmbeddingProvider(ABC):
                 wall: float = 0.0) -> None:
         self.call_metrics.append(CallMetric(
             kind="embedding", latency_ms=round((time.perf_counter() - started) * 1000), ok=error is None,
-            error=str(error)[:200] if error else None, items=len(batch or []),
+            error=str(error) if error else None, items=len(batch or []),
             prompt_chars=sum(len(t) for t in batch or []), started_at=wall))
 
 

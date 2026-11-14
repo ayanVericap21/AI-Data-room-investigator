@@ -112,17 +112,37 @@ class AttributeComparison(BaseModel):
     assumptions_differ: bool
 
 
-class CandidatePair(BaseModel):
+class Candidate(BaseModel):
     """A *candidate* comparison. relation_hint is a deterministic hint, not a finding."""
 
-    claim_a_id: str
-    claim_b_id: str
+    claim_id: str
+    candidate_id: str
     topic_score: float
     relation_hint: RelationHint
     comparison: AttributeComparison
-    matched_by: Literal["lexical", "embedding", "llm"] = "lexical"
+    matched_by: Literal["lexical", "embedding", "llm", "identifier", "rule"] = "lexical"
 
 
-class CandidateListOut(BaseModel):
-    items: list[CandidatePair]
-    total: int
+class CandidateLink(BaseModel):
+    """Another claim that may state the same fact as the claim it is listed under, and how it was found."""
+
+    claim: ClaimOut
+    relation_hint: RelationHint
+    topic_score: float
+    matched_by: Literal["lexical", "embedding", "llm", "identifier", "rule"]
+
+
+class GroupedClaim(BaseModel):
+    claim: ClaimOut
+    candidates: list[CandidateLink]  # the group's other claims this one may be compared with
+
+
+class ClaimGroup(BaseModel):
+    """A fact and the claims that may state it: each claim with its candidates."""
+
+    claims: list[GroupedClaim]
+
+
+class ClaimGroupListOut(BaseModel):
+    items: list[ClaimGroup]
+    total: int  # groups

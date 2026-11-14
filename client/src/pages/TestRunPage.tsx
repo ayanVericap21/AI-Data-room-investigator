@@ -1,9 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Box, Button, Chip, CircularProgress, MenuItem, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, Chip, CircularProgress, IconButton, MenuItem, Paper, Stack, TextField, Tooltip, Typography } from "@mui/material";
+import { useQueryClient } from "@tanstack/react-query";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import StopIcon from "@mui/icons-material/Stop";
 import { errorMessage } from "../api/client";
+import ClaimsPanel from "../components/common/ClaimsPanel";
 import FileTree from "../components/common/FileTree";
+import { CANDIDATES_KEY, CLAIMS_KEY } from "../hooks/useClaims";
+import { useScanDocuments } from "../hooks/useDocuments";
 import { POLL_MS, useRunFiles, useRunLog, useStartRun, useStopRun } from "../hooks/useTestRun";
 import type { RunState } from "../types/testRun";
 import { allFolders, buildTree } from "../utils/fileTree";
@@ -21,11 +26,13 @@ export default function TestRunPage() {
   const files = useRunFiles();
   const start = useStartRun();
   const stop = useStopRun();
+  const scan = useScanDocuments();
+  const qc = useQueryClient();
   const { lines, run, error, pollNow } = useRunLog();
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [judgeWorkers, setJudgeWorkers] = useState(4); // pair-judging model calls made at the same time
+  const [judgeWorkers, setJudgeWorkers] = useState(4); // grouping and judging model calls made at the same time
   const initialised = useRef(false);
 
   const paths = useMemo(() => (files.data ?? []).map((f) => f.path), [files.data]);
@@ -40,6 +47,15 @@ export default function TestRunPage() {
   }, [files.data]);
 
   const active = run.state === "running" || run.state === "stopping";
+
+  // when a run ends, the claims, claim groups and findings shown below are read again
+  useEffect(() => {
+    if (run.state === "finished" || run.state === "stopped" || run.state === "failed") {
+      void qc.invalidateQueries({ queryKey: CLAIMS_KEY });
+      void qc.invalidateQueries({ queryKey: CANDIDATES_KEY });
+      void qc.invalidateQueries({ queryKey: ["findings"] });
+    }
+  }, [run.state, qc]);
 
   const toggleFiles = (toggled: string[], checked: boolean) =>
     setSelected((prev) => {
@@ -86,7 +102,7 @@ export default function TestRunPage() {
             value={judgeWorkers}
             disabled={active}
             onChange={(e) => setJudgeWorkers(Number(e.target.value))}
-            sx={{ minWidth: 150 }}
+            sx={{ minWidth: 300 }}
           >
             {[1, 2, 4, 8].map((n) => (
               <MenuItem key={n} value={n}>{n === 1 ? "1 (one by one)" : n}</MenuItem>
@@ -128,15 +144,35 @@ export default function TestRunPage() {
 
       <Box sx={{ display: "grid", gap: 2, gridTemplateColumns: { xs: "1fr", md: "minmax(280px, 1fr) 2fr" } }}>
         <Paper variant="outlined" sx={{ p: 1.5, maxHeight: 560, overflow: "auto" }}>
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
-            <Typography variant="subtitle2">
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", columnGap: 1, mb: 1 }}>
+            <Typography variant="subtitle2" noWrap sx={{ minWidth: 0 }}>
               Documents ({selected.size} of {paths.length} included)
             </Typography>
-            <Stack direction="row" spacing={0.5}>
+            <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", flexShrink: 0 }}>
+              <Tooltip title="Scan the data room folder for new or changed documents">
+                <span>
+                  <IconButton
+                    size="small"
+                    color="primary"
+                    aria-label="Refresh documents"
+                    disabled={active || scan.isPending}
+                    onClick={() => scan.mutate(undefined, { onSuccess: () => void files.refetch() })}
+                  >
+                    {scan.isPending ? <CircularProgress size={18} /> : <RefreshIcon fontSize="small" />}
+                  </IconButton>
+                </span>
+              </Tooltip>
               <Button size="small" disabled={active} onClick={() => setSelected(new Set(paths))}>All</Button>
               <Button size="small" disabled={active} onClick={() => setSelected(new Set())}>None</Button>
             </Stack>
           </Box>
+          {scan.isError && <Alert severity="error" sx={{ mb: 1 }}>{errorMessage(scan.error)}</Alert>}
+          {scan.data && (
+            <Alert severity="info" sx={{ mb: 1 }}>
+              Scan finished: {scan.data.added} added, {scan.data.updated} updated, {scan.data.unchanged} unchanged, {scan.data.missing} missing.
+              {scan.data.unsupported.length > 0 && ` Unsupported files ignored: ${scan.data.unsupported.join(", ")}.`}
+            </Alert>
+          )}
           {files.isLoading && <CircularProgress size={20} />}
           {files.isError && <Alert severity="error">{errorMessage(files.error)}</Alert>}
           {files.data && paths.length === 0 && (
@@ -173,6 +209,10 @@ export default function TestRunPage() {
             </Box>
           </Box>
         </Paper>
+      </Box>
+
+      <Box sx={{ mt: 4 }}>
+        <ClaimsPanel />
       </Box>
     </Box>
   );
