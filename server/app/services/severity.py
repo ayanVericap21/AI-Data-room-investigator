@@ -32,7 +32,7 @@ def contradiction_severity(claims: Iterable, context: Iterable = ()) -> str:
             gap = relative_gap(a.value, a.unit, b.value, b.unit, normalize_unit)
             if gap is not None:
                 worst = gap if worst is None else max(worst, gap)
-    non_numeric = worst is None and any((c.claim_category or "") in NON_NUMERIC for c in claims)
+    non_numeric = worst is None and any(((getattr(c, "claim_category", None) or getattr(c, "value_type", None)) or "") in NON_NUMERIC for c in claims)  # a claim row or a matching view
     large = non_numeric or (worst is not None and worst >= 0.05)
     small = worst is not None and worst < 0.01
     prominent = any(PROMINENT.search(_text(c)) for c in claims + context)

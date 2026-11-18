@@ -7,7 +7,7 @@ from app.agent import InvestigationAgent
 from app.agent import run_investigation as _run_investigation
 from app.llm.errors import LLMPermanentError
 from app.llm.mock import MockLLMClient
-from app.models import Finding, Investigation, InvestigationEvent
+from app.models import DocumentChunk, Finding, Investigation, InvestigationEvent
 from app.tools import ToolBudget, build_registry
 from tests.test_tools import finding_args, room, registry  # noqa: F401  (fixtures)
 
@@ -42,7 +42,9 @@ def test_full_run_lists_reads_submits_and_finishes(session, room):
     assert result.token_usage.calls == 5 and result.llm_latency.calls == 5 and result.tool_latency.calls == 4
 
     investigation = session.get(Investigation, result.investigation_id)
-    assert investigation.status == "completed" and investigation.completed_at and investigation.duration_ms is not None
+    # the agent opened one of the three readable documents and finished: accepted, but recorded as incomplete with the gap listed
+    assert investigation.status == "partially_completed" and investigation.completed_at and investigation.duration_ms is not None
+    assert len(investigation.execution_config["coverage"]["not_opened"]) == 2 and investigation.execution_config["cost"]["estimated"] is None
     assert investigation.total_tokens == result.token_usage.total_tokens
     assert investigation.execution_config["focus"] == "capacity"
     steps = session.scalars(select(InvestigationEvent).where(
@@ -226,8 +228,13 @@ def test_tool_and_finding_limits_default_to_none_so_nothing_cuts_a_large_data_ro
     assert budget.max_tool_calls is None and budget.max_findings is None
     registry = build_registry(session, None, room.investigation.id, budget)
     assert all(registry.execute("list_documents").ok for _ in range(100))  # well past the old limit of 60
-    for i in range(25):  # and past the old limit of 20 findings
-        assert registry.execute("submit_finding", finding_args(room, title=f"finding {i}")).ok
+    extra = [DocumentChunk(document_id=room.deck.id, chunk_index=10 + i, content_type="paragraph", content=f"Capacity line {i} is {i} tonnes.", page_number=3) for i in range(25)]
+    session.add_all(extra)
+    session.commit()
+    for i, chunk in enumerate(extra):  # and past the old limit of 20 findings (each with its own evidence: a repeat of one is refused)
+        args = finding_args(room, title=f"finding {i}")
+        args["evidence"][0] = dict(chunk_id=chunk.id, quoted_text=f"Capacity line {i} is {i} tonnes", role="contradicting", relevance_reason="x", support_assessment="y")
+        assert registry.execute("submit_finding", args).ok
 
 
 def test_explicit_limits_still_work_when_asked_for(session, room):

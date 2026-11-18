@@ -15,7 +15,7 @@ def test_small_units_map_one_to_one_and_keep_locators():
 
 def test_long_paragraph_splits_on_sentences_and_keeps_locator():
     text = " ".join(f"Sentence number {i} is here." for i in range(40))
-    drafts = chunk_units([unit(text, page=3)], max_chars=200)
+    drafts = chunk_units([unit(text, page=3)], max_chars=200, overlap_chars=0)
     assert len(drafts) > 1
     assert all(len(d.content) <= 200 and d.page_number == 3 for d in drafts)
     assert " ".join(d.content for d in drafts) == text  # nothing lost or altered

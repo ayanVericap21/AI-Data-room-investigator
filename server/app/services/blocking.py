@@ -2,7 +2,7 @@
 
 Two routes the LLM grouping and the nearest-neighbour matching miss:
 
-* shared labels: two claims in different documents whose metric names share a word that few claims use ("purchase order", "headcount"), or whose subject and
+* shared labels: two claims in different documents (or two numbers or dates in two places of one document) whose metric names share a word that few claims use ("purchase order", "headcount"), or whose subject and
   metric words together share two such words ("practical completion"), and that state the same kind of value. Common words (the metric "date") never link.
 * negation: a claim that says there is none of something ("No subcontractors are engaged", "No safety incidents have occurred") is linked to every claim
   that asserts that thing. They go to the judge as a rule group: the negation is the rule and the claims that assert the thing are the records.
@@ -26,6 +26,7 @@ RARE_FLOOR, RARE_CAP, RARE_SHARE = 6, 12, 0.04  # a word is rare when at most th
 SAME_METRIC_MAX = 8  # claims whose metrics are word for word the same are linked when there are at most this many of them
 PARTNERS = 6  # at most this many shared-label candidates for one claim
 NEGATION_PARTNERS = 8  # at most this many claims linked to one negation
+INSIDE_TYPES = frozenset({"quantity", "date"})  # the claims of one document that are compared with each other
 KINDS = {"quantity": "number", "date": "time", "identifier": "id"}  # every other type is text (name, state, statement)
 NEGATIVE_VALUES = frozenset({"no", "none", "never", "nobody", "nothing", "not any"})  # not "nil" or "zero": a balance of nil is a quantity
 NEGATION = re.compile(r"\b(?:no|none of the|nothing|nobody|never any|not any|without any)\s+((?:[a-z][a-z-]*\s+){0,2}[a-z][a-z-]*)", re.IGNORECASE)
@@ -46,6 +47,15 @@ def types_compatible(a: ClaimView, b: ClaimView) -> bool:
     return ka == kb or {ka, kb} in ({"number", "text"}, {"number", "time"})
 
 
+def inside_document_ok(a: ClaimView, b: ClaimView) -> bool:
+    """Whether two claims of ONE document are worth comparing: they come from different passages (one passage is one statement) and both state a number or a date,
+    which can be checked against each other. Two statements or names inside a document say too many different things for a pair to mean a conflict.
+    Claims of different documents are always allowed here."""
+    if a.document_id != b.document_id:
+        return True
+    return a.chunk_id != b.chunk_id and (a.value_type or "") in INSIDE_TYPES and (b.value_type or "") in INSIDE_TYPES
+
+
 def rare_limit(claims: int) -> int:
     return max(RARE_FLOOR, min(RARE_CAP, int(claims * RARE_SHARE)))
 
@@ -58,7 +68,7 @@ def _candidate(a: ClaimView, b: ClaimView, how: str, rule_first: bool = False) -
 
 
 def shared_label_candidates(views: list[ClaimView]) -> list[Candidate]:
-    """Claims in different documents that state the same kind of value and share a rare word of their labels (see the module's text)."""
+    """Claims in different documents (or in different passages of one document) that state the same kind of value and share a rare word of their labels (see the module's text)."""
     limit = rare_limit(len(views))
     metric = [frozenset(t for t in tokens(v.metric) - GENERIC if len(t) > 2) for v in views]
     both = [metric[i] | frozenset(t for t in tokens(v.subject) - GENERIC if len(t) > 2) for i, v in enumerate(views)]
@@ -75,8 +85,8 @@ def shared_label_candidates(views: list[ClaimView]) -> list[Candidate]:
             if (i, j) in scored:
                 continue
             a, b = views[i], views[j]
-            if a.document_id == b.document_id or (a.value_type or "") != (b.value_type or ""):
-                continue
+            if not inside_document_ok(a, b) or (a.value_type or "") != (b.value_type or ""):
+                continue  # two numbers or dates in two places of one document are candidates; two claims of one passage are parts of one statement
             shared_metric = {t for t in metric[i] & metric[j] if metric_df[t] <= limit}
             shared_both = {t for t in both[i] & both[j] if both_df[t] <= limit}
             if not shared_metric and len(shared_both) < 2:
@@ -94,7 +104,7 @@ def shared_label_candidates(views: list[ClaimView]) -> list[Candidate]:
         if 2 <= len(members) <= SAME_METRIC_MAX:
             for i, j in combinations(members, 2):
                 a, b = views[i], views[j]
-                if (a.document_id != b.document_id and (a.value_type or "") == (b.value_type or "") and not same_table(a, b) and table_rows_about_one_item(a, b)
+                if (inside_document_ok(a, b) and (a.value_type or "") == (b.value_type or "") and not same_table(a, b) and table_rows_about_one_item(a, b)
                         and not one_sentence_in_one_document(a, b) and (a.value_type == "identifier" or not different_records(a, b))):
                     scored[(i, j)] = max(scored.get((i, j), 0), 10)
     taken: Counter = Counter()

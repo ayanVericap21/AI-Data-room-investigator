@@ -327,7 +327,7 @@ def test_a_crashing_tool_returns_an_error_instead_of_raising(session):
 
 def test_describe_lists_every_tool_with_its_input_schema(registry):
     described = {d.name: d for d in registry.describe()}
-    assert set(described) == {"list_documents", "get_outline", "search", "get_chunk", "read_section", "calculate", "submit_finding"}
+    assert set(described) == {"list_documents", "get_outline", "search", "get_chunk", "read_section", "calculate", "compare_values", "submit_finding"}
     assert "document_id" in described["get_outline"].input_schema["properties"]
     schema = str(described["submit_finding"].input_schema)
     assert "contradiction" in schema and "missing_information" in schema
@@ -388,3 +388,9 @@ def test_a_document_without_chunks_is_not_expected_to_be_opened(session, room, r
     add_doc(session, "scan.pdf", "pdf", [], status="skipped")
     session.commit()
     assert registry.coverage().total == 3
+
+
+def test_submit_finding_accepts_what_the_judge_produces_a_title_of_500_characters_and_16_evidence_rows():
+    from app.tools.schemas import SubmitFindingInput
+    schema = SubmitFindingInput.model_json_schema()
+    assert schema["properties"]["title"]["maxLength"] == 500 and schema["properties"]["evidence"]["maxItems"] == 16

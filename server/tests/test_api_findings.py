@@ -31,7 +31,9 @@ def test_nothing_run_yet_gives_an_empty_answer(client):
 
 def test_findings_are_grouped_contradictions_first_then_by_severity_with_their_sources(client, registry, room):  # noqa: F811
     context_id = save(registry, room, classification="contextual_difference", severity="low", title="Context")
-    medium_id = save(registry, room, severity="medium", title="Medium contradiction")
+    other_evidence = [dict(chunk_id=room.deck_p2, quoted_text="EBITDA margin for 2024 was 18% of revenue", role="contradicting", relevance_reason="x", support_assessment="y"),
+                      dict(chunk_id=room.capex_expansion, quoted_text="150,000 tonnes (2027)", role="contradicting", relevance_reason="x", support_assessment="y")]
+    medium_id = save(registry, room, severity="medium", title="Medium contradiction", evidence=other_evidence)  # a repeat of a saved finding is refused, so it has its own evidence
     high_id = save(registry, room, severity="high", title="High contradiction")
     body = client.get("/api/findings").json()
     assert body["investigation"]["id"] == room.investigation.id and body["investigation"]["finding_count"] == 3
@@ -55,3 +57,16 @@ def test_a_run_can_be_chosen_by_id_and_unknown_ids_are_404(client, registry, roo
     assert client.get("/api/findings?investigation_id=inv_nope").status_code == 404
     runs = client.get("/api/investigations").json()
     assert {r["id"]: r["finding_count"] for r in runs} == {room.investigation.id: 1, other.id: 0}
+
+
+def test_clearing_results_removes_what_runs_produced_and_keeps_documents(client, registry, room, session):  # noqa: F811
+    from app.models import Claim, Document, DocumentChunk, Evidence, Finding, FindingClaim
+    save(registry, room)
+    documents, chunks = session.query(Document).count(), session.query(DocumentChunk).count()
+    assert session.query(Finding).count() == 1 and session.query(Evidence).count() == 2
+    removed = client.delete("/api/results").json()
+    assert removed["findings"] == 1 and removed["evidence"] == 2 and removed["investigations"] >= 1
+    for model in (Finding, Evidence, FindingClaim, Claim, Investigation):
+        assert session.query(model).count() == 0
+    assert session.query(Document).count() == documents and session.query(DocumentChunk).count() == chunks
+    assert client.get("/api/findings").json() == {"investigation": None, "counts": {}, "findings": []}

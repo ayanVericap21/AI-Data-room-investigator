@@ -40,6 +40,18 @@ def test_transient_errors_retry_with_backoff_then_succeed():
     assert delays == [1, 2] and llm.retry_count == 2
 
 
+def test_a_retried_error_names_its_http_status_in_the_log_and_in_the_call_metrics(caplog):
+    llm = MockLLMClient([LLMTransientError("busy", status=503), LLMTransientError("slow down", retry_after=2, status=429), LLMTransientError("reset"), "ok"],
+                        sleep=lambda _s: None, base_delay=1, max_attempts=5)
+    with caplog.at_level("WARNING", logger="app.llm.base"):
+        assert llm.generate_text("q") == "ok"
+    messages = [r.getMessage() for r in caplog.records if "Transient LLM error" in r.getMessage()]
+    assert "HTTP 503" in messages[0] and "attempt 1 of" in messages[0]
+    assert "HTTP 429" in messages[1] and "waiting 2s" in messages[1]
+    assert "no HTTP status" in messages[2]
+    assert [m.status for m in llm.call_metrics] == [503, 429, None, None]  # the last attempt succeeded
+
+
 def test_transient_errors_exhaust_budget():
     llm = MockLLMClient([LLMTransientError("429")] * 5, max_attempts=3)
     with pytest.raises(LLMTransientError):

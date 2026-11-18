@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import httpx
 from pydantic import BaseModel, Field
@@ -37,6 +37,8 @@ class LlamaJob(BaseModel):
     pages_billed: int = 0
     latency_ms: int = 0
     error: str | None = None
+    cached: bool = False  # read from the extraction cache: no job ran and no credits were spent
+    credits_saved: float = 0.0  # what the stored job cost when it ran
 
 
 class LlamaExtractClient:
@@ -70,10 +72,10 @@ class LlamaExtractClient:
         return response.json()
 
     # -- the three steps -------------------------------------------------------
-    def upload(self, path: Path) -> str:
+    def upload(self, path: Path, purpose: str = "extract") -> str:
         with open(path, "rb") as fh:
             data = self._request("POST", "/api/v1/beta/files", params=self._params(), files={"file": (path.name, fh)},
-                                 data={"purpose": "extract"})
+                                 data={"purpose": purpose})
         file_id = data.get("id")
         if not file_id:
             raise LlamaExtractError("The upload response had no file id")
@@ -91,10 +93,24 @@ class LlamaExtractClient:
             raise LlamaExtractError("The extract response had no job id")
         return job_id
 
-    def wait(self, job_id: str) -> dict[str, Any]:
-        """Poll until the job ends; returns the final job JSON with metadata and usage."""
+    def cancel(self, job_id: str) -> bool:
+        """Ask LlamaExtract to stop a running job (POST /api/v2/extract/{id}/cancel), so it stops processing. Best effort: a job that has already ended
+        cannot be cancelled and the call is refused; that is not an error here. Whether a cancelled job is still billed is not stated in the service's docs."""
+        try:
+            self._request("POST", f"/api/v2/extract/{job_id}/cancel", params=self._params())
+        except LlamaExtractError as exc:
+            logger.warning("Could not cancel LlamaExtract job %s: %s", job_id, exc)
+            return False
+        return True
+
+    def wait(self, job_id: str, should_stop: Callable[[], bool] | None = None) -> dict[str, Any]:
+        """Poll until the job ends; returns the final job JSON with metadata and usage. When ``should_stop`` turns true the job is cancelled at once
+        (it would otherwise keep running, and billing, on the service) and the wait ends with an error."""
         started = time.monotonic()
         while True:
+            if should_stop is not None and should_stop():
+                self.cancel(job_id)
+                raise LlamaExtractError(f"Extraction job {job_id} was cancelled: the run was stopped")
             job = self._request("GET", f"/api/v2/extract/{job_id}", params=self._params(expand=["extract_metadata", "usage"]))
             if job.get("status") in DONE:
                 return job
@@ -102,10 +118,13 @@ class LlamaExtractClient:
                 raise LlamaExtractError(f"Extraction job {job_id} did not finish within {self.max_wait:.0f}s")
             time.sleep(self.poll_seconds)
 
-    def extract(self, path: Path, schema: dict[str, Any], file_id: str | None = None, **kwargs: Any) -> LlamaJob:
-        """Upload ``path`` (unless ``file_id`` names a file already uploaded), run one extraction job and wait for it."""
+    def extract(self, path: Path, schema: dict[str, Any], file_id: str | None = None, should_stop: Callable[[], bool] | None = None, **kwargs: Any) -> LlamaJob:
+        """Upload ``path`` (unless ``file_id`` names a file already uploaded), run one extraction job and wait for it. A stopped run starts no new job
+        and cancels the one it is waiting for."""
+        if should_stop is not None and should_stop():
+            raise LlamaExtractError("Extraction was not started: the run was stopped")
         started = time.monotonic()
-        job = self.wait(self.create_job(file_id or self.upload(path), schema, **kwargs))
+        job = self.wait(self.create_job(file_id or self.upload(path), schema, **kwargs), should_stop)
         usage = job.get("usage") or {}
         billed = (job.get("metadata") or {}).get("usage") or {}
         return LlamaJob(

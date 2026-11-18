@@ -1,0 +1,7 @@
+Neighbour search float test on 1407 real claims (dev database), local embedder LocalEmbeddingProvider, 384 dimensions
+eligible pairs after the gates: 1,485,650; embedding 8.3 s; gates 6.3 s
+similarities, pure Python sum: 29.9 s; numpy float64 matrix product + lookup: 0.41 s (the product alone: 13.0 ms)
+float64: largest difference 1.665e-15; pairs that differ at all: 1,317,584 of 1,485,650; claims whose ranked list is in a different order: 7
+float32 (for comparison): largest difference 8.729e-07; pairs that differ: 1,485,648; claims with a different order: 84
+pairs within 1e-9 of a threshold (0.72 or 0.5): 0; claims whose list holds two equal similarities: 1364
+neighbour candidates (strong, mutual, orphan), old: 663; new float64: 663; differing: 0; new float32: 663; differing: 0

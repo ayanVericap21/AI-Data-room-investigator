@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.core.exceptions import AppError
 from app.llm.embeddings import EmbeddingProvider
+from app.services.chunk_embeddings import embed_missing
 from app.models import Claim, Document, DocumentChunk
 from app.models.base import ProcessingStatus
 
@@ -32,6 +33,16 @@ class RetrievalService:
     def __init__(self, session: Session, embedder: EmbeddingProvider):
         self.session = session
         self.embedder = embedder
+        self._embedded = False  # the chunks without a vector have been embedded by this service
+
+    def ensure_embedded(self) -> int:
+        """Embed the chunks that have no vector yet (a ledger run saves chunks without them), once per service. A failure leaves it to
+        the next search. Returns the number of chunks embedded."""
+        if self._embedded:
+            return 0
+        count = embed_missing(self.session, self.embedder)
+        self._embedded = True
+        return count
 
     def search(self, query: str, top_k: int = 5, document_ids: list[str] | None = None,
                exclude_chunk_ids: list[str] | None = None, exclude_document_ids: list[str] | None = None,
@@ -40,6 +51,7 @@ class RetrievalService:
             raise AppError("Semantic search requires PostgreSQL with pgvector")
         if not query.strip():
             return []
+        self.ensure_embedded()
         vector = self.embedder.embed([query], task="query")[0]
         distance = DocumentChunk.embedding.op("<=>", return_type=Float)(vector)
         stmt = (

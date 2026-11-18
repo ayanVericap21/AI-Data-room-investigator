@@ -9,7 +9,8 @@ from app.api.dependencies import (JobManager, Settings, get_job_manager, get_llm
 from app.core.exceptions import NotFoundError
 from app.llm.base import LLMClient
 from app.llm.embeddings import EmbeddingProvider
-from app.models import Document, DocumentChunk
+from app.models import (Claim, Document, DocumentChunk, Evidence, Finding, FindingClaim, Investigation,
+                        InvestigationEvent)
 from app.schemas.claim import ClaimGroupListOut, ChunkOut, ClaimListOut
 from app.services.claim_groups import group_candidates
 from app.schemas.job import JobOut
@@ -61,6 +62,18 @@ def candidate_groups(min_topic_score: float = Query(0.5, ge=0, le=1), max_partne
     service = ClaimService(session)
     groups = group_candidates(found, service.claims_by_ids({i for c in found for i in (c.claim_id, c.candidate_id)}))
     return ClaimGroupListOut(items=groups, total=len(groups))
+
+
+@router.delete("/results")
+def clear_results(session: Session = Depends(get_session)) -> dict[str, int]:
+    """Remove everything earlier runs produced (claims, findings with their evidence and claim links, investigations with their events) so only
+    the next run's results are shown. Documents and their passages stay."""
+    removed = {}
+    for name, model in (("evidence", Evidence), ("finding_claims", FindingClaim), ("findings", Finding),
+                        ("investigation_events", InvestigationEvent), ("investigations", Investigation), ("claims", Claim)):
+        removed[name] = session.query(model).delete(synchronize_session=False)
+    session.commit()
+    return removed
 
 
 @router.get("/chunks/{chunk_id}", response_model=ChunkOut)

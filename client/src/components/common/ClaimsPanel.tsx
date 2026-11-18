@@ -6,6 +6,7 @@ import {
 import { errorMessage } from "../../api/client";
 import DiscrepanciesPanel from "./DiscrepanciesPanel";
 import { useCandidates, useChunk, useClaims } from "../../hooks/useClaims";
+import { useVirtualRows } from "../../hooks/useVirtualRows";
 import type { Claim, RelationHint } from "../../types/claim";
 import { locationLabel } from "../../utils/location";
 
@@ -38,6 +39,8 @@ export default function ClaimsPanel() {
   const [chunkId, setChunkId] = useState<string | null>(null);
   const claims = useClaims();
   const candidates = useCandidates();
+  const claimRows = useVirtualRows(tab === 0 ? claims.data?.items.length ?? 0 : 0, 76, (i) => claims.data?.items[i]?.id ?? i);
+  const groupRows = useVirtualRows(tab === 1 ? candidates.data?.items.length ?? 0 : 0, 320);
 
   return (
     <Box>
@@ -49,7 +52,7 @@ export default function ClaimsPanel() {
       </Tabs>
 
       {tab === 0 && (
-        <TableContainer component={Paper} variant="outlined">
+        <TableContainer component={Paper} variant="outlined" ref={claimRows.ref}>
           {claims.isError && <Alert severity="error">{errorMessage(claims.error)}</Alert>}
           <Table size="small">
             <TableHead>
@@ -60,8 +63,11 @@ export default function ClaimsPanel() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {claims.data?.items.map((c) => (
-                <TableRow key={c.id} hover>
+              {claimRows.before > 0 && <TableRow sx={{ height: claimRows.before }}><TableCell colSpan={6} sx={{ p: 0, border: 0 }} /></TableRow>}
+              {claimRows.items.map((row) => {
+                const c = claims.data!.items[row.index];
+                return (
+                <TableRow key={c.id} hover ref={claimRows.measure} data-index={row.index}>
                   <TableCell>
                     {c.subject ?? "—"}<br /><Typography variant="caption" color="text.secondary">{c.metric ?? "—"}</Typography>
                   </TableCell>
@@ -78,7 +84,9 @@ export default function ClaimsPanel() {
                   </TableCell>
                   <TableCell align="right">{c.extraction_confidence?.toFixed(2) ?? "—"}</TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
+              {claimRows.after > 0 && <TableRow sx={{ height: claimRows.after }}><TableCell colSpan={6} sx={{ p: 0, border: 0 }} /></TableRow>}
               {claims.data?.items.length === 0 && (
                 <TableRow><TableCell colSpan={6} align="center">
                   No claims yet. Check the documents above and press Start.
@@ -96,10 +104,14 @@ export default function ClaimsPanel() {
             Each group is a fact and the claims that may state it, shown with the sentence each one comes from. Under every claim are its candidates: the other claims of
             its group it may be compared with, each with its source. These are candidates, not findings.
           </Alert>
-          {candidates.data?.items.map((g, gi) => {
+          <Box ref={groupRows.ref} sx={{ pt: `${groupRows.before}px`, pb: `${groupRows.after}px` }}>
+          {groupRows.items.map((row) => {
+            const g = candidates.data!.items[row.index];
+            const gi = row.index;
             const first = g.claims[0]?.claim;
             return (
-              <Paper key={gi} variant="outlined" sx={{ mb: 4, overflow: "hidden", borderColor: "text.disabled" }}>
+              <Box key={gi} ref={groupRows.measure} data-index={row.index} sx={{ pb: 4 }}>
+              <Paper variant="outlined" sx={{ overflow: "hidden", borderColor: "text.disabled" }}>
                 <Box sx={{ px: 2, py: 1.25, bgcolor: "action.selected", borderBottom: 1, borderColor: "text.disabled", display: "flex", alignItems: "center", gap: 1 }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                     Group {gi + 1}: {first?.metric ?? first?.subject ?? "claims"}
@@ -158,8 +170,10 @@ export default function ClaimsPanel() {
                   })}
                 </Stack>
               </Paper>
+              </Box>
             );
           })}
+          </Box>
           {candidates.data?.items.length === 0 && (
             <Paper variant="outlined" sx={{ p: 2, textAlign: "center" }}>No claim groups.</Paper>
           )}

@@ -95,6 +95,9 @@ class ToolContext:
     recent_queries: list[str] = field(default_factory=list)  # searches since the last saved finding
     opened_documents: set[str] = field(default_factory=set)  # via get_outline, read_section or get_chunk
     searched_documents: set[str] = field(default_factory=set)  # documents that appeared in search hits
+    calculations: list[dict[str, Any]] = field(default_factory=list)  # calculations since the last saved finding (stored with it)
+    search_min_score: float | None = None  # default minimum similarity of a search hit (a search may set its own)
+    agent_checks: bool = False  # the investigation agent's extra checks on a submitted finding (repeats, quotes that state one number); the claim-group judge saves several findings on the same passages and merges them later, so it runs without
 
 
 @dataclass(frozen=True)

@@ -2,6 +2,8 @@
 a bare dict. The JSON schemas of the input models are what the agent is shown."""
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field, model_validator
 
 from app.models.base import Classification, EvidenceRole, EvidenceStatus, Severity
@@ -51,6 +53,7 @@ class Coverage(BaseModel):
     total: int
     opened: int
     not_opened: list[str]  # file names
+    unreadable: list[str] = []  # documents in the data room with no chunks (processing failed or skipped): they cannot be opened, and are reported, never counted as covered
 
 
 # ---- get_outline --------------------------------------------------------------
@@ -64,6 +67,7 @@ class SearchInput(ToolInput):
     top_k: int = Field(5, ge=1, le=10, description="How many passages to return.")
     document_ids: list[str] | None = Field(None, description="Only search these documents.")
     exclude_document_ids: list[str] | None = Field(None, description="Skip these documents.")
+    min_score: float | None = Field(None, ge=0.0, le=1.0, description="Drop passages whose similarity is below this. Omit to use the run default.")
 
 
 class SearchOutput(BaseModel):
@@ -120,6 +124,20 @@ class CalculateOutput(BaseModel):
     result: str  # exact decimal arithmetic, shown as text
 
 
+# ---- compare_values -----------------------------------------------------------
+class CompareValuesInput(ToolInput):
+    a: str = Field(min_length=1, description="First value as written in the document, e.g. '120,000', '1.2 crore', '30 June 2025', 'Q3 2024'.")
+    unit_a: str | None = Field(None, description="Its unit as written, e.g. 'tonnes', 'INR', 'kg'.")
+    b: str = Field(min_length=1, description="Second value as written in the document.")
+    unit_b: str | None = Field(None, description="Its unit as written.")
+    value_type: Literal["quantity", "date", "identifier", "name"] | None = Field(None, description="What kind of value both are. Omit when unsure.")
+
+
+class CompareValuesOutput(BaseModel):
+    relation: Literal["equal", "different", "unknown"]
+    note: str  # one line: what code found, after scale words, units of one dimension, dates and legal-form words are normalised
+
+
 # ---- submit_finding -----------------------------------------------------------
 class EvidenceInput(BaseModel):
     chunk_id: str = Field(description="Chunk the quote comes from.")
@@ -130,7 +148,7 @@ class EvidenceInput(BaseModel):
 
 
 class SubmitFindingInput(ToolInput):
-    title: str = Field(min_length=1, max_length=300)
+    title: str = Field(min_length=1, max_length=500)  # the judge's own findings use titles up to 500 characters
     description: str = Field(min_length=1)
     classification: Classification
     severity: Severity
@@ -139,7 +157,7 @@ class SubmitFindingInput(ToolInput):
     materiality_reasoning: str | None = None
     business_impact: str | None = None
     unresolved_questions: list[str] = Field(default_factory=list)
-    evidence: list[EvidenceInput] = Field(min_length=1, max_length=12)
+    evidence: list[EvidenceInput] = Field(min_length=1, max_length=16)  # the judge quotes up to 16 claims in one finding
 
 
 class StoredEvidence(BaseModel):
@@ -147,6 +165,7 @@ class StoredEvidence(BaseModel):
     chunk_id: str
     filename: str
     locator: str
+    claim_ids: list[str] = []  # extracted claims of that chunk whose value the quote states
     quoted_text: str  # the exact text as stored in the source chunk
 
 

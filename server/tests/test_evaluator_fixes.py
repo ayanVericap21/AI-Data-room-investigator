@@ -106,7 +106,7 @@ def test_a_percentage_set_against_a_count_with_no_stated_base_is_missing_informa
 def test_two_claims_for_two_periods_are_judged_not_dropped_as_a_series(session, room):  # noqa: F811
     a = claim_in(session, "a.pdf", "Balance at 31 May 2025: GBP 384,000.", "GBP 384,000", metric="balance", period="31 May 2025")
     b = claim_in(session, "b.pdf", "Balance at 15 September 2025: nil.", "nil", metric="balance", period="15 September 2025")
-    llm = MockLLMClient([{"verdicts": []}, {"verdicts": []}])
+    llm = MockLLMClient([{"verdicts": []}] * 20)
     stats = judge(session, room, llm).run([candidate(a, b)])
     assert stats.groups_series == 0 and llm.prompts
 
@@ -118,3 +118,14 @@ def test_the_same_values_from_the_same_passages_are_one_finding_and_a_conflictin
     verdicts = [verdict([a, b], quote=lambda v: q[v]), verdict([a, b], quote=lambda v: q[v]), verdict([a, b], cls="contextual_difference", quote=lambda v: q[v])]
     stats = judge(session, room, MockLLMClient([answer(*verdicts)])).run([candidate(a, b)])
     assert stats.findings_saved == 1 and stats.duplicates_skipped == 1 and len(stats.conflicts) == 1
+
+
+def test_a_span_of_items_is_not_an_amount_so_adding_spans_is_never_a_finding(session, room):  # noqa: F811
+    text = "Photographs 1 to 3, 4 to 6 and 7 are on the sheets; the application has photographs 1 to 14."
+    doc, chunks = add_doc(session, "photos.pdf", "pdf", [dict(content=text, page_number=1)])
+    for value in ("1 to 3", "4 to 6", "1 to 14"):
+        session.add(Claim(document_id=doc.id, chunk_id=chunks[0].id, subject="photographs", metric=f"photographs {value}", value=value, claim_text=text, claim_category="quantity"))
+    session.commit()
+    relation = {"label": "photograph spans equal the total range", "terms": [{"ref": "c1"}, {"ref": "c2"}], "relation": "equals", "against": "c3"}
+    stats = InternalChecker(session, MockLLMClient([{"checks": [relation]}]), build_registry(session, None, room.investigation.id)).run()
+    assert (stats.proposed, stats.checked, stats.saved) == (1, 0, 0) and session.scalar(select(Finding)) is None

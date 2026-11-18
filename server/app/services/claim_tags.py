@@ -13,7 +13,7 @@ LATER_BASES = frozenset({"actual", "revised"})
 
 
 def make_tags(about: str | None = None, basis: str | None = None, precision: str | None = None, quantifier: str | None = None,
-              anchor: str | None = None, complete: bool | None = None) -> list[str]:
+              anchor: str | None = None, complete: bool | None = None, is_rule: bool | None = None) -> list[str]:
     """The tags worth keeping: a default (content, no basis, exact, no quantifier) says nothing and is not stored."""
     clean = lambda x: (x or "").strip().lower()
     tags = []
@@ -29,7 +29,14 @@ def make_tags(about: str | None = None, basis: str | None = None, precision: str
         tags.append(f"{PREFIX}anchor: {anchor.strip()}")
     if complete:
         tags.append(f"{PREFIX}complete: list")
+    if is_rule:
+        tags.append(f"{PREFIX}rule: yes")  # the extraction call says the claim states a rule (see rule_links)
     return tags
+
+
+def is_rule(assumptions: Iterable[str] | None) -> bool:
+    """The extraction call flagged the claim as a rule: it states what is permitted, prohibited, required, limited, scheduled or suspended for a scope."""
+    return tags_of(assumptions).get("rule") == "yes"
 
 
 def tags_of(assumptions: Iterable[str] | None) -> dict[str, str]:

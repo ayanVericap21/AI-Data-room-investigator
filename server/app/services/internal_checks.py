@@ -12,6 +12,7 @@ import logging
 import re
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
+from decimal import Decimal
 from typing import Callable, Literal
 
 from pydantic import BaseModel, Field
@@ -22,10 +23,11 @@ from app.llm.base import LLMClient
 from app.llm.errors import LLMError
 from app.models import Document, DocumentChunk
 from app.models.base import ProcessingStatus
+from app.services.candidate_matching import normalize_unit
 from app.services.claim_grouping import _line, load_claim_rows
 from app.services.internal_patterns import find_relations
 from app.services.severity import contradiction_severity, missing_severity
-from app.services.value_rules import Num, parse_date, parse_numeric
+from app.services.value_rules import Num, parse_date, parse_numeric, unit_info
 from app.tools.registry import ToolRegistry
 
 logger = logging.getLogger(__name__)
@@ -71,6 +73,7 @@ class InternalStats:
     failed: int = 0
     proposed: int = 0  # relations the model proposed
     checked: int = 0  # relations code could check (every value a plain number)
+    unlike: int = 0  # relations that mix a rate, price or percentage with an amount: not checked
     held: int = 0
     broken: int = 0
     patterns: int = 0  # relations found by patterns in one sentence (part of a whole, average and total, a stated change) that the figures do not satisfy
@@ -84,6 +87,35 @@ class InternalStats:
 
 def _number(value: object) -> Num | None:
     return parse_numeric(value, ignore=CURRENCIES)
+
+
+_SCALE_WORDS = {"thousand": Decimal(1_000), "million": Decimal(1_000_000), "billion": Decimal(1_000_000_000)}
+_SCALE_IN_TEXT = re.compile(r"\b(thousand|million|billion)s?\b|(?:\$|usd|in)\s*'?000s?\b", re.IGNORECASE)
+
+
+def _scale(view) -> Decimal:
+    """The factor that takes the claim's number to whole units. Read from its unit ('$ in thousands'), and when the number has no currency sign or
+    scale word of its own, from the claim's sentence ('... (in thousands)'). ``unit_info`` reads the scale word of the unit; this also reads "000s" and a scale stated only in the sentence."""
+    factor = unit_info(view.unit, normalize_unit).factor
+    if factor != 1:
+        return factor
+    for text, needs_bare in ((view.unit or "", False), (view.claim_text or "", True)):
+        if needs_bare and re.search(r"[$€£]|[a-z]", str(view.value or ""), re.IGNORECASE):
+            continue  # the value carries its own sign or scale word: the sentence does not rescale it
+        m = _SCALE_IN_TEXT.search(text)
+        if m:
+            return _SCALE_WORDS[m.group(1).lower()] if m.group(1) else Decimal(1000)
+    return Decimal(1)
+
+
+def _is_fraction(view, number: Num) -> bool:
+    """A percentage, a rate or a price per unit (0.88, 0.85, 20%): a number below one that is not zero. It is a multiplier, never an amount to add to one.
+    Read with the scale of the claim's own unit only: a sentence that says "in thousands" somewhere does not turn a rate into an amount."""
+    if "%" in str(view.value) or (view.unit or "").strip() == "%":
+        return True
+    factor = unit_info(view.unit, normalize_unit).factor
+    low, high = number.low * factor, number.high * factor
+    return low != 0 and abs(low) < 1 and abs(high) < 1
 
 
 def clause_quote(content: str, value: object, fallback: str = "") -> str | None:
@@ -223,6 +255,14 @@ class InternalChecker:
         target = _number(against[0].value)
         if target is None or any(n is None or t <= 0 for n, t in nums) or target.low is None or target.high is None:
             return
+        if target.kind == "range" or any(n.kind == "range" for n, _t in nums):
+            return  # "1 to 3" is a span (photographs, pages, items), not an amount: adding spans is not arithmetic
+        kinds = {_is_fraction(r[0], n) for (r, _t), (n, _t2) in zip(terms, nums)} | {_is_fraction(against[0], target)}
+        if len(kinds) > 1:
+            stats.unlike += 1  # a rate, price or percentage added to an amount (or a sum of percentages compared with an amount) is not arithmetic
+            return
+        nums = [(n.scaled(_scale(r[0])), t) for (r, _t), (n, t) in zip(terms, nums)]  # "4,505.6 ($ in thousands)" is 4,505,600 before it is compared
+        target = target.scaled(_scale(against[0]))
         stats.checked += 1
         low = sum(n.low * type(n.low)(str(t)) for n, t in nums)
         high = sum(n.high * type(n.high)(str(t)) for n, t in nums)

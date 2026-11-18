@@ -14,6 +14,7 @@ def search(ctx: ToolContext, inp: SearchInput) -> SearchOutput:
     try:
         hits = ctx.retrieval.search(
             inp.query, top_k=inp.top_k, document_ids=inp.document_ids, exclude_document_ids=inp.exclude_document_ids,
+            min_score=inp.min_score if inp.min_score is not None else ctx.search_min_score,
         )
     except AppError as exc:
         raise ToolError("search_unavailable", str(exc)) from exc

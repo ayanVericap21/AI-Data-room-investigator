@@ -26,7 +26,7 @@ def test_a_group_becomes_a_candidate_with_the_llm_route_and_both_claims_are_show
     assert set(shown) == {"c1", "c2"} and any("deck.pdf" in v for v in shown.values()) and any("capex.xlsx" in v for v in shown.values())
 
 
-def test_claims_are_sorted_by_label_before_they_are_shown(session, room):
+def test_claims_are_shown_in_document_order(session, room):
     make_claims(session, room)
     session.add(Claim(document_id=room.lease.id, chunk_id=room.rent_1, subject="lease", metric="annual rent", value=1, unit="crore",
                       claim_text="Annual rent is 1.2 crore"))
@@ -34,9 +34,8 @@ def test_claims_are_sorted_by_label_before_they_are_shown(session, room):
     llm = MockLLMClient([{"groups": []}])
     grouper(session, llm).run()
     shown = list(refs_in(llm.prompts[0]).values())
-    metrics = [next(p for p in line.split(" | ") if p.startswith("metric: ")) for line in shown]
-    # sorted by the label words the matching code uses (stopwords such as "annual" ignored): capacity < rent
-    assert metrics == ["metric: capacity", "metric: capacity", "metric: annual rent"]
+    files = [line.split(" | ")[1].split(",")[0] for line in shown]
+    assert files == sorted(files) and len(files) == 3  # by file name (then by position in the file), not by label
 
 
 def test_groups_with_unknown_or_repeated_refs_never_invent_candidates(session, room):
@@ -103,3 +102,45 @@ def test_claims_that_share_no_subject_or_metric_words_with_another_claim_are_not
     llm_all = MockLLMClient([{"groups": []}])
     _, unfiltered = ClaimGrouper(session, llm_all).run()
     assert unfiltered.claims_filtered == 0 and len(refs_in(llm_all.prompts[0])) == 3
+
+
+# ---- the groups of earlier calls are carried forward ----------------------------------------------------------------------------------------
+def llm_pairs(candidates, claims):
+    names = {c.id: n for n, c in enumerate(claims, start=1)}
+    return {frozenset((names[c.claim_id], names[c.candidate_id])) for c in candidates if c.matched_by == "llm"}
+
+
+def test_a_later_call_is_shown_the_ungrouped_claims_of_the_earlier_one_and_can_group_with_them(session, room):  # noqa: F811
+    from tests.test_claim_group_judge import warehouse_claims
+    claims = warehouse_claims(session, [1, 2])
+    llm = MockLLMClient([{"groups": []}, {"groups": [{"refs": ["c1", "u1"], "topic": "storage"}]}])
+    candidates, stats = ClaimGrouper(session, llm, max_chars_per_call=1, carry_groups=True).run()  # one claim to a call
+    assert "GROUPS OF EARLIER CALLS" not in llm.prompts[0] and "GROUPS OF EARLIER CALLS" in llm.prompts[1] and "\nu1 | doc0.pdf" in llm.prompts[1]
+    assert llm_pairs(candidates, claims) == {frozenset((1, 2))} and stats.carried and stats.batches == 2 and stats.groups == 1
+
+
+def test_a_claim_can_join_a_group_an_earlier_call_formed(session, room):  # noqa: F811
+    from tests.test_claim_group_judge import warehouse_claims
+    claims = warehouse_claims(session, [1, 2, 3])
+    llm = MockLLMClient([{"groups": []}, {"groups": [{"refs": ["c1", "u1"], "topic": "storage"}]}, {"groups": [], "joins": [{"group": "g1", "refs": ["c1", "c7"]}]}])
+    candidates, stats = ClaimGrouper(session, llm, max_chars_per_call=1, carry_groups=True).run()
+    assert "\ng1 | doc1.pdf" in llm.prompts[2] and "group topic: storage | 2 claims" in llm.prompts[2]  # the group is shown by one example claim, its topic and its size
+    assert llm_pairs(candidates, claims) == {frozenset((1, 2)), frozenset((1, 3)), frozenset((2, 3))}
+    assert stats.joined == 1 and stats.claims_grouped == 3 and stats.largest_group == 3 and stats.unknown_refs == 1  # c7 does not exist
+
+
+def test_without_the_flag_batches_are_independent_and_nothing_is_carried(session, room):  # noqa: F811
+    from tests.test_claim_group_judge import warehouse_claims
+    claims = warehouse_claims(session, [1, 2])
+    llm = MockLLMClient([{"groups": []}, {"groups": []}])
+    candidates, stats = ClaimGrouper(session, llm, max_chars_per_call=1).run()
+    assert not any("GROUPS OF EARLIER CALLS" in prompt for prompt in llm.prompts) and not stats.carried and llm_pairs(candidates, claims) == set()
+
+
+def test_a_failed_call_leaves_its_claims_ungrouped_for_the_next_one(session, room):  # noqa: F811
+    from app.llm.errors import LLMPermanentError
+    from tests.test_claim_group_judge import warehouse_claims
+    claims = warehouse_claims(session, [1, 2])
+    llm = MockLLMClient([LLMPermanentError("down"), {"groups": [{"refs": ["c1", "u1"], "topic": "storage"}]}])
+    candidates, stats = ClaimGrouper(session, llm, max_chars_per_call=1, carry_groups=True).run()
+    assert stats.batches_failed == 1 and "\nu1 | doc0.pdf" in llm.prompts[1] and llm_pairs(candidates, claims) == {frozenset((1, 2))}

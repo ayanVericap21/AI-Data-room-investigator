@@ -22,10 +22,12 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import AppError, ScannedDocumentError
+from app.llm.llama_parse import OcrConfig
 from app.llm.embeddings import EmbeddingProvider
 from app.llm.errors import LLMError
 from app.models import Document, DocumentChunk
 from app.models.base import ProcessingStatus
+from app.services.chunk_embeddings import embed_missing
 from app.schemas.extraction import ExtractedUnit, ExtractionReport
 from app.services.chunking import chunk_units, embedding_text
 from app.services.document_service import DocumentService
@@ -49,13 +51,13 @@ class Extracted:
     error: Exception | None = None
 
 
-def extract_one(path: str, document_id: str, filename: str) -> Extracted:
+def extract_one(path: str, document_id: str, filename: str, ocr: OcrConfig | None = None) -> Extracted:
     """Parse one file. Never raises: an error is returned, and the caller re-raises it so it is handled
     exactly as if it had happened in-process. Module-level so a worker process can run it."""
     out = Extracted()
     started = time.perf_counter()
     try:
-        out.units = extract_document(Path(path), document_id, filename, out.report)
+        out.units = extract_document(Path(path), document_id, filename, out.report, ocr)
     except Exception as exc:
         out.error = exc
     out.ms = _ms(started)
@@ -80,19 +82,24 @@ class ProcessResult:
 
 class ProcessingService:
     def __init__(self, session: Session, documents: DocumentService, embedder: EmbeddingProvider,
-                 on_progress: ProgressFn | None = None, extract_workers: int = 1):
+                 on_progress: ProgressFn | None = None, extract_workers: int = 1, ocr: OcrConfig | None = None, embed_chunks: bool = True):
         self.session = session
         self.documents = documents
         self.embedder = embedder
+        # False: chunks are saved without vectors (a ledger run does not read them). The agent's search embeds what is missing when it first
+        # searches (see RetrievalService), so a document processed this way is complete for every use.
+        self.embed_chunks = embed_chunks
         self.on_progress = on_progress or (lambda _m, _d: None)
         self.extract_workers = max(1, extract_workers)
+        self.ocr = ocr  # None: picture-only PDF pages are not read (a mostly scanned PDF is skipped)
         self.extract_phase_ms = 0  # wall time of the parallel parsing phase (0 when parsing one at a time)
 
     def process_pending(self, only: set[str] | None = None) -> list[ProcessResult]:
         """Process the pending documents; with ``only`` (relative paths), just those, and no other document is touched."""
-        stmt = select(Document).where(Document.processing_status.in_(
-            [ProcessingStatus.pending.value, ProcessingStatus.failed.value, ProcessingStatus.processing.value]
-        )).order_by(Document.filename)
+        retry = [ProcessingStatus.pending.value, ProcessingStatus.failed.value, ProcessingStatus.processing.value]
+        if self.ocr is not None:
+            retry.append(ProcessingStatus.skipped.value)  # documents left out as scanned can be read now
+        stmt = select(Document).where(Document.processing_status.in_(retry)).order_by(Document.filename)
         docs = [d for d in self.session.scalars(stmt) if only is None or d.filename in only]
         parsed = self._extract_in_parallel(docs)
         results = [self.process_document(doc, parsed.get(doc.id)) for doc in docs]
@@ -116,7 +123,7 @@ class ProcessingService:
         try:
             paths = [str(self.documents.resolve_path(d)) for d in todo]
             with ProcessPoolExecutor(max_workers=workers) as pool:
-                outcomes = list(pool.map(extract_one, paths, [d.id for d in todo], [d.filename for d in todo]))
+                outcomes = list(pool.map(extract_one, paths, [d.id for d in todo], [d.filename for d in todo], [self.ocr] * len(todo)))
         except Exception:
             logger.warning("Parallel parsing failed; parsing one document at a time", exc_info=True)
             return {}
@@ -138,7 +145,7 @@ class ProcessingService:
         """``extracted`` is a parse already done in parallel; without it the file is parsed here."""
         existing = self._chunk_count(doc.id)
         if (doc.processing_status == ProcessingStatus.processed.value
-                and existing > 0 and self._missing_embeddings(doc.id) == 0):
+                and existing > 0 and (not self.embed_chunks or self._missing_embeddings(doc.id) == 0)):
             return ProcessResult(doc.id, doc.filename, doc.processing_status, existing, skipped=True)
 
         doc.processing_status = ProcessingStatus.processing.value
@@ -156,7 +163,7 @@ class ProcessingService:
             if existing == 0:
                 path = self.documents.resolve_path(doc)
                 if extracted is None:
-                    extracted = extract_one(str(path), doc.id, doc.filename)
+                    extracted = extract_one(str(path), doc.id, doc.filename, self.ocr)
                 timings["extract"] = extracted.ms  # kept even when parsing failed or the PDF is skipped as scanned
                 timings.update({f"extract.{k}": v for k, v in extracted.report.timings_ms.items()})
                 if extracted.error is not None:
@@ -213,14 +220,5 @@ class ProcessingService:
                                  embed_calls=calls, embed_failed_attempts=failed)
 
     def _embed_missing(self, doc: Document) -> None:
-        stmt = (select(DocumentChunk).where(DocumentChunk.document_id == doc.id, DocumentChunk.embedding.is_(None))
-                .order_by(DocumentChunk.chunk_index))
-        chunks = list(self.session.scalars(stmt))
-        batch = self.embedder.MAX_BATCH
-        for start in range(0, len(chunks), batch):
-            part = chunks[start:start + batch]
-            vectors = self.embedder.embed([embedding_text(doc.filename, c.heading, c.content) for c in part],
-                                          task="document")
-            for chunk, vector in zip(part, vectors):
-                chunk.embedding = vector
-            self.session.commit()  # persist progress per batch so a later failure keeps finished work
+        if self.embed_chunks:
+            embed_missing(self.session, self.embedder, doc)

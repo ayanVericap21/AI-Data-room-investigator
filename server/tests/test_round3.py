@@ -35,3 +35,10 @@ def test_a_unit_already_in_the_value_is_not_repeated():
 # ---- 1: one discrepancy, one finding --------------------------------------------------
 
 
+def test_a_claim_that_names_an_entity_with_a_field_label_is_kept_while_titles_and_page_furniture_are_not():
+    name = "Riverside Heritage Development LLC"
+    assert not _is_own_label(LlamaClaim(subject=name, metric="taxpayer", value=name, claim_text="Taxpayer: Riverside Heritage Development LLC"))
+    assert not _is_own_label(LlamaClaim(subject="Ashby Mill", metric="property name", value="Ashby Mill", claim_text="Property name and address: Ashby Mill, 410 Bridge Street"))
+    assert _is_own_label(LlamaClaim(subject="Cost Certification Draft", metric="document title", value="Cost Certification Draft", claim_text="Ashby Mill Lofts | Cost Certification Draft"))
+    assert _is_own_label(LlamaClaim(subject="Ashby Mill Lofts", metric="name", value="Ashby Mill Lofts", claim_text="Ashby Mill Lofts | Cost Certification Draft | Page 5 of 8"))
+    assert _is_own_label(LlamaClaim(subject="Article 5 - Allocations", metric="section", value="Article 5 - Allocations", claim_text="Article 5 - Allocations"))

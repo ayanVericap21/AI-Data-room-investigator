@@ -5,6 +5,7 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { errorMessage } from "../../api/client";
 import { useFindings, useInvestigations, useRunMetrics } from "../../hooks/useFindings";
+import { useVirtualRows } from "../../hooks/useVirtualRows";
 import type { Finding } from "../../types/finding";
 import { formatDateTime } from "../../utils/format";
 import { locationLabel } from "../../utils/location";
@@ -31,7 +32,7 @@ const categoryLabel = (c: string) => CATEGORY_LABEL[c] ?? c.replace(/_/g, " ");
 
 function FindingCard({ finding: f, onOpenSource }: { finding: Finding; onOpenSource: (chunkId: string) => void }) {
   return (
-    <Paper variant="outlined" sx={{ p: 1.5, mb: 1.5 }}>
+    <Paper variant="outlined" sx={{ p: 1.5 }}>
       <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 0.5, mb: 0.5 }}>
         <Chip size="small" label={f.severity} color={SEVERITY_COLOR[f.severity] ?? "default"} />
         <Typography variant="subtitle2" sx={{ flex: 1, minWidth: 200 }}>{f.title}</Typography>
@@ -55,6 +56,20 @@ function FindingCard({ finding: f, onOpenSource }: { finding: Finding; onOpenSou
         ))}
       </Box>
     </Paper>
+  );
+}
+
+/** The findings of one category: only the cards on screen are rendered (a run can save hundreds). */
+function FindingList({ findings, onOpenSource }: { findings: Finding[]; onOpenSource: (chunkId: string) => void }) {
+  const rows = useVirtualRows(findings.length, 300, (i) => findings[i]?.id ?? i);
+  return (
+    <Box ref={rows.ref} sx={{ pt: `${rows.before}px`, pb: `${rows.after}px` }}>
+      {rows.items.map((row) => (
+        <Box key={findings[row.index].id} ref={rows.measure} data-index={row.index} sx={{ pb: 1.5 }}>
+          <FindingCard finding={findings[row.index]} onOpenSource={onOpenSource} />
+        </Box>
+      ))}
+    </Box>
   );
 }
 
@@ -104,14 +119,13 @@ export default function DiscrepanciesPanel({ onOpenSource }: { onOpenSource: (ch
       </Accordion>
 
       {categories.map((c) => (
-        <Accordion key={c} variant="outlined" disableGutters defaultExpanded={c === "contradiction" || categories.length === 1} sx={{ mb: 1 }}>
+        <Accordion key={c} variant="outlined" disableGutters defaultExpanded={c === "contradiction" || categories.length === 1} sx={{ mb: 1 }}
+          slotProps={{ transition: { unmountOnExit: true } }}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography variant="subtitle1">{categoryLabel(c)} ({counts[c]})</Typography>
           </AccordionSummary>
           <AccordionDetails>
-            {items.filter((f) => f.classification === c).map((f) => (
-              <FindingCard key={f.id} finding={f} onOpenSource={onOpenSource} />
-            ))}
+            <FindingList findings={items.filter((f) => f.classification === c)} onOpenSource={onOpenSource} />
           </AccordionDetails>
         </Accordion>
       ))}

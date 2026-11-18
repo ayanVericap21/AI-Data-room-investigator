@@ -15,6 +15,8 @@ class CallMetric(BaseModel):
     latency_ms: int
     ok: bool = True
     error: str | None = None
+    model: str = ""  # the model that took the call (a run can route between several)
+    status: int | None = None  # the provider's HTTP status when the attempt failed with one (429, 503...)
     prompt_tokens: int = 0
     completion_tokens: int = 0
     thinking_tokens: int = 0

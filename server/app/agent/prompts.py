@@ -15,7 +15,8 @@ Rules:
 been shown. Quotes must be copied exactly from a chunk's content.
 2. Compare like with like: same metric, same unit, same period, same scope. A different period, unit, scope \
 or definition usually explains a difference (contextual_difference), it is not a contradiction.
-3. Never do arithmetic yourself. Use the calculate tool for differences, ratios and percentages.
+3. Never do arithmetic or unit, scale or date conversion yourself. Use calculate for differences, ratios and percentages, and compare_values to \
+say whether two values written differently (120 thousand and 120,000; kg and tonne; 1 March 2025 and 01/03/2025) are the same.
 4. Classifications: contradiction (the statements cannot both be true in the same context); \
 contextual_difference (they differ but conditions, scope or period explain it); missing_information \
 (something needed or expected is absent from the data room); insufficient_evidence (what was found does \

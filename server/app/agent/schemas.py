@@ -52,7 +52,13 @@ class AgentStepRecord(BaseModel):
     result_summary: str = ""
     tool_latency_ms: int = 0
     tool_call_index: int | None = None  # index in the tool call log
-    llm_attempts: list[CallMetric] = Field(default_factory=list)  # every provider attempt made for this turn
+    llm_attempts: list[CallMetric] = Field(default_factory=list)  # every provider attempt made for this turn (tokens and latency per attempt)
+    error_message: str | None = None  # the full error text of a failed call (result_summary holds a short form)
+    prompt_notes: dict[str, Any] = Field(default_factory=dict)  # what was cut from the prompt: results shortened to one line, results truncated and by how much
+    # Kept out of every dump of the run result (they are large); the runner stores them with the step event.
+    prompt: str | None = Field(None, exclude=True)  # the full prompt sent to the model this turn
+    action_json: dict[str, Any] | None = Field(None, exclude=True)  # the model's answer as validated
+    output: Any = Field(None, exclude=True)  # the full output of the tool call
 
 
 class AgentRunResult(BaseModel):
@@ -74,3 +80,4 @@ class AgentRunResult(BaseModel):
     documents_opened: int = 0  # opened by the agent (outline, read_section or get_chunk)
     documents_not_opened: list[str] = Field(default_factory=list)
     finish_refusals: int = 0  # times finishing was refused because documents were still unopened
+    documents_unreadable: list[str] = Field(default_factory=list)  # documents with no chunks (processing failed or skipped): reported, never counted as covered

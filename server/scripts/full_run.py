@@ -105,6 +105,9 @@ def git_info() -> str:
         return "unknown"
 
 
+DEFAULT_DB_NAME = "dataroom_runs"
+
+
 def ensure_database(settings, name: str) -> tuple[str, bool]:
     admin_url = make_url(settings.database_url)
     admin = create_engine(admin_url.set(database="postgres"), isolation_level="AUTOCOMMIT")
@@ -464,7 +467,7 @@ def main() -> None:
     ap.add_argument("--max-findings", type=int, default=None, help="default: no limit")
     ap.add_argument("--llm-attempts", type=int, default=5)
     ap.add_argument("--focus", default=DEFAULT_FOCUS)
-    ap.add_argument("--db-name", default=None)
+    ap.add_argument("--db-name", default=None, help=f"database to use (created on first use); default {DEFAULT_DB_NAME}, shared by every run")
     ap.add_argument("--merge-chunks", action=argparse.BooleanOptionalAction, default=True,
                     help="merge small neighbouring units into chunks of up to 1000 characters (default on)")
     ap.add_argument("--embedding", choices=["local", "google"], default="local",
@@ -495,7 +498,7 @@ def main() -> None:
     embedder = get_embedding_provider(settings)
     llm.max_attempts = embedder.max_attempts = args.llm_attempts
     R.embedder = embedder
-    R.db_name = args.db_name or f"dataroom_run_{stamp.replace('-', '_')}"
+    R.db_name = args.db_name or DEFAULT_DB_NAME  # one database for every run: documents are processed once and ids carry over
     url, R.db_created = ensure_database(settings, R.db_name)
     engine = create_engine(url)
     session = sessionmaker(bind=engine, expire_on_commit=False)()
@@ -512,7 +515,7 @@ def main() -> None:
 
         t = time.perf_counter()
         processing = ProcessingService(session, svc, embedder, on_progress=lambda m, d: print(f"[process] {m}", flush=True),
-                                       extract_workers=args.extract_workers)
+                                       extract_workers=args.extract_workers, ocr=settings.ocr_config)
         try:
             result_list = processing.process_pending()
         finally:

@@ -22,6 +22,7 @@ from app.schemas.claim import AttributeComparison, Candidate, ClaimView
 from app.services import value_rules
 from app.services.claim_tags import plain
 from app.services.identifiers import entity_ids
+from app.services.numbers import value_supported_by_text
 
 STOPWORDS = {
     "the", "a", "an", "of", "for", "and", "or", "to", "in", "on", "at", "by", "per", "is", "are",
@@ -197,8 +198,15 @@ def different_records(a: ClaimView, b: ClaimView) -> bool:
 
 
 def one_sentence_in_one_document(a: ClaimView, b: ClaimView) -> bool:
-    """Two claims read from the same sentence (same chunk, same text) are parts of one statement, not two statements to compare."""
-    return a.chunk_id == b.chunk_id and same_statement(a, b)
+    """Two claims read from the same sentence are parts of one statement, not two statements to compare: the same text in one chunk, or the same
+    text printed again elsewhere in the same document (a sentence repeated on several pages) when that text itself states both values
+    ("quarterly" and "annual" in one sentence). The same text in two different documents is two statements and stays comparable."""
+    if not same_statement(a, b):
+        return False
+    if a.chunk_id == b.chunk_id:
+        return True
+    text = a.claim_text or ""
+    return a.document_id == b.document_id and value_supported_by_text(a.value, text) and value_supported_by_text(b.value, text)
 
 
 def comparable_subjects(a: ClaimView, b: ClaimView) -> bool:

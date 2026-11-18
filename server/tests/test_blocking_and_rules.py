@@ -75,7 +75,7 @@ def test_a_final_value_against_a_contract_value_is_a_basis_difference_but_a_vari
     final = claim_in(session, "close.pdf", "Final contract value is GBP 2.65 million excluding VAT.", "GBP 2.65 million", subject="Final contract", metric="final contract value")
     variation = claim_in(session, "close2.pdf", "Final contract value, including approved variations of GBP 150,000, is GBP 2.65 million.", "GBP 150,000", subject="Final contract", metric="approved variations")
     assert judge(session, room, MockLLMClient([])).run([candidate(contract, final)]).groups_basis == 1
-    llm = MockLLMClient([{"verdicts": []}, {"verdicts": []}])
+    llm = MockLLMClient([{"verdicts": []}] * 20)
     stats = judge(session, room, llm).run([candidate(contract, variation)])  # different attributes: the model reads them
     assert stats.groups_basis == 0 and llm.prompts
 
@@ -83,7 +83,7 @@ def test_a_final_value_against_a_contract_value_is_a_basis_difference_but_a_vari
 def test_a_yes_no_and_a_date_are_never_a_basis_difference(session, room):  # noqa: F811
     none = claim_in(session, "board.pdf", "No subcontractors are engaged on the project, and the final report is due.", "No", subject="project", metric="completion", category="state")
     done = claim_in(session, "mail.pdf", "Practical completion was achieved on 08/07/2025.", "08/07/2025", subject="project", metric="completion", category="date")
-    llm = MockLLMClient([{"verdicts": []}, {"verdicts": []}])
+    llm = MockLLMClient([{"verdicts": []}] * 20)
     stats = judge(session, room, llm).run([candidate(none, done)])
     assert stats.groups_basis == 0 and llm.prompts
 
@@ -323,6 +323,6 @@ def test_a_claim_the_extraction_call_marks_as_about_its_document_is_never_compar
 def test_a_vague_or_approximate_value_is_never_agreed_in_code(session, room):  # noqa: F811
     a = claim_in(session, "a.pdf", "Spend is broadly 500 units.", "500 units", metric="spend", assumptions=["@precision: vague"])
     b = claim_in(session, "b.pdf", "Spend is 500 units.", "500 units", metric="spend")
-    llm = MockLLMClient([{"verdicts": []}, {"verdicts": []}])
+    llm = MockLLMClient([{"verdicts": []}] * 20)
     stats = judge(session, room, llm).run([candidate(a, b)])
     assert stats.groups_agreed == 0 and llm.prompts

@@ -102,3 +102,21 @@ def test_candidate_hints_use_the_rules():
     assert relation_hint(compare_attributes(view("a", value="10.2", unit="million"), view("b", doc="x", value="10,213,000", unit=None))) == "exact"
     assert relation_hint(compare_attributes(view("a", value=30, unit="t"), view("b", doc="x", value=30000, unit="kg"))) == "exact"
     assert relation_hint(compare_attributes(view("a", value=412, unit=None), view("b", doc="x", value=388, unit=None))) == "conflicting"
+
+
+def test_a_table_heading_in_thousands_scales_the_numbers_beneath_it():
+    for unit in ("$ in thousands", "thousands of dollars", "USD thousands", "$ thousands"):
+        info = unit_info(unit, normalize_unit)
+        assert (info.key, info.factor) == ("usd", Decimal(1000)), unit
+    assert unit_info("in thousands", normalize_unit).key is None and unit_info("in thousands").factor == Decimal(1000)  # no unit left once the scale is out
+    assert unit_info("in").key == "in" and unit_info("in").factor == Decimal(1)  # a lone "in" with no scale word stays a unit
+    assert unit_info("$ in millions", normalize_unit).factor == Decimal(1_000_000) and unit_info("INR crores", normalize_unit).factor == Decimal(10) ** 7
+
+
+def test_a_figure_in_thousands_agrees_with_the_same_figure_in_whole_dollars_and_only_with_it():
+    assert rel("24,600", "$24,600,000", "$ in thousands", "USD") == "equal"
+    assert comparison_note("24,600", "$ in thousands", "$24,600,000", "USD", None, None, normalize_unit) == "Code check: the values agree within their stated precision."
+    assert rel("24,600", "$25,310,000", "$ in thousands", "USD") == "different"
+    assert rel("24,600", "$24,600,000", "$ in millions", "USD") == "different"  # millions is not thousands
+    assert rel("1,500", "1,500", "$ in thousands", "$ thousands") == "equal"  # two headings that both say thousands scale both numbers alike
+    assert rel("1.5", "1,500", "$ in thousands", "USD") == "equal"

@@ -13,8 +13,9 @@ import unicodedata
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.models import Document, DocumentChunk, Evidence, Finding, Investigation, InvestigationEvent
+from app.models import Claim, Document, DocumentChunk, Evidence, Finding, FindingClaim, Investigation, InvestigationEvent
 from app.models.base import Classification
+from app.services.numbers import numbers_in_text, value_supported_by_text
 from app.tools.base import ToolContext, ToolError
 from app.tools.reading import locator_text
 from app.tools.schemas import StoredEvidence, SubmitFindingInput, SubmitFindingOutput
@@ -31,8 +32,9 @@ def find_source_span(content: str, quote: str) -> tuple[str, bool] | None:
     An exact substring match is preferred. Otherwise runs of whitespace are treated as
     equivalent (PDF and table text often differs from what a model reproduces only by line
     breaks), then so are the differences that parsing and copying introduce without changing the words: Unicode
-    forms (ligatures, non-breaking spaces), curly vs straight quotes, dash variants, zero-width characters and a
-    word hyphenated across a line break. The verbatim source span is returned. Any other difference fails."""
+    forms (ligatures, non-breaking spaces), curly vs straight quotes, dash variants, zero-width characters, a
+    word hyphenated across a line break and the pipes and the HTML tags that separate table cells. The verbatim source span is returned.
+    Any other difference fails."""
     quote = quote.strip()
     if not quote:
         return None
@@ -57,6 +59,7 @@ def find_source_span(content: str, quote: str) -> tuple[str, bool] | None:
 _QUOTE_AND_DASH_VARIANTS = str.maketrans({"‘": "'", "’": "'", "‚": "'", "‛": "'", "“": '"', "”": '"',
                                           "„": '"', "‟": '"', "‐": "-", "‑": "-", "‒": "-", "–": "-",
                                           "—": "-", "―": "-", "−": "-"})
+_TAG = re.compile(r"</?[A-Za-z][^<>]*>")  # an HTML tag of a table chunk (<td>, </tr>): a cell separator like the pipe, not text the model would quote
 _INVISIBLE = {"­", "​", "‌", "‍", "⁠", "﻿"}
 
 
@@ -71,6 +74,14 @@ def _fold(text: str) -> tuple[str, list[int]]:
         if ch in _INVISIBLE:
             i += 1
             continue
+        if ch == "<":
+            tag = _TAG.match(text, i)
+            if tag:
+                if out and out[-1] != " ":
+                    out.append(" ")
+                    positions.append(i)
+                i = tag.end()
+                continue
         if ch in "-‐‑" and i + 1 < n and text[i + 1] in "\r\n" and out and out[-1].isalpha():  # "wa-\nfer" -> "wafer"
             j = i + 1
             while j < n and text[j].isspace():
@@ -79,7 +90,7 @@ def _fold(text: str) -> tuple[str, list[int]]:
                 i = j
                 continue
         for piece in unicodedata.normalize("NFKC", ch).translate(_QUOTE_AND_DASH_VARIANTS):
-            if piece.isspace():
+            if piece.isspace() or piece == "|":  # a table's cell separator: "Developer fee | $2,750,000" and "Developer fee $2,750,000" are the same words
                 if out and out[-1] != " ":
                     out.append(" ")
                     positions.append(i)
@@ -88,6 +99,37 @@ def _fold(text: str) -> tuple[str, list[int]]:
                 positions.append(i)
         i += 1
     return "".join(out), positions
+
+
+_CLAIM_RELATION = {"supporting": "supports", "contradicting": "contradicts", "contextual": "contextualizes", "insufficient": "contextualizes"}
+MAX_CLAIMS_PER_EVIDENCE = 5
+
+
+def _same_numbers_problem(verified: list, classification: Classification) -> str | None:
+    """A contradiction whose quotes all state exactly the same numbers is not a numeric contradiction. Conservative: it only fires when every quote
+    has numbers and the sets are identical, so a difference in scale words, units or dates is never rejected here (compare_values decides those)."""
+    if classification != Classification.contradiction or len(verified) < 2:
+        return None
+    sets = [{n.normalize() for n in numbers_in_text(exact)} for (_i, _chunk, _filename, exact, _norm) in verified]
+    if all(sets) and all(s == sets[0] for s in sets):
+        shown = ", ".join(sorted(format(n, "f") for n in sets[0]))
+        return (f"every quoted passage states the same numbers ({shown}), so the quotes do not show a numeric contradiction. "
+                "If the difference is in units, scale, dates or wording, check it with compare_values and classify accordingly")
+    return None
+
+
+def _duplicate_of(ctx: ToolContext, classification: str, chunk_ids: set[str]) -> str | None:
+    """The id of a finding already saved in this investigation with the same classification and the same evidence chunks."""
+    rows = ctx.session.execute(
+        select(Finding.id, Finding.classification, Evidence.chunk_id)
+        .join(Evidence, Evidence.finding_id == Finding.id).where(Finding.investigation_id == ctx.investigation_id)
+    ).all()
+    chunks_of: dict[str, set[str]] = {}
+    classes: dict[str, str] = {}
+    for finding_id, cls, chunk_id in rows:
+        chunks_of.setdefault(finding_id, set()).add(chunk_id)
+        classes[finding_id] = cls
+    return next((fid for fid, chunks in chunks_of.items() if classes[fid] == classification and chunks == chunk_ids), None)
 
 
 def submit_finding(ctx: ToolContext, inp: SubmitFindingInput) -> SubmitFindingOutput:
@@ -122,6 +164,13 @@ def submit_finding(ctx: ToolContext, inp: SubmitFindingInput) -> SubmitFindingOu
     if len(distinct) < 2 and inp.classification in NEEDS_TWO_PASSAGES:
         problems.append(f"a {inp.classification.value} compares statements, so at least two different quoted passages "
                         "are required")
+    if not problems and ctx.agent_checks:
+        same = _same_numbers_problem(verified, inp.classification)
+        if same:
+            problems.append(same)
+        duplicate = _duplicate_of(ctx, inp.classification.value, chunk_ids)
+        if duplicate:
+            problems.append(f"this finding repeats {duplicate} (same classification, same evidence passages); submit a different finding or finish")
     if problems:
         raise ToolError("validation_failed", "Finding not saved. " + "; ".join(problems))
 
@@ -134,6 +183,7 @@ def submit_finding(ctx: ToolContext, inp: SubmitFindingInput) -> SubmitFindingOu
     )
     stored: list[StoredEvidence] = []
     notes: list[str] = []
+    linked_claims: dict[str, str] = {}  # claim id -> relationship, in the order found
     try:
         ctx.session.add(finding)
         ctx.session.flush()
@@ -142,17 +192,26 @@ def submit_finding(ctx: ToolContext, inp: SubmitFindingInput) -> SubmitFindingOu
                 finding_id=finding.id, chunk_id=chunk.id, evidence_role=ev.role.value, quoted_text=exact_text,
                 relevance_reason=ev.relevance_reason, support_assessment=ev.support_assessment,
             )
+            matched = [c for c in ctx.session.scalars(select(Claim).where(Claim.chunk_id == chunk.id))
+                       if c.value is not None and value_supported_by_text(c.value, exact_text)][:MAX_CLAIMS_PER_EVIDENCE]
+            if matched:  # the claims table is linked, not ignored: the evidence row and finding_claims point at the claims the quote states
+                row.claim_id = matched[0].id
+                for c in matched:
+                    linked_claims.setdefault(c.id, _CLAIM_RELATION[ev.role.value])
             ctx.session.add(row)
             ctx.session.flush()
-            stored.append(StoredEvidence(evidence_id=row.id, chunk_id=chunk.id, filename=filename,
+            stored.append(StoredEvidence(evidence_id=row.id, chunk_id=chunk.id, filename=filename, claim_ids=[c.id for c in matched],
                                          locator=locator_text(chunk), quoted_text=exact_text))
             if normalised:
                 notes.append(f"evidence {i}: quote matched after whitespace normalisation; the exact source text was stored")
+        for claim_id, relationship in linked_claims.items():
+            ctx.session.add(FindingClaim(finding_id=finding.id, claim_id=claim_id, relationship_type=relationship))
         ctx.session.add(InvestigationEvent(
             investigation_id=ctx.investigation_id, event_type="finding_saved", node_name="submit_finding",
             message=f"Finding saved: {inp.title}", status="success",
             details={"finding_id": finding.id, "classification": inp.classification.value, "severity": inp.severity.value,
-                     "evidence_count": len(stored), "searches_since_last_finding": list(ctx.recent_queries)},
+                     "evidence_count": len(stored), "searches_since_last_finding": list(ctx.recent_queries),
+                     "calculations": list(ctx.calculations), "claim_ids": list(linked_claims)},
         ))
         ctx.session.commit()
     except SQLAlchemyError as exc:
@@ -162,4 +221,5 @@ def submit_finding(ctx: ToolContext, inp: SubmitFindingInput) -> SubmitFindingOu
 
     ctx.finding_ids.append(finding.id)
     ctx.recent_queries.clear()
+    ctx.calculations.clear()
     return SubmitFindingOutput(finding_id=finding.id, verification_status="verified", evidence=stored, notes=notes)

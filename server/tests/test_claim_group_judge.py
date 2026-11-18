@@ -84,6 +84,39 @@ def evidence_rows(session):
     return session.scalars(select(Evidence)).all()
 
 
+BUDGET_TABLE = ("1 | Source | Amount\n7 | Deferred developer fee | $600,000\n21 | Insurance, taxes, interest and permits | $1,000,000\n"
+                "22 | Developer fee | $2,750,000\n23 | Financing costs and reserves | $700,000")
+
+
+def table_and_cap(session):
+    """A budget table row ('22 | Developer fee | $2,750,000') and a sentence stating a cap on the same fee."""
+    doc_a, rows_a = add_doc(session, "budget.pdf", "pdf", [dict(content=BUDGET_TABLE, page_number=1, content_type="table")])
+    doc_b, rows_b = add_doc(session, "application.pdf", "pdf", [dict(content="The developer fee is capped at $2,000,000.", page_number=1)])
+    a = Claim(document_id=doc_a.id, chunk_id=rows_a[0].id, subject="Developer fee", metric="developer fee", value="$2,750,000", claim_text="Developer fee: $2,750,000")
+    b = Claim(document_id=doc_b.id, chunk_id=rows_b[0].id, subject="Developer fee", metric="developer fee", value="$2,000,000",
+              claim_text="The developer fee is capped at $2,000,000.")
+    session.add_all([a, b])
+    session.commit()
+    return a, b
+
+
+def test_a_quote_retyped_without_the_table_pipes_is_kept_as_the_rows_own_text(session, room):
+    a, b = table_and_cap(session)
+    v = verdict([a, b], quote=lambda value: f"Developer fee {value}")  # the model dropped the row number and the pipes
+    stats = judge(session, room, MockLLMClient([answer(v)])).run(candidates_of([a, b]))
+    assert stats.findings_saved == 1 and stats.findings_rejected == 0
+    stored = {row.quoted_text for row in evidence_rows(session)}
+    assert "The developer fee is capped at $2,000,000." in stored and any("$2,750,000" in text and "|" in text for text in stored)  # source text, not the model's
+
+
+def test_a_quote_that_is_not_in_the_chunk_is_replaced_by_the_claims_own_row_and_counted(session, room):
+    a, b = table_and_cap(session)
+    v = verdict([a, b], quote=lambda value: f"Developer fee budgeted at {value} in total")  # words the table does not contain
+    stats = judge(session, room, MockLLMClient([answer(v)])).run(candidates_of([a, b]))
+    assert stats.findings_saved == 1 and stats.findings_rejected == 0 and stats.quotes_replaced >= 1
+    assert "22 | Developer fee | $2,750,000" in {row.quoted_text for row in evidence_rows(session)}
+
+
 # ---- one verdict for the whole group -------------------------------------------------------------------------------------------------------
 def test_one_differing_claim_among_four_makes_the_group_a_contradiction_with_a_quote_for_each_claim(session, room):
     claims = warehouse_claims(session, [500, 500, 500, 450])
@@ -109,6 +142,79 @@ def test_several_groups_share_a_call_and_their_claims_are_numbered_through_the_c
     stats = judge(session, room, llm).run(candidates_of(one) + candidates_of(two))
     assert stats.groups_total == 2 and stats.llm_calls == 1 and stats.findings_saved == 2
     assert "### Group 2" in llm.prompts[0] and "Claim [4]" in llm.prompts[0]
+
+
+def shared_chunk_groups(session, big=1000):
+    """Two groups that share one claim: a with b (a strong pair) and a with c (a weak pair, so a group of its own). a's chunk is ``big`` characters long."""
+    texts = [("A", 500, "x" * big), ("B", 450, "y" * 50), ("C", 400, "z" * 50)]
+    claims = []
+    for n, (letter, value, filler) in enumerate(texts):
+        doc, chunks = add_doc(session, f"share{n}.pdf", "pdf", [dict(content=f"UNIQUE-CHUNK-{letter} capacity {value} t {filler}", page_number=1)])
+        claims.append(Claim(document_id=doc.id, chunk_id=chunks[0].id, subject="warehouse", metric="storage capacity", value=str(value) + ("%" if letter == "C" else ""), claim_text=f"stores {value} t"))  # C is a percentage: it cannot join the cluster of A and B (an absolute figure), so its candidate is a group of its own
+    session.add_all(claims)
+    session.commit()
+    a, b, c = claims
+    return claims, [candidate(a, b, how="llm"), candidate(a, c, how="embedding")]
+
+
+class Reader(LLMClient):
+    """Reads each call's prompt like the model would: a contradiction for every group, with one quote per claim taken from the claim's own line."""
+
+    def __init__(self, answers: bool = True):
+        super().__init__(max_attempts=1)
+        self.prompts, self.answers = [], answers
+
+    def _raw_generate(self, prompt, system, json_mode):
+        import json
+        import re
+
+        self.prompts.append(prompt)
+        verdicts = []
+        if self.answers:
+            for group in re.split(r"(?=### Group \d+)", prompt)[1:]:
+                number = int(re.match(r"### Group (\d+)", group).group(1))
+                found = re.findall(r"Claim \[(\d+)\].*?stores (\d+) t", group)
+                letter = {"500": "A", "450": "B", "400": "C"}
+                verdicts.append(dict(group=number, same_attribute=True, attribute_reasoning="capacity", set_aside=[], classification="contradiction", severity="high", confidence=0.9,
+                                     title=f"group {number} differs", description="the capacities differ",
+                                     evidence=[dict(claim=int(n), value=v, quote=f"UNIQUE-CHUNK-{letter[v]} capacity {v} t") for n, v in found]))
+        return RawResponse(text=json.dumps({"verdicts": verdicts}))
+
+
+def test_a_chunk_shared_by_two_groups_of_one_call_is_printed_once(session, room):
+    claims, candidates = shared_chunk_groups(session)
+    llm = Reader(answers=False)
+    judge(session, room, llm).run(candidates)
+    prompt = llm.prompts[0]
+    assert "### Group 1" in prompt and "### Group 2" in prompt  # both groups are in the first call
+    assert prompt.count("UNIQUE-CHUNK-A") == 1 and prompt.count("UNIQUE-CHUNK-B") == 1 and prompt.count("UNIQUE-CHUNK-C") == 1  # each excerpt once in the whole call
+    assert "(printed under Group 1)" in prompt  # the second group points to where the shared excerpt is printed
+    assert "may be in an earlier group of this call" in prompt  # and the call says what such a pointer means
+
+
+def test_a_call_without_a_shared_chunk_has_no_pointer_and_no_note(session, room):
+    claims = warehouse_claims(session, [500, 450])
+    llm = MockLLMClient([answer(verdict(claims))])
+    judge(session, room, llm).run(candidates_of(claims))
+    assert "the same excerpt" not in llm.prompts[0] and "may be in an earlier group" not in llm.prompts[0]
+
+
+def test_groups_that_share_a_chunk_need_less_room_so_more_of_them_fit_in_one_call(session, room):
+    claims, candidates = shared_chunk_groups(session)
+    # each group alone is about 1.7k characters; together about 2.5k when the shared chunk is counted once, 3.5k when it is counted twice
+    fits, split = Reader(answers=False), Reader(answers=False)
+    judge(session, room, fits, budget=3000).run(candidates)
+    judge(session, room, split, budget=2000).run(candidates)
+    assert "### Group 2" in fits.prompts[0]  # one call holds both groups
+    assert "### Group 2" not in split.prompts[0]  # too little room for both: the second group goes to a call of its own
+
+
+def test_a_verdict_for_a_group_whose_excerpt_is_printed_under_another_group_is_handled_by_its_own_claim_numbers(session, room):
+    claims, candidates = shared_chunk_groups(session)
+    llm = Reader()
+    stats = judge(session, room, llm).run(candidates)
+    assert "(printed under Group 1)" in llm.prompts[0] and len(llm.prompts) == 1  # one call, answered for both groups
+    assert stats.findings_saved == 2 and stats.findings_rejected == 0 and stats.misaligned == 0 and stats.claims_dropped == 0
 
 
 def test_a_group_too_large_for_one_call_is_folded_to_its_distinct_values(session, room):
@@ -160,8 +266,20 @@ def test_a_group_about_different_attributes_is_not_comparable_and_never_becomes_
     assert "not comparable. a height and a floor level" in stats.records[(claims[0].id, claims[1].id)].outcome
 
 
-def test_an_invented_quote_is_rejected_and_nothing_is_saved(session, room):
+def test_an_invented_quote_is_never_stored_the_claims_own_passage_is_stored_instead(session, room):
     claims = warehouse_claims(session, [500, 450])
+    invented = verdict(claims, quote=lambda v: f"Capacity of {v} tonnes was quoted from nowhere.")
+    stats = judge(session, room, MockLLMClient([answer(invented)])).run(candidates_of(claims))
+    stored = {row.quoted_text for row in evidence_rows(session)}
+    assert stats.findings_saved == 1 and stats.quotes_replaced == 2
+    assert stored == {sentence(500), sentence(450)} and not any("nowhere" in text for text in stored)
+
+
+def test_a_quote_that_cannot_be_replaced_still_rejects_the_finding(session, room):
+    claims = warehouse_claims(session, [500, 450])
+    for c, value in zip(claims, ("999", "888")):
+        c.claim_text, c.value = "stated elsewhere", value  # the claim's own value is not in its chunk, so there is nothing real to quote
+    session.commit()
     invented = verdict(claims, quote=lambda v: f"Capacity of {v} tonnes was quoted from nowhere.")
     stats = judge(session, room, MockLLMClient([answer(invented)])).run(candidates_of(claims))
     assert stats.findings_saved == 0 and stats.findings_rejected == 1 and session.scalar(select(func.count()).select_from(Finding)) == 0
@@ -190,6 +308,49 @@ def test_a_contradiction_that_denies_itself_is_withdrawn(session, room):
     stats = judge(session, room, MockLLMClient([answer(v)])).run(candidates_of(claims))
     assert stats.withdrawn == 1 and stats.findings_saved == 0
     assert denies_contradiction("There is no real conflict") and not denies_contradiction("The values conflict.")
+
+
+def short(claims, group=1, same_attribute=True, reasoning="all state the same capacity"):
+    """A short verdict: no severity, confidence, title, description or evidence (what the prompt asks for consistent and not comparable groups)."""
+    return dict(group=group, same_attribute=same_attribute, attribute_reasoning=reasoning, set_aside=[], classification="consistent")
+
+
+def test_the_prompts_ask_for_a_short_verdict_when_a_group_is_consistent_or_not_comparable():
+    from app.services.claim_group_judge import RULE_SYSTEM
+
+    for system in (SYSTEM, RULE_SYSTEM):
+        assert "SHORT verdict" in system and "at most 15 words" in system and "classification: consistent" in system
+        assert "FULL verdict" in system and "Every verdict has ALL of these fields" not in system
+
+
+def test_a_short_consistent_verdict_is_counted_and_needs_no_evidence(session, room):
+    claims = warehouse_claims(session, [500, 450])  # different values, so code does not settle the group itself
+    stats = judge(session, room, MockLLMClient([answer(short(claims))]), save_consistent=False).run(candidates_of(claims, how="lexical"))
+    assert stats.verdict_counts["consistent"] == 1 and stats.consistent_not_saved == 1
+    assert stats.findings_saved == 0 and stats.misaligned == 0 and stats.echo_missing == 0
+
+
+def test_a_short_consistent_verdict_is_saved_with_the_claims_own_quotes_when_consistent_findings_are_on(session, room):
+    claims = warehouse_claims(session, [500, 450])
+    stats = judge(session, room, MockLLMClient([answer(short(claims))]), save_consistent=True).run(candidates_of(claims, how="lexical"))
+    assert stats.findings_saved == 1 and stats.quotes_from_code == 2
+    assert {row.quoted_text for row in evidence_rows(session)} == {sentence(500), sentence(450)}
+
+
+def test_a_short_not_comparable_verdict_is_counted_with_its_reason_and_nothing_is_saved(session, room):
+    claims = warehouse_claims(session, [500, 450])
+    stats = judge(session, room, MockLLMClient([answer(short(claims, same_attribute=False, reasoning="a height and a floor level"))])).run(candidates_of(claims, how="lexical"))
+    assert stats.verdict_counts["not_comparable"] == 1 and stats.findings_saved == 0 and stats.echo_missing == 0
+    assert any("a height and a floor level" in (record.outcome or "") for record in stats.records.values())
+
+
+def test_a_full_verdict_without_echoed_values_is_still_counted_as_missing_them(session, room):
+    claims = warehouse_claims(session, [500, 450])
+    v = verdict(claims)
+    for ev in v["evidence"]:
+        ev["value"] = ""
+    stats = judge(session, room, MockLLMClient([answer(v)])).run(candidates_of(claims))
+    assert stats.echo_missing == 1 and stats.findings_saved == 1
 
 
 def test_a_consistent_verdict_is_counted_but_not_saved_when_consistent_findings_are_off(session, room):
@@ -252,7 +413,7 @@ def test_a_failed_call_is_recorded_and_its_group_is_asked_again_once(session, ro
 
 def test_a_group_the_model_skips_gets_an_outcome_saying_so(session, room):
     claims = warehouse_claims(session, [500, 450])
-    stats = judge(session, room, MockLLMClient([answer(), answer()])).run(candidates_of(claims))
+    stats = judge(session, room, MockLLMClient([answer()] * 20)).run(candidates_of(claims))
     assert stats.findings_saved == 0 and "no verdict returned" in stats.records[(claims[0].id, claims[1].id)].outcome
 
 
@@ -264,7 +425,7 @@ def test_the_judge_is_told_when_a_value_is_inside_a_limit(session, room):
     b = Claim(document_id=db.id, chunk_id=cb[0].id, subject="site", metric="samples taken per site", value="6", claim_text="6 samples were taken per site")
     session.add_all([a, b])
     session.commit()
-    llm = MockLLMClient([answer()] * 2)
+    llm = MockLLMClient([answer()] * 20)
     judge(session, room, llm).run([candidate(a, b)])
     assert "A value inside a limit is compliant" in llm.prompts[0]
 
@@ -272,9 +433,22 @@ def test_the_judge_is_told_when_a_value_is_inside_a_limit(session, room):
 def test_the_judge_sees_the_cards_of_the_documents_in_its_call(session, room):
     claims = warehouse_claims(session, [500, 450])
     cards = {c.document_id: (f"doc{n}.pdf", DocProfile(main_entity="Acme Warehousing", document_type="lease")) for n, c in enumerate(claims)}
-    llm = MockLLMClient([answer()] * 2)
+    llm = MockLLMClient([answer()] * 20)
     judge(session, room, llm, profiles=cards).run(candidates_of(claims))
     assert "Documents in this collection" in llm.prompts[0] and "Acme Warehousing" in llm.prompts[0]
+
+
+def test_every_call_starts_with_the_same_cards_of_all_the_documents_so_the_start_can_be_cached(session, room):
+    one, two = warehouse_claims(session, [500, 450]), warehouse_claims(session, [10, 20], prefix="other")
+    every = one + two
+    cards = {c.document_id: (f"doc{n}.pdf", DocProfile(main_entity=f"Entity {n}", document_type="lease")) for n, c in enumerate(every)}
+    llm = MockLLMClient([answer()] * 20)
+    judge(session, room, llm, profiles=cards, budget=700).run(candidates_of(one) + candidates_of(two))  # a small budget: each group goes in a call of its own
+    first, second = llm.prompts[0], llm.prompts[1]
+    assert first != second and "### Group 1" in first and "### Group 1" in second
+    start_a, start_b = first.split("### Group 1")[0], second.split("### Group 1")[0]
+    assert start_a == start_b  # the same text before the groups in both calls
+    assert all(f"Entity {n}" in start_a for n in range(4))  # a full card for every document, also the ones this call does not hold
 
 
 def test_the_rules_prompt_states_the_group_verdict_and_stays_under_the_service_limit():
@@ -432,11 +606,34 @@ def test_a_missing_figure_the_comparison_needs_is_saved_as_missing_information_w
     assert finding.classification == "missing_information" and stats.quotes_from_code == 2
 
 
-def test_a_candidate_found_only_by_nearest_neighbours_never_joins_claims_into_a_bigger_group(session, room):
+def test_a_candidate_found_by_nearest_neighbours_joins_the_cluster_it_links_to_when_the_claims_can_state_one_attribute(session, room):
     a, b, c, d = warehouse_claims(session, [500, 450, 400, 350])
     groups = ClaimGroupJudge._form_groups([candidate(a, b, how="llm"), candidate(a, c, how="embedding"), candidate(a, d, how="embedding"), candidate(a, b, how="embedding")])
-    assert [g.claim_ids for g in groups] == [[a.id, b.id], [a.id, c.id], [a.id, d.id]]  # the neighbour candidate inside a group is compared there
-    assert len(groups[0].edges) == 2 and all(len(g.edges) == 1 for g in groups[1:])
+    assert [g.claim_ids for g in groups] == [[a.id, b.id, c.id, d.id]]  # one group of four: the model's cluster, and the two claims the neighbours link to it
+    assert len(groups[0].edges) == 4
+
+
+def test_a_neighbour_that_cannot_join_the_cluster_is_compared_with_the_claim_it_links_to_as_a_pair(session, room):
+    a, b, c, d = warehouse_claims(session, [500, 450, 400, 350])
+    never = lambda x, y, how: y != c.id and x != c.id  # c cannot state the attribute of the cluster
+    groups = ClaimGroupJudge._form_groups([candidate(a, b, how="llm"), candidate(a, c, how="embedding"), candidate(a, d, how="embedding")], never)
+    assert [g.claim_ids for g in groups] == [[a.id, b.id, d.id], [a.id, c.id]]
+
+
+def test_the_models_clusters_stay_whole_and_a_candidate_between_two_clusters_is_a_pair_not_a_merge(session, room):
+    a, b, c, d, e = warehouse_claims(session, [500, 450, 400, 350, 300])
+    groups = ClaimGroupJudge._form_groups(candidates_of([a, b, c]) + candidates_of([d, e]) + [candidate(c, d, how="lexical")])
+    assert [g.claim_ids for g in groups] == [[a.id, b.id, c.id], [d.id, e.id], [c.id, d.id]]
+
+
+def test_claims_linked_by_words_alone_form_one_group_up_to_the_cap_and_a_larger_set_is_split_by_attribute_not_into_pairs(session, room):
+    claims = warehouse_claims(session, [100 + i for i in range(6)])
+    chain = [candidate(x, y, how="lexical") for x, y in zip(claims, claims[1:])]
+    assert [len(g.claim_ids) for g in ClaimGroupJudge._form_groups(chain)] == [6]  # a chain of six is one group
+    groups = ClaimGroupJudge._form_groups(chain, cap=4)  # too large for one fact: the links that can state one attribute still keep claims together
+    assert [len(g.claim_ids) for g in groups] == [2, 2, 2, 2, 2] and all(len(g.claim_ids) == 2 for g in groups)  # without an attribute test the chain falls back to pairs
+    kept = ClaimGroupJudge._split_large([c.id for c in claims], chain, lambda x, y, how: x in {claims[0].id, claims[1].id, claims[2].id} and y in {claims[0].id, claims[1].id, claims[2].id}, 4)
+    assert sorted(len(g.claim_ids) for g in kept) == [2, 2, 2, 3]  # three claims of one attribute stay one group; the three links that leave them are pairs
 
 
 def test_a_central_estimate_inside_its_interval_agrees_and_other_values_do_not():
@@ -446,3 +643,93 @@ def test_a_central_estimate_inside_its_interval_agrees_and_other_values_do_not()
     assert not point_inside_range("1810 AD", "1885-1740 cal BCE")  # not the same unit
     assert not point_inside_range("3000", "3480 +/- 25 BP")  # a plus-or-minus is not a range of this kind
     assert not point_inside_range("1810 cal BCE", "850-750 cal BCE")
+
+
+# ---- every group is judged: groups asked again go in as few calls as fit, a call that keeps failing is halved ---------------------------------
+class BusyForLargeCalls(LLMClient):
+    """Fails with a transient error while a call holds more than ``limit`` groups (a service overloaded by large requests); otherwise answers every group
+    in the call with a contradiction. Records how many groups each call held."""
+
+    def __init__(self, limit, fail_first=0):
+        super().__init__(max_attempts=1)
+        self.limit, self.sizes, self.fail_first = limit, [], fail_first
+
+    def _raw_generate(self, prompt, system, json_mode):
+        import json
+        import re
+
+        groups = re.findall(r"### Group (\d+)", prompt)
+        self.sizes.append(len(groups))
+        if len(groups) > self.limit or len(self.sizes) <= self.fail_first:
+            raise LLMTransientError("503 high demand")
+        verdicts = []
+        for group in re.split(r"(?=### Group \d+)", prompt)[1:]:
+            number = int(re.match(r"### Group (\d+)", group).group(1))
+            found = re.findall(r"Claim \[(\d+)\].*?stores (\d+) tonnes", group)
+            verdicts.append(dict(group=number, same_attribute=True, attribute_reasoning="capacity", set_aside=[], classification="contradiction", severity="high", confidence=0.9,
+                                 title=f"group {number}", description="differs", evidence=[dict(claim=int(n), value=v, quote=sentence(v)) for n, v in found]))
+        return RawResponse(text=json.dumps({"verdicts": verdicts}))
+
+
+def pairs_of_claims(session, count):
+    candidates = []
+    for k in range(count):
+        a, b = warehouse_claims(session, [500 + k, 400 + k], prefix=f"p{k}-", subject=f"warehouse {k}")
+        candidates.append(candidate(a, b))
+    return candidates
+
+
+from app.llm.errors import LLMTransientError  # noqa: E402
+
+
+def test_after_a_failed_call_all_its_groups_are_asked_again_together_not_one_by_one(session, room):  # noqa: F811
+    llm, pauses = BusyForLargeCalls(limit=100, fail_first=1), []
+    stats = judge(session, room, llm, budget=1_000_000, retry_pause_seconds=7, sleep=pauses.append).run(pairs_of_claims(session, 12))
+    assert llm.sizes == [12, 12]  # one call for all twelve groups, which failed; the same twelve in one call the second time
+    assert (stats.findings_saved, stats.groups_unjudged, stats.batches_failed) == (12, 0, 1) and sum(pauses) == 7  # a pause before asking again
+
+
+def test_a_call_that_keeps_failing_is_halved_until_it_goes_through_and_every_group_is_judged(session, room):  # noqa: F811
+    llm = BusyForLargeCalls(limit=3)
+    stats = judge(session, room, llm, budget=1_000_000, retry_pause_seconds=0, sleep=lambda _s: None).run(pairs_of_claims(session, 12))
+    assert llm.sizes[0] == 12 and max(llm.sizes[1:]) <= 12 and 12 in llm.sizes[:2]  # the whole set first, again whole, then halves
+    assert stats.findings_saved == 12 and stats.groups_unjudged == 0 and max(s for s in llm.sizes[2:]) <= 6
+
+
+def test_a_stop_request_ends_the_asking_again(session, room):  # noqa: F811
+    state = {"stop": False}
+    llm = BusyForLargeCalls(limit=0)
+    stats = judge(session, room, llm, budget=1_000_000, retry_pause_seconds=30, should_stop=lambda: state["stop"], sleep=lambda _s: state.update(stop=True)).run(pairs_of_claims(session, 4))
+    assert llm.sizes == [4] and stats.groups_unjudged == 4  # one call, then the pause was interrupted: nothing more was asked
+
+
+# ---- a "not comparable" verdict whose own reason names a difference is asked again ---------------------------------------------------------
+def test_a_reason_that_names_a_difference_is_not_taken_as_not_comparable(session, room):  # noqa: F811
+    from app.services.claim_group_judge import describes_a_difference
+
+    assert describes_a_difference("Minor spelling difference in owner name between documents ('Ashbey' vs 'Ashby').")
+    assert describes_a_difference("The values mismatch.") and describes_a_difference("Total differs from the sum")
+    assert not describes_a_difference("Different subjects and metrics") and not describes_a_difference("A height and a floor level")
+    assert not describes_a_difference("The claims measure different attributes; the periods differ") and not describes_a_difference("")
+
+
+def test_such_a_verdict_is_asked_again_and_the_second_answer_is_used(session, room):  # noqa: F811
+    claims = warehouse_claims(session, [500, 450])
+    first = verdict(claims, same_attribute=False, attribute_reasoning="Minor spelling difference in the capacity figure ('500' vs '450').")
+    llm = MockLLMClient([answer(first), answer(verdict(claims))])
+    stats = judge(session, room, llm).run(candidates_of(claims))
+    assert stats.reason_contradicts_verdict == 1 and stats.retries == 1 and stats.findings_saved == 1 and stats.verdict_counts["not_comparable"] == 0
+
+
+def test_a_reason_about_different_things_is_final_at_once(session, room):  # noqa: F811
+    claims = warehouse_claims(session, [500, 450])
+    llm = MockLLMClient([answer(verdict(claims, same_attribute=False, attribute_reasoning="Different subjects and metrics"))])
+    stats = judge(session, room, llm).run(candidates_of(claims))
+    assert stats.reason_contradicts_verdict == 0 and stats.retries == 0 and stats.verdict_counts["not_comparable"] == 1
+
+
+def test_if_the_second_answer_says_the_same_it_is_final_and_counted_not_comparable(session, room):  # noqa: F811
+    claims = warehouse_claims(session, [500, 450])
+    same = verdict(claims, same_attribute=False, attribute_reasoning="The figures differ in spelling only.")
+    stats = judge(session, room, MockLLMClient([answer(same), answer(same)])).run(candidates_of(claims))
+    assert stats.reason_contradicts_verdict == 1 and stats.retries == 1 and stats.verdict_counts["not_comparable"] == 1 and stats.findings_saved == 0

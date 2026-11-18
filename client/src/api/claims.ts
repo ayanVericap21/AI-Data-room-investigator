@@ -13,4 +13,6 @@ export const fetchJobs = async (): Promise<Job[]> => (await http.get<Job[]>("/jo
 
 export const startProcessing = async (): Promise<Job> => (await http.post<Job>("/documents/process")).data;
 
+export const clearResults = async (): Promise<Record<string, number>> => (await http.delete<Record<string, number>>("/results")).data;
+
 export const startExtraction = async (): Promise<Job> => (await http.post<Job>("/claims/extract")).data;

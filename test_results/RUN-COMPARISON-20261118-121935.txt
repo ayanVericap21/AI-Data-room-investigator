@@ -1,0 +1,102 @@
+RUN COMPARISON against AI Data Room Evaluation Data Templates - Ground Truth.csv (39 cases of HTC01), 2026-11-18 12:19:35
+Matches are automatic and approximate: each lists the finding it used, so a case can be confirmed by reading that finding.
+
+=== RUN 1: TEST-RUN-20261118-120244-ui-run.txt
+started 2026-11-18 12:02:44 (local); wall time 378.8s; valid for scoring: yes
+Claim groups: 1185 groups from 1722 candidates; 120 agreed (every claim states the same value, not sent to the LLM); 1000 judged; verdicts {'contextual_difference': 51, 'consistent': 262, 'not_comparable': 673, 'co
+Findings: 54 saved with verified quotes; 2 rejected (quotes missing or not exact)
+LLM calls: 60 provider attempts (22 failed, 22 retries incl. invalid-output retries), 571.8s total, avg 12197ms
+Tokens: prompt 812,023  completion 145,271  thinking 0  cached 52,180  total 957,294   (cost not computed: no price per token configured)
+findings read: 81
+cases to flag caught: 6 of 31; traps (consistent cases) wrongly flagged: 0 of 8
+score as accuracy (caught + traps not flagged) / all cases: 36%
+   caught HTC01-005 [Contextual difference] by [fnd_c1e9b61385c14360] contradiction/high: Virginia Credit Purchase Price Discrepancy
+   caught HTC01-009 [Insufficient evidence] by [fnd_5ebeaf2ac6d6447f] contextual_difference/medium: Building Placed-in-Service Date Progression
+   caught HTC01-011 [Contradiction] by [fnd_b4af5e8baa8c48bd] missing_information/high: Referenced item not in the data room: window survey
+   caught HTC01-014 [Contradiction] by [fnd_6c854bfc1fa24c8e] contextual_difference/low: Equity installment schedule versus funding progress
+   caught HTC01-015 [Contradiction] by [fnd_fea7de754a6a4442] contextual_difference/low: Developer fee limit versus budget amount
+   caught HTC01-032 [Insufficient evidence] by [fnd_5e823c5b7acf4175] contextual_difference/low: Model Update Condition Versus Actual Model Update
+
+=== RUN 2: TEST-RUN-20261118-121013-ui-run.txt
+started 2026-11-18 12:10:13 (local); wall time 236.5s; valid for scoring: yes
+Claim groups: 1369 groups from 1898 candidates; 156 agreed (every claim states the same value, not sent to the LLM); 1138 judged; verdicts {'contextual_difference': 102, 'consistent': 223, 'not_comparable': 788, 'c
+Findings: 67 saved with verified quotes; 1 rejected (quotes missing or not exact)
+LLM calls: 52 provider attempts (13 failed, 13 retries incl. invalid-output retries), 370.2s total, avg 8767ms
+Tokens: prompt 840,374  completion 143,427  thinking 0  cached 0  total 983,801   (cost not computed: no price per token configured)
+findings read: 94
+cases to flag caught: 8 of 31; traps (consistent cases) wrongly flagged: 0 of 8
+score as accuracy (caught + traps not flagged) / all cases: 41%
+   caught HTC01-004 [Contradiction] by [fnd_1a0e0049c6544239] contextual_difference/medium: Virginia Credit Price in Model vs Signed Agreement
+   caught HTC01-005 [Contextual difference] by [fnd_8d3532bd9ea143e9] contextual_difference/medium: Revision of Virginia Credit Purchase Price
+   caught HTC01-009 [Insufficient evidence] by [fnd_7339f92146e24673] contradiction/high: Conflicting Building Placed-in-Service Dates
+   caught HTC01-011 [Contradiction] by [fnd_1408f811481c4c12] missing_information/high: Referenced item not in the data room: window survey
+   caught HTC01-014 [Contradiction] by [fnd_2f0e80bd42ec4818] contextual_difference/low: Equity Installments Funding Status
+   caught HTC01-015 [Contradiction] by [fnd_29615c4fef614406] contradiction/critical: Development fee exceeds operating agreement limit
+   caught HTC01-025 [Contradiction] by [fnd_ff12c0757a4a4234] contradiction/high: Cross-document check: Hard cost subtotal check
+   caught HTC01-032 [Insufficient evidence] by [fnd_519206ca514f4c74] contextual_difference/low: Progression of Project Certification
+
+=== RUN 3: TEST-RUN-20261118-121429-ui-run.txt
+started 2026-11-18 12:14:29 (local); wall time 274.1s; valid for scoring: yes
+Claim groups: 1203 groups from 1682 candidates; 133 agreed (every claim states the same value, not sent to the LLM); 1004 judged; verdicts {'contextual_difference': 59, 'consistent': 234, 'not_comparable': 703, 'co
+Findings: 50 saved with verified quotes; 2 rejected (quotes missing or not exact)
+LLM calls: 46 provider attempts (9 failed, 9 retries incl. invalid-output retries), 314.9s total, avg 8182ms
+Tokens: prompt 777,069  completion 115,295  thinking 0  cached 15,640  total 892,364   (cost not computed: no price per token configured)
+findings read: 76
+cases to flag caught: 10 of 31; traps (consistent cases) wrongly flagged: 0 of 8
+score as accuracy (caught + traps not flagged) / all cases: 46%
+   caught HTC01-004 [Contradiction] by [fnd_e7777e1a10c54053] contextual_difference/medium: Virginia credit purchase price difference between financial model/draft and signed agreeme
+   caught HTC01-005 [Contextual difference] by [fnd_23f9055333ef4293] contextual_difference/medium: Change in Virginia tax credit purchase price between draft and signed agreements
+   caught HTC01-009 [Insufficient evidence] by [fnd_6239789dc0a24b09] contextual_difference/medium: Building placed-in-service date differences between temporary certificate and final date
+   caught HTC01-011 [Contradiction] by [fnd_11122ec411434769] contextual_difference/low: Historic window openings count vs design profile specifications
+   caught HTC01-014 [Contradiction] by [fnd_f09acae1e5524af6] contextual_difference/low: Capital Contribution Installments vs Actual Funding Status
+   caught HTC01-015 [Contradiction] by [fnd_336efd90702f4fc1] contextual_difference/low: Developer fee amount versus fee cap
+   caught HTC01-025 [Contradiction] by [fnd_84108ed0b54749b2] contradiction/high: Cross-document check: Hard cost subtotal
+   caught HTC01-026 [Insufficient evidence] by [fnd_7c1deba913f4497e] contextual_difference/low: Certification status and approval stages
+   caught HTC01-032 [Insufficient evidence] by [fnd_7c1deba913f4497e] contextual_difference/low: Certification status and approval stages
+   caught HTC01-036 [Contradiction] by [fnd_f52349022a444638] contradiction/high: Property Sale Planned During Credit Period in Violation of Prohibition
+
+=== EVERY CASE ACROSS THE RUNS (caught / not flagged = yes; for a consistent case, yes means it was NOT flagged)
+case       key class               severity  run1   run2   run3   times  summary
+HTC01-001  Contradiction           Critical  no     no     no     0/3    Federal credit in the financial model does not match the QRE
+HTC01-002  Contradiction           Critical  no     no     no     0/3    Budget counts non-qualifying costs as QRE
+HTC01-003  Contradiction           High      no     no     no     0/3    Cost certification leaves out the change orders
+HTC01-004  Contradiction           High      no     yes    yes    2/3    Financial model and summaries use the draft credit price, not the sign
+HTC01-005  Contextual difference   Medium    yes    yes    yes    3/3    Signed and draft purchase agreements give different prices
+HTC01-006  Contradiction           High      no     no     no     0/3    Memo says the project is fully funded, but the budget shows a gap
+HTC01-007  Contradiction           Critical  no     no     no     0/3    Memo puts the federal credits in the wrong tax year
+HTC01-008  Contradiction           High      no     no     no     0/3    Two different construction start dates, one before Part 2 approval
+HTC01-009  Insufficient evidence   Critical  yes    yes    yes    3/3    Part 3 approval is claimed but not in the data room
+HTC01-010  Insufficient evidence   High      no     no     no     0/3    No evidence NPS approved the window shop drawings before installation
+HTC01-011  Contradiction           Critical  yes    yes    yes    3/3    Window quote is for vinyl, but the approval requires wood
+HTC01-012  Contradiction           Medium    no     no     no     0/3    Appraisal and architect disagree on the unit count
+HTC01-013  Contextual difference   Medium    no     no     no     0/3    Gross area and rentable area differ
+HTC01-014  Contradiction           High      yes    yes    yes    3/3    Equity installments do not add up to the equity amount
+HTC01-015  Contradiction           High      yes    yes    yes    3/3    Developer fee in the budget is above the operating agreement cap
+HTC01-016  Contradiction           High      no     no     no     0/3    Operating agreement gives two different guaranty caps
+HTC01-017  Contradiction           Critical  no     no     no     0/3    Cost certification names the developer as taxpayer, not the building o
+HTC01-018  Contradiction           Low       no     no     no     0/3    Owner name is misspelled on the architect's documents
+HTC01-019  Consistent              Low       yes    yes    yes    3/3    Owner name written two ways
+HTC01-020  Consistent              Critical  yes    yes    yes    3/3    Memo's rounded QRE and credit figures match the cost certification
+HTC01-021  Consistent              Medium    yes    yes    yes    3/3    Part 2 approval date written in different formats
+HTC01-022  Contextual difference   Medium    no     no     no     0/3    Window quote differs from the budget line
+HTC01-023  Contextual difference   Medium    no     no     no     0/3    Update reports 48 units complete against 84 planned
+HTC01-024  Consistent              Critical  yes    yes    yes    3/3    QRE shown in thousands in the model
+HTC01-025  Contradiction           High      no     yes    yes    2/3    Hard cost line items do not add up to the subtotal
+HTC01-026  Insufficient evidence   Medium    no     no     yes    1/3    Deposit payment is backed only by an email
+HTC01-027  Insufficient evidence   Medium    no     no     no     0/3    Adjusted basis in the substantial rehabilitation test has no readable 
+HTC01-028  Contradiction           Medium    no     no     no     0/3    Model assumes faster lease-up than the market study supports
+HTC01-029  Consistent              Critical  yes    yes    yes    3/3    Placed-in-service date agrees across documents
+HTC01-030  Consistent              High      yes    yes    yes    3/3    Construction loan amount agrees across documents
+HTC01-031  Contextual difference   Low       no     no     no     0/3    Memo describes a mixed-use community; plans show two commercial suites
+HTC01-032  Insufficient evidence   High      yes    yes    yes    3/3    Memo claims the state credit certification has been issued
+HTC01-033  Contradiction           Medium    no     no     no     0/3    Update treats the Phase 1 temporary occupancy date as the placed-in-se
+HTC01-034  Consistent              Medium    yes    yes    yes    3/3    Substantial completion date agrees between the schedule and the update
+HTC01-035  Contradiction           High      no     no     no     0/3    Financial model puts the whole federal credit in 2025
+HTC01-036  Contradiction           Critical  no     no     yes    1/3    Planned sale of a commercial unit falls inside the recapture period, b
+HTC01-037  Contradiction           High      no     no     no     0/3    Equity bridge loan matures before the installment meant to repay it
+HTC01-038  Contradiction           High      no     no     no     0/3    Model expects state credit proceeds after the buyer can walk away
+HTC01-039  Consistent              High      yes    yes    yes    3/3    Recapture period is described the same way in the operating agreement 
+
+caught in every run (6): HTC01-005, HTC01-009, HTC01-011, HTC01-014, HTC01-015, HTC01-032
+caught in some runs only (4): HTC01-004, HTC01-025, HTC01-026, HTC01-036
+never caught (21): HTC01-001, HTC01-002, HTC01-003, HTC01-006, HTC01-007, HTC01-008, HTC01-010, HTC01-012, HTC01-013, HTC01-016, HTC01-017, HTC01-018, HTC01-022, HTC01-023, HTC01-027, HTC01-028, HTC01-031, HTC01-033, HTC01-035, HTC01-037, HTC01-038

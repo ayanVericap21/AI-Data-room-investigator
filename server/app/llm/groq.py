@@ -217,14 +217,14 @@ class GroqLLMClient(LLMClient):
                 self._note(f"{slot.model} left out for the rest of the run: {slot.unavailable}")
                 if not self._others_left(slot):
                     raise LLMPermanentError(f"Groq API 429: every model of the chain has used its quota; last: {slot.model} ({slot.unavailable}): {response.text[:160]}")
-                raise LLMTransientError(f"Groq API 429 on {slot.model}: daily quota; trying another model", retry_after=0.0)
+                raise LLMTransientError(f"Groq API 429 on {slot.model}: daily quota; trying another model", retry_after=0.0, status=429)
             pause = delay if delay is not None else slot.requests.interval
             slot.requests.pause(pause)
             slot.tokens.pause(pause)
             self._note(f"{slot.model} rate limited, paused {pause:.0f}s" + ("; the call goes to another model" if self._others_left(slot) else ""))
-            raise LLMTransientError(f"Groq API 429 on {slot.model}: {response.text[:160]}", retry_after=0.0 if self._others_left(slot) else delay)
+            raise LLMTransientError(f"Groq API 429 on {slot.model}: {response.text[:160]}", retry_after=0.0 if self._others_left(slot) else delay, status=429)
         if response.status_code >= 500:
-            raise LLMTransientError(f"Groq API {response.status_code}: {response.text[:200]}", retry_after=retry_delay_seconds(response))
+            raise LLMTransientError(f"Groq API {response.status_code}: {response.text[:200]}", retry_after=retry_delay_seconds(response), status=response.status_code)
         if response.status_code == 413:
             raise LLMPermanentError(f"Groq API 413: the request is larger than the model's token limit; send less text per call: {response.text[:200]}")
         if response.status_code == 404 or (response.status_code == 400 and ("model_not_found" in response.text or "decommissioned" in response.text)):
@@ -232,13 +232,13 @@ class GroqLLMClient(LLMClient):
             self._note(f"{slot.model} left out for the rest of the run: {slot.unavailable}")
             if not self._others_left(slot):
                 raise LLMPermanentError(f"Groq API {response.status_code}: no model of the chain is available: {response.text[:200]}")
-            raise LLMTransientError(f"Groq API {response.status_code} on {slot.model}: not available; trying another model", retry_after=0.0)
+            raise LLMTransientError(f"Groq API {response.status_code} on {slot.model}: not available; trying another model", retry_after=0.0, status=response.status_code)
         if response.status_code == 400 and "json_validate_failed" in response.text:
             # the model wrote an answer that is not valid JSON (the request itself is fine): ask again, on another model when one is free
             slot.tokens.settle(reservation, int(reservation[1]))
             slot.avoid_next = True
             self._note(f"{slot.model} returned invalid JSON; the call is asked again" + (" on another model" if self._others_left(slot) else ""))
-            raise LLMTransientError(f"Groq API 400 on {slot.model}: invalid JSON in the answer (json_validate_failed)", retry_after=0.0)
+            raise LLMTransientError(f"Groq API 400 on {slot.model}: invalid JSON in the answer (json_validate_failed)", retry_after=0.0, status=400)
         if response.status_code >= 400:
             raise LLMPermanentError(f"Groq API {response.status_code}: {response.text[:300]}")
         data = response.json()

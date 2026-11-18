@@ -46,7 +46,7 @@ def process_documents(
         started = time.perf_counter()
         with factory() as session:
             processing = ProcessingService(session, DocumentService(session, settings), embedder, progress,
-                                           extract_workers=settings.extract_workers)
+                                           extract_workers=settings.extract_workers, ocr=settings.ocr_config)
             results = processing.process_pending()
             return {"results": [asdict(r) for r in results],
                     "extract_phase_ms": processing.extract_phase_ms,

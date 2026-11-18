@@ -15,7 +15,7 @@ from typing import Callable, TypeVar
 
 from pydantic import BaseModel, ValidationError
 
-from app.llm.errors import LLMError, LLMInvalidOutputError, LLMTransientError
+from app.llm.errors import LLMError, LLMInvalidOutputError, LLMQuotaError, LLMTransientError
 from app.llm.metrics import CallMetric, LatencySummary, summarize
 
 logger = logging.getLogger(__name__)
@@ -60,6 +60,7 @@ class LLMClient(ABC):
         self._sleep = sleep
         self._usage = TokenUsage()
         self.retry_count = 0  # total retries performed (for run metadata)
+        self.quota_exhausted = ""  # why the provider's daily quota is used up (empty while it is not): a run stops rather than retry
         self.call_metrics: list[CallMetric] = []  # one entry per provider attempt
         self._lock = threading.Lock()  # counters are shared by every thread that calls this client
         self._tls = threading.local()  # what belongs to one call (its size and start time) is per thread
@@ -82,25 +83,38 @@ class LLMClient(ABC):
     def generate_structured_output(self, prompt: str, schema: type[T], system: str | None = None) -> T:
         """Return a validated ``schema`` instance. The schema is shown to the model in
         the prompt (provider-neutral); validation is always done by Pydantic here."""
-        schema_json = json.dumps(schema.model_json_schema(), indent=2)
-        full_prompt = (
-            f"{prompt}\n\nRespond with ONLY a JSON object that conforms to this JSON Schema "
-            f"(no prose, no markdown):\n{schema_json}"
-        )
+        json_schema = schema.model_json_schema()
+        native = self.native_schema(json_schema)
+        if native is None:  # the provider cannot take the schema as a request parameter: the model reads it in the prompt
+            full_prompt = (
+                f"{prompt}\n\nRespond with ONLY a JSON object that conforms to this JSON Schema "
+                f"(no prose, no markdown):\n{json.dumps(json_schema, indent=2)}"
+            )
+        else:  # the provider enforces the schema itself, so the prompt does not carry it
+            full_prompt = prompt
+        self._tls.response_schema = native
         last_error: Exception | None = None
-        for attempt in range(1, self.max_attempts + 1):
-            response = self._call(full_prompt, system, json_mode=True)
-            try:
-                return schema.model_validate(extract_json(response.text))
-            except (ValueError, ValidationError) as exc:  # JSONDecodeError is a ValueError
-                last_error = exc
-                with self._lock:
-                    self.retry_count += 1
-                logger.warning("Invalid structured output", extra={"attempt": attempt, "schema": schema.__name__})
-                full_prompt += f"\n\nYour previous reply was invalid ({str(exc)[:300]}). Return valid JSON only."
+        try:
+            for attempt in range(1, self.max_attempts + 1):
+                response = self._call(full_prompt, system, json_mode=True)
+                try:
+                    return schema.model_validate(extract_json(response.text))
+                except (ValueError, ValidationError) as exc:  # JSONDecodeError is a ValueError
+                    last_error = exc
+                    with self._lock:
+                        self.retry_count += 1
+                    logger.warning("Invalid structured output", extra={"attempt": attempt, "schema": schema.__name__})
+                    full_prompt += f"\n\nYour previous reply was invalid ({str(exc)[:300]}). Return valid JSON only."
+        finally:
+            self._tls.response_schema = None  # a later plain-text call on this thread must not carry it
         raise LLMInvalidOutputError(
             f"Model output did not match {schema.__name__} after {self.max_attempts} attempts: {last_error}"
         )
+
+    def native_schema(self, json_schema: dict) -> dict | None:
+        """``json_schema`` in the form this provider accepts as a request parameter (read from ``self._tls.response_schema`` by the
+        provider's ``_raw_generate``), or None when it cannot take one: the schema is then pasted into the prompt."""
+        return None
 
     # -- internals -----------------------------------------------------------
     def _call(self, prompt: str, system: str | None, json_mode: bool) -> RawResponse:
@@ -118,11 +132,14 @@ class LLMClient(ABC):
                 with self._lock:
                     self.retry_count += 1
                 delay = exc.retry_after if exc.retry_after is not None else self.base_delay * (2 ** (attempt - 1))
-                logger.warning("Transient LLM error, retrying", extra={"attempt": attempt, "delay": delay, "error": str(exc)})
+                logger.warning(f"Transient LLM error, retrying: {exc.status_label} (attempt {attempt} of {self.max_attempts}, waiting {min(delay, 60):.0f}s)",
+                               extra={"attempt": attempt, "delay": delay, "error": str(exc), "status": exc.status})
                 self._sleep(min(delay, 60))
                 continue
             except LLMError as exc:  # permanent: record the attempt, then let it propagate
                 self._record(started, None, exc)
+                if isinstance(exc, LLMQuotaError):
+                    self.quota_exhausted = str(exc)[:300]
                 raise
             self._record(started, response.usage, None, len(response.text))
             usage = response.usage.model_copy()
@@ -136,7 +153,7 @@ class LLMClient(ABC):
                 response_chars: int = 0) -> None:
         self.call_metrics.append(CallMetric(
             kind="llm", latency_ms=round((time.perf_counter() - started) * 1000), ok=error is None,
-            error=str(error) if error else None,
+            error=str(error) if error else None, status=getattr(error, "status", None), model=getattr(self, "model", ""),
             prompt_tokens=usage.prompt_tokens if usage else 0, completion_tokens=usage.completion_tokens if usage else 0,
             thinking_tokens=usage.thinking_tokens if usage else 0, total_tokens=usage.total_tokens if usage else 0,
             cached_tokens=usage.cached_tokens if usage else 0, prompt_chars=getattr(self._tls, "prompt_chars", 0),

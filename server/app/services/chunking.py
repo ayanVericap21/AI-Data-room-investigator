@@ -25,6 +25,7 @@ from app.schemas.extraction import ExtractedUnit
 
 DEFAULT_MAX_CHARS = 1000  # hard limit for any chunk (the local embedding model reads about 1,000 characters)
 DEFAULT_TARGET_CHARS = 1000  # small neighbouring units are merged up to this size
+DEFAULT_OVERLAP_CHARS = 150  # when a unit is split, each part after the first starts with up to this many characters from the end of the part before it (whole sentences or rows)
 MERGE_BY_DEFAULT = True  # small neighbouring units are merged; False means one unit is one chunk
 _SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
 
@@ -64,12 +65,40 @@ def _pack(pieces: list[str], max_chars: int, joiner: str) -> list[str]:
     return groups
 
 
-def split_text(text: str, content_type: str, max_chars: int) -> list[str]:
+def _overlap_tail(part: str, overlap_chars: int, joiner: str) -> str:
+    """The end of ``part`` to repeat at the start of the next part: whole sentences (text) or whole rows (tables) that fit in ``overlap_chars``;
+    when even the last one is longer, its last words."""
+    pieces = part.split("\n") if joiner == "\n" else [s for s in _SENTENCE_END.split(part) if s]
+    tail = ""
+    for piece in reversed(pieces):
+        candidate = piece if not tail else piece + joiner + tail
+        if len(candidate) > overlap_chars:
+            break
+        tail = candidate
+    if not tail and joiner != "\n":
+        words = pieces[-1].split()
+        for word in reversed(words):
+            candidate = word if not tail else word + " " + tail
+            if len(candidate) > overlap_chars:
+                break
+            tail = candidate
+    return tail
+
+
+def split_text(text: str, content_type: str, max_chars: int, overlap_chars: int = 0) -> list[str]:
+    """Split a unit that is longer than ``max_chars``. With ``overlap_chars`` each part after the first starts with the end of the part before it
+    (so a fact cut at the boundary is whole in one of them); no part is longer than ``max_chars``."""
     if len(text) <= max_chars:
         return [text]
+    overlap_chars = max(0, min(overlap_chars, max_chars // 2))
+    room = max_chars - overlap_chars
     if content_type in ("table", "table_row"):
-        return _pack(text.split("\n"), max_chars, "\n")
-    return _pack([s for s in _SENTENCE_END.split(text) if s], max_chars, " ")
+        joiner, parts = "\n", _pack(text.split("\n"), room, "\n")
+    else:
+        joiner, parts = " ", _pack([s for s in _SENTENCE_END.split(text) if s], room, " ")
+    if overlap_chars and len(parts) > 1:
+        parts = [parts[0]] + [(_overlap_tail(prev, overlap_chars, joiner) + joiner + cur).lstrip(joiner) for prev, cur in zip(parts, parts[1:])]
+    return parts
 
 
 _MERGEABLE = {"paragraph", "heading", "table_row"}  # tables stay as their own chunk
@@ -109,6 +138,8 @@ def _draft_from_group(group: list[tuple[ExtractedUnit, str, int, int]], index: i
         metadata["locator"] = unit.locator.model_dump(exclude_none=True)
         if parts > 1:
             metadata.update(part=part, parts=parts)
+            if part > 1:
+                metadata["overlaps_previous_part"] = True  # its first sentences (or rows) repeat the end of the part before
         return ChunkDraft(
             chunk_index=index, content=text, content_type=unit.content_type, page_number=unit.locator.page,
             sheet_name=unit.locator.sheet_name, cell_reference=unit.locator.cell_reference,
@@ -134,7 +165,8 @@ def _draft_from_group(group: list[tuple[ExtractedUnit, str, int, int]], index: i
 
 
 def chunk_units(units: list[ExtractedUnit], max_chars: int = DEFAULT_MAX_CHARS,
-                target_chars: int = DEFAULT_TARGET_CHARS, merge: bool | None = None) -> list[ChunkDraft]:
+                target_chars: int = DEFAULT_TARGET_CHARS, merge: bool | None = None,
+                overlap_chars: int = DEFAULT_OVERLAP_CHARS) -> list[ChunkDraft]:
     """Units -> chunks. Oversized units are split. With ``merge``, neighbouring small units of the
     same page, sheet or heading are joined (newline-separated, in reading order) until a chunk
     reaches ``target_chars``, so a slide of ten text boxes becomes one chunk, not ten fragments.
@@ -146,7 +178,7 @@ def chunk_units(units: list[ExtractedUnit], max_chars: int = DEFAULT_MAX_CHARS,
     groups: list[list[tuple[ExtractedUnit, str, int, int]]] = []
     group_chars = 0
     for unit in units:
-        parts = split_text(unit.content, unit.content_type, max_chars)
+        parts = split_text(unit.content, unit.content_type, max_chars, overlap_chars)
         for i, part in enumerate(parts, start=1):
             piece = (unit, part, i, len(parts))
             if (merge and groups and len(parts) == 1 and groups[-1][-1][3] == 1

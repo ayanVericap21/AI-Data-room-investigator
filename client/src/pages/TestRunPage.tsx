@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Box, Button, Chip, CircularProgress, IconButton, MenuItem, Paper, Stack, TextField, Tooltip, Typography } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { clearResults } from "../api/claims";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import StopIcon from "@mui/icons-material/Stop";
@@ -27,6 +28,7 @@ export default function TestRunPage() {
   const start = useStartRun();
   const stop = useStopRun();
   const scan = useScanDocuments();
+  const clear = useMutation({ mutationFn: clearResults });
   const qc = useQueryClient();
   const { lines, run, error, pollNow } = useRunLog();
 
@@ -81,6 +83,16 @@ export default function TestRunPage() {
   const onStart = () =>
     start.mutate({ documents: paths.filter((p) => selected.has(p)), judgeWorkers }, { onSuccess: () => void pollNow() });
   const onStop = () => stop.mutate(undefined, { onSuccess: () => void pollNow() });
+  const onClear = () => {
+    if (!window.confirm("Delete all claims, findings and evidence from earlier runs? Documents stay.")) return;
+    clear.mutate(undefined, {
+      onSuccess: () => {
+        void qc.invalidateQueries({ queryKey: CLAIMS_KEY });
+        void qc.invalidateQueries({ queryKey: CANDIDATES_KEY });
+        void qc.invalidateQueries({ queryKey: ["findings"] });
+      },
+    });
+  };
 
   return (
     <Box>
@@ -125,11 +137,15 @@ export default function TestRunPage() {
           >
             Stop
           </Button>
+          <Button variant="outlined" disabled={active || clear.isPending} onClick={onClear}>
+            Clear results
+          </Button>
         </Stack>
       </Box>
 
       {start.isError && <Alert severity="error" sx={{ mb: 2 }}>{errorMessage(start.error)}</Alert>}
-      {stop.isError && <Alert severity="error" sx={{ mb: 2 }}>{errorMessage(stop.error)}</Alert>}
+      {clear.isError && <Alert severity="error" sx={{ mb: 2 }}>{errorMessage(clear.error)}</Alert>}
+      {stop.isError &&<Alert severity="error" sx={{ mb: 2 }}>{errorMessage(stop.error)}</Alert>}
       {error && <Alert severity="warning" sx={{ mb: 2 }}>Could not refresh the log: {error}</Alert>}
       {run.state === "stopping" && (
         <Alert severity="info" sx={{ mb: 2 }}>

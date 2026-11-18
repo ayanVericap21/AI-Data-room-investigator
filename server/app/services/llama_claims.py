@@ -20,9 +20,10 @@ from sqlalchemy.orm import Session
 from app.llm.llama_extract import LlamaExtractClient, LlamaExtractError, LlamaJob
 from app.models import Claim, Document, DocumentChunk
 from app.schemas.claim import ClaimExtractionResult, ExtractedClaim
-from app.services.claim_service import EXCERPT_TYPES_SKIPPED, ClaimService, ExtractionSummary
+from app.services.claim_service import EXCERPT_TYPES_SKIPPED, ClaimService, ExtractionSummary, delete_claims
 from app.services.claim_tags import make_tags
 from app.services.doc_profiles import DocProfile
+from app.services.extraction_cache import ExtractionCache
 from app.services.missing_items import DocReference
 from app.services.numbers import value_supported_by_text
 from app.tools.submit import find_source_span
@@ -74,6 +75,7 @@ SCHEMA: dict[str, Any] = {
                                    "description": "For an assertion about how many: all, none, some, most or not_all. The metric names what it covers (workshops recorded)"},
                     "anchor": {"type": "string", "description": "Required whenever period or value is relative to an event (day 2, week 3, within 30 days of handover, after completion): the event or date it is counted from, as the document names it, or the event the document is about when it says only day 2 or week 3"},
                     "complete": {"type": "boolean", "description": "For a list claim: true when the text says the list is complete (in full, all, only) or states how many there are"},
+                    "is_rule": {"type": "boolean", "description": "true when the claim is a rule: a claim that states what is permitted, prohibited, required, limited, scheduled or suspended for a scope (a place, a kind of item, some people, a period), or the status of a scope during a period (closed, suspended, unavailable, expired). A limit or a quota is a rule. So is a universal or negative statement about a scope (none, no, never, all, always: \"no subcontractors are engaged\", \"all invoices were paid\"). Leave out (or false) for a claim that only reports something that was done, found, used, measured or stated as a fact"},
                 },
                 "required": ["subject", "metric", "value", "claim_text", "value_type"],
             },
@@ -133,6 +135,8 @@ SYSTEM_PROMPT = (
     "LISTS: a list of names or items in one sentence is ONE claim: the value is the whole list as written and the metric names what the items are; set complete to true when the text says the list is complete "
     "(in full, all, only) or states how many there are; a count stated in the sentence is a separate claim. "
     "RELATIVE DATES: a period or date counted from an event (day 2, week 3, within 30 days of handover, after completion) goes in period of the claim it belongs to, never as a claim of its own, and anchor always names the event it is counted from: the event the document names, or the event the document is about when it says only day 2 or week 3. "
+    "PAGE NUMBERS: a page number or page count printed on a page (Page 4 of 6, 4 of 6) is layout, not a fact: return no claim for it. The document's title, its version or revision and its dates are still claims (DOCUMENT DETAILS). "
+    "RULES: set is_rule to true on a claim that is a rule: a claim that states what is permitted, prohibited, required, limited, scheduled or suspended for a scope (a place, a kind of item, some people, a period), or the status of a scope during a period (closed, suspended, unavailable, expired). A limit or a quota is a rule. So is a universal or negative statement about a scope (none, no, never, all, always: \"no subcontractors are engaged\", \"all invoices were paid\"). A claim that only reports something that was done, found, used, measured or stated as a fact is not a rule: leave is_rule out. "
     "DISCLAIMERS: ignore a sentence that only says what the document is not or does not replace: return no claim and no reference for it.")
 
 
@@ -151,10 +155,11 @@ class LlamaClaim(BaseModel):
     quantifier: str | None = None
     anchor: str | None = None
     complete: bool | None = None
+    is_rule: bool | None = None
 
     @property
     def tags(self) -> list[str]:
-        return make_tags(self.about, self.basis, self.precision, self.quantifier, self.anchor, self.complete)
+        return make_tags(self.about, self.basis, self.precision, self.quantifier, self.anchor, self.complete, self.is_rule)
 
     @property
     def kind(self) -> str | None:
@@ -216,10 +221,40 @@ def _year_in_name(claim: "LlamaClaim") -> bool:
     return claim.kind == "date" and bool(re.fullmatch(r"\d{4}", value)) and value in (claim.subject or "")
 
 
+PAGE_WORDS = frozenset({"page", "pages", "number", "numbers", "count", "total", "document", "current"})  # what the label of a page-number claim is made of
+PAGE_VALUE = re.compile(r"^(?:page\s*)?\d+(?:\s*(?:of|/)\s*\d+)?(?:\s*pages?)?$", re.IGNORECASE)  # "Page 6 of 6", "17 of 18", "22", "4 Page"
+
+
+def _is_page_number(claim: "LlamaClaim") -> bool:
+    """A page number or page count printed on the page ("page number: Page 6 of 6"), which is layout, not a fact. Its label is only page words
+    and its value is only a page position. A bare number inside a full sentence ("The report has 24 pages.") is kept: that states something."""
+    words = set(re.findall(r"[a-z]+", (claim.metric or "").lower()))
+    if not words & {"page", "pages"} or not words <= PAGE_WORDS:
+        return False
+    value = " ".join(str(claim.value if claim.value is not None else "").split())
+    if not PAGE_VALUE.match(value):
+        return False
+    text = (claim.claim_text or "").strip()
+    return not (value.isdigit() and len(text.split()) >= 8 and "|" not in text)
+
+
+_PAGE_FURNITURE = re.compile(r"\bpage\s+\d+\s+of\s+\d+\b", re.IGNORECASE)
+_TITLE_WORDS = {"title", "heading", "header", "caption"}
+
+
 def _is_own_label(claim: "LlamaClaim") -> bool:
-    """The claim's value is the label of its own row or item (Tool_ID: MET-004 about MET-004): a label, not a value."""
+    """The claim's value is the label of its own row or item (Tool_ID: MET-004 about MET-004): a label, not a value. A title or heading, a running title or
+    footer ("... | Page 5 of 8") and a sentence that adds nothing to the value are labels. A sentence that says more than the value ("Taxpayer: Riverside Heritage
+    Development LLC", "Owner of record: Ashby Mill Owner LLC") states a fact about the entity it names, so it is kept."""
     subject, value = _squash(claim.subject or ""), _squash(str(claim.value or ""))
-    return bool(subject) and subject == value
+    if not subject or subject != value:
+        return False
+    if set(re.findall(r"[a-z]+", (claim.metric or "").lower())) & _TITLE_WORDS:
+        return True
+    text = claim.claim_text or ""
+    if _PAGE_FURNITURE.search(text):
+        return True
+    return not (set(re.findall(r"\w+", text.lower())) - set(re.findall(r"\w+", value)))
 
 
 def pick_chunk(chunks: list[DocumentChunk], value: Any, claim_text: str, page: int | None, cited_text: str,
@@ -289,13 +324,17 @@ def merge_jobs(jobs: list[LlamaJob]) -> LlamaJob:
     profile = next((j.result.get("profile") for j in jobs if j.result.get("profile")), None)  # the first range describes the document
     return LlamaJob(job_id=",".join(j.job_id for j in jobs), status="COMPLETED", result={"claims": claims, "references": references, "profile": profile},
                     metadata={"field_metadata": {"document_metadata": {"claims": cited}}}, credits=sum(j.credits for j in jobs),
-                    pages_billed=sum(j.pages_billed for j in jobs), latency_ms=max(j.latency_ms for j in jobs))
+                    pages_billed=sum(j.pages_billed for j in jobs), latency_ms=max(j.latency_ms for j in jobs),
+                    cached=all(j.cached for j in jobs), credits_saved=sum(j.credits_saved for j in jobs))
 
 
 class LlamaClaimExtractor:
     def __init__(self, session: Session, client: LlamaExtractClient, data_room_dir: Path,
-                 on_progress: ProgressFn | None = None, should_stop: Callable[[], bool] | None = None, pages_per_job: int = 0):
+                 on_progress: ProgressFn | None = None, should_stop: Callable[[], bool] | None = None, pages_per_job: int = 0,
+                 cache: ExtractionCache | None = None):
         self.pages_per_job = pages_per_job  # a PDF longer than this is read in page ranges, one job each, started together (0 = one job per document)
+        self.cache = cache  # the stored responses of earlier jobs; None = every document is read by the service
+        self._warned_cache = False
         self.session = session
         self.client = client
         self.root = data_room_dir
@@ -328,27 +367,54 @@ class LlamaClaimExtractor:
             path = (self.root / doc.filename).resolve()
             ranges = self._page_ranges(doc)
             if not ranges:
-                self._jobs[doc.id] = [self._pool.submit(self.client.extract, path, SCHEMA, system_prompt=SYSTEM_PROMPT)]
+                self._jobs[doc.id] = [self._pool.submit(self._run, doc, path)]
                 continue
-            try:
-                file_id = self.client.upload(path)  # uploaded once, read by every range
-            except Exception as exc:  # reported when the document is stored
-                failed: Future = Future()
-                failed.set_exception(exc)
-                self._jobs[doc.id] = [failed]
-                continue
-            self._jobs[doc.id] = [self._pool.submit(self.client.extract, path, SCHEMA, file_id=file_id, system_prompt=SYSTEM_PROMPT,
-                                                    extra_configuration={"target_pages": pages}) for pages in ranges]
+            stored = {pages: self.cache.get(doc.file_hash, pages) for pages in ranges} if self.cache is not None else {}
+            file_id = None
+            if any(stored.get(pages) is None for pages in ranges):  # the file is uploaded only when some range has to be read
+                try:
+                    file_id = self.client.upload(path)  # uploaded once, read by every range
+                except Exception as exc:  # reported when the document is stored
+                    failed: Future = Future()
+                    failed.set_exception(exc)
+                    self._jobs[doc.id] = [failed]
+                    continue
+            futures: list[Future] = []
+            for pages in ranges:
+                if stored.get(pages) is not None:
+                    done: Future = Future()
+                    done.set_result(stored[pages])
+                    futures.append(done)
+                else:
+                    futures.append(self._pool.submit(self._run, doc, path, file_id, pages))
+            self._jobs[doc.id] = futures
 
     def close(self) -> None:
         if self._pool is not None:
             self._pool.shutdown(wait=False, cancel_futures=True)
             self._pool, self._jobs = None, {}
 
+    def _run(self, doc: Document, path: Path, file_id: str | None = None, pages: str | None = None) -> LlamaJob:
+        """One extraction job: the stored response when this file, schema, prompt, tier and page range were read before, else the service
+        (and the response is kept for the next run)."""
+        if self.cache is not None:
+            hit = self.cache.get(doc.file_hash, pages or "")
+            if hit is not None:
+                return hit
+        kwargs: dict[str, Any] = {"system_prompt": SYSTEM_PROMPT}
+        if file_id is not None:
+            kwargs["file_id"] = file_id
+        if pages:
+            kwargs["extra_configuration"] = {"target_pages": pages}
+        job = self.client.extract(path, SCHEMA, should_stop=self.should_stop, **kwargs)  # a stopped run cancels the job instead of leaving it to run and bill
+        if self.cache is not None:
+            self.cache.put(doc.file_hash, pages or "", job)
+        return job
+
     def _job(self, doc: Document, path: Path) -> LlamaJob:
         futures = self._jobs.pop(doc.id, None)
         if futures is None:
-            return self.client.extract(path, SCHEMA, system_prompt=SYSTEM_PROMPT)
+            return self._run(doc, path)
         return merge_jobs([f.result() for f in futures])
 
     def extract_document(self, doc: Document, summary: ExtractionSummary, force: bool = False) -> None:
@@ -361,13 +427,21 @@ class LlamaClaimExtractor:
             select(DocumentChunk).where(DocumentChunk.document_id == doc.id).order_by(DocumentChunk.chunk_index))
             if c.content_type not in EXCERPT_TYPES_SKIPPED]
         try:
-            summary.external_calls += 1
             job = self._job(doc, path)
         except LlamaExtractError as exc:
+            summary.external_calls += 1
             self._fail(doc, summary, str(exc))
             if exc.code == 402:  # out of credits: the next documents would fail the same way
                 summary.stopped, summary.stop_reason = True, "LlamaExtract is out of credits"
             return
+        summary.extraction_credits_saved += job.credits_saved  # the jobs (some or all) that came from the extraction cache
+        if job.cached:  # every job of this document came from the extraction cache: nothing was uploaded and nothing was spent
+            summary.documents_from_cache += 1
+        else:
+            summary.external_calls += 1
+        if self.cache is not None and self.cache.error and not self._warned_cache:
+            self._warned_cache = True
+            self.on_progress(f"WARNING: the extraction cache is not working, documents are read by LlamaExtract and not stored ({self.cache.error})", {})
         summary.external_credits += job.credits
         if job.status != "COMPLETED" or not isinstance(job.result, dict):
             self._fail(doc, summary, f"extraction job {job.status}: {job.error or 'no result'}")
@@ -378,11 +452,15 @@ class LlamaClaimExtractor:
         if profile is not None and not profile.empty:
             self.profiles[doc.id] = (doc.filename, profile)
         extracted: list[ExtractedClaim] = []
+        seen: dict[tuple, ExtractedClaim] = {}  # a claim the extractor returned twice for this document (a sentence repeated on several pages): kept once
         for index, claim in enumerate(parsed.claims):
             if claim.value in (None, ""):
                 continue
             if _is_own_label(claim):
                 summary.claims_skipped_as_labels += 1
+                continue
+            if _is_page_number(claim):
+                summary.claims_skipped_page_numbers += 1
                 continue
             if _year_in_name(claim) or DISCLAIMER.search(claim.claim_text or ""):
                 summary.claims_skipped_by_rule += 1
@@ -398,10 +476,18 @@ class LlamaClaimExtractor:
             if chunk is None:
                 self._claims._reject(summary, f"value {claim.value!r} not found in any chunk of {doc.filename}")
                 continue
-            extracted.append(ExtractedClaim(
+            kept = ExtractedClaim(
                 chunk_id=chunk.id, subject=claim.subject, metric=claim.metric, value=value, unit=claim.unit,
                 period=claim.period, conditions=claim.conditions, claim_category=claim.kind, assumptions=claim.tags,
-                claim_text=claim.claim_text or f"{claim.metric}: {claim.value}"))
+                claim_text=claim.claim_text or f"{claim.metric}: {claim.value}")
+            key = tuple(_squash(str(part or "")) for part in (kept.subject, kept.value, kept.unit, kept.period, kept.conditions, kept.claim_text))  # the metric is worded differently each time the sentence is read
+            if key in seen:
+                summary.claims_skipped_duplicates += 1
+                first = seen[key]
+                first.assumptions = list(dict.fromkeys([*(first.assumptions or []), *(kept.assumptions or [])]))  # a flag the repeat carries (a rule) is not lost
+                continue
+            seen[key] = kept
+            extracted.append(kept)
         created = self._claims._persist(doc, chunks, ClaimExtractionResult(claims=extracted), summary)
         self.session.commit()
         self._keep_references(parsed, chunks, doc)
@@ -412,7 +498,8 @@ class LlamaClaimExtractor:
             summary.notes.append(f"{doc.filename}: LlamaExtract returned no claims, but {with_numbers} of its {len(chunks)} chunks contain numbers")
             self.on_progress(f"WARNING: {doc.filename} produced no claims although its text contains values; it is not treated as fully read", {"document_id": doc.id})
         summary.documents_processed += 1
-        self.on_progress(f"Extracted {created} claims from {doc.filename} (LlamaExtract, {job.credits:g} credits)",
+        source = f"from the extraction cache, {job.credits_saved:g} credits not spent" if job.cached else f"LlamaExtract, {job.credits:g} credits"
+        self.on_progress(f"Extracted {created} claims from {doc.filename} ({source})",
                          {"document_id": doc.id, "claims": created})
 
     def _keep_references(self, parsed: LlamaClaims, chunks: list[DocumentChunk], doc: Document) -> None:
@@ -429,7 +516,7 @@ class LlamaClaimExtractor:
 
     def _fail(self, doc: Document, summary: ExtractionSummary, reason: str) -> None:
         self.session.rollback()
-        self.session.execute(delete(Claim).where(Claim.document_id == doc.id))
+        delete_claims(self.session, doc.id)
         self.session.commit()
         summary.documents_failed += 1
         summary.notes.append(f"{doc.filename}: {reason}")

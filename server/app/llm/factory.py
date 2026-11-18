@@ -13,6 +13,7 @@ from app.llm.llama_llm import LlamaExtractLLMClient
 from app.llm.local import DEFAULT_LOCAL_MODEL, LocalEmbeddingProvider
 from app.llm.mock import MockLLMClient
 from app.llm.ollama import OllamaLLMClient
+from app.llm.router import RoutedLLMClient
 
 THIRD_PARTY_OFF = ("Third-party APIs are disabled (ALLOW_THIRD_PARTY_APIS is not true). "
                    "Use LLM_PROVIDER=ollama with a local model, or set ALLOW_THIRD_PARTY_APIS=true to use {what}.")
@@ -36,11 +37,11 @@ def get_llm_client(settings: Settings) -> LLMClient:
     if provider == "google":
         if not settings.allow_third_party_apis:
             raise LLMConfigError(THIRD_PARTY_OFF.format(what="Google"))
-        if not settings.llm_api_key:
-            raise LLMConfigError("LLM_API_KEY is not set")
+        if not settings.google_api_keys():
+            raise LLMConfigError("LLM_API_KEY_1 (or LLM_API_KEY) is not set")
         if not settings.llm_model:
             raise LLMConfigError("LLM_MODEL is not set")
-        return GoogleLLMClient(model=settings.llm_model, api_key=settings.llm_api_key)
+        return GoogleLLMClient(model=settings.llm_model, api_key=settings.google_api_keys(), requests_per_minute=settings.google_requests_per_minute)
     if provider == "groq":
         if not settings.allow_third_party_apis:
             raise LLMConfigError(THIRD_PARTY_OFF.format(what="Groq"))
@@ -51,6 +52,14 @@ def get_llm_client(settings: Settings) -> LLMClient:
         return GroqLLMClient(model=settings.llm_model, api_key=settings.llm_api_key, fallback_models=settings.llm_fallback_models,
                               requests_per_minute=settings.llm_requests_per_minute, tokens_per_minute=settings.llm_tokens_per_minute)
     raise LLMConfigError(f"Unsupported LLM_PROVIDER '{settings.llm_provider}'")
+
+
+def get_tier_client(settings: Settings, models: list[str], requests_per_minute: int, max_attempts: int) -> RoutedLLMClient | None:
+    """A chain over ``models`` (Gemini), each paced to ``requests_per_minute`` and making at most ``max_attempts`` attempts a call; the next model takes a call the
+    first cannot. None when the provider is not Google or the chain is empty (two-step judging is then off)."""
+    if settings.llm_provider.strip().lower() != "google" or not models or not settings.google_api_keys() or not settings.allow_third_party_apis:
+        return None
+    return RoutedLLMClient([GoogleLLMClient(model=m, api_key=settings.google_api_keys(), requests_per_minute=requests_per_minute, max_attempts=max_attempts) for m in models])
 
 
 def get_embedding_provider(settings: Settings) -> EmbeddingProvider:
@@ -65,11 +74,11 @@ def get_embedding_provider(settings: Settings) -> EmbeddingProvider:
     if provider == "google":
         if not settings.allow_third_party_apis:
             raise LLMConfigError(THIRD_PARTY_OFF.format(what="Google embeddings"))
-        if not settings.llm_api_key:
-            raise LLMConfigError("LLM_API_KEY is not set (required for Google embeddings)")
+        if not settings.google_api_keys():
+            raise LLMConfigError("LLM_API_KEY_1 (or LLM_API_KEY) is not set (required for Google embeddings)")
         if not settings.embedding_model:
             raise LLMConfigError("EMBEDDING_MODEL is not set")
         return GoogleEmbeddingProvider(
-            model=settings.embedding_model, api_key=settings.llm_api_key, dimensions=settings.embedding_dimensions
+            model=settings.embedding_model, api_key=settings.google_api_keys()[0], dimensions=settings.embedding_dimensions
         )
     raise LLMConfigError(f"Unsupported EMBEDDING_PROVIDER '{provider}'")

@@ -241,6 +241,39 @@ def test_a_year_that_is_part_of_the_subjects_name_is_not_a_date(session, room): 
     assert session.scalar(select(Claim)) is None and summary.claims_skipped_by_rule == 1
 
 
+@pytest.mark.parametrize("metric,value,text", [
+    ("page number", "Page 6 of 6", "Ashby Mill Lofts | Financial Model Summary | Page 6 of 6"),
+    ("total page count", "17 of 18", "17 of 18"),
+    ("document page number", "22", "Operating Agreement Excerpt | 22"),
+    ("total pages", "34 page", "34 page"),
+    ("page", "Page 4", "Page 4"),
+])
+def test_a_page_number_printed_on_the_page_is_skipped_and_counted(session, room, metric, value, text):  # noqa: F811
+    summary = ExtractionSummary()
+    extractor(session, room, FakeClient({"claims": [claim(subject="Financial Model Summary", metric=metric, value=value, unit=None, claim_text=text, value_type="statement")]})).extract_document(room.deck, summary)
+    assert session.scalar(select(Claim)) is None and summary.claims_skipped_page_numbers == 1
+
+
+def test_a_title_a_version_a_date_and_a_page_count_stated_in_a_sentence_are_still_claims(session, room):  # noqa: F811
+    from app.services.llama_claims import LlamaClaim, _is_page_number
+
+    kept = [
+        dict(subject="Financial Model Summary", metric="document title", value="Financial Model Summary", claim_text="Ashby Mill Lofts | Financial Model Summary"),
+        dict(subject="Financial Model Summary", metric="document version date", value="March 1, 2025", claim_text="Version dated March 1, 2025"),
+        dict(subject="agreement", metric="revision", value="Revised Draft", claim_text="Revised Draft"),
+        dict(subject="report", metric="total pages", value="24", claim_text="The full report has 24 pages and is available on request from the sponsor."),
+        dict(subject="plant", metric="page rate", value="12", claim_text="Pages are printed at 12 per minute"),
+    ]
+    assert not any(_is_page_number(LlamaClaim(**k)) for k in kept)
+
+
+def test_the_extraction_prompt_drops_page_numbers_but_keeps_titles_versions_and_dates():
+    from app.services.llama_claims import SYSTEM_PROMPT
+
+    assert "PAGE NUMBERS" in SYSTEM_PROMPT and "return no claim for it" in SYSTEM_PROMPT
+    assert "title, its version or revision and its dates are still claims" in SYSTEM_PROMPT
+
+
 def test_a_disclaimer_sentence_gives_neither_a_claim_nor_a_reference(session, room):  # noqa: F811
     sentence = "This report does not replace the audited accounts, the venue contract or the delegate feedback forms."
     client = FakeClient({"claims": [claim(subject="report", metric="replacement", value="does not replace", unit=None, claim_text=sentence, value_type="statement")],
@@ -263,3 +296,13 @@ def test_tags_never_make_two_claims_differ_in_context():
     a = ClaimView(id="a", document_id="d1", chunk_id="c1", subject="x", metric="m", value="1", assumptions=["@basis: actual"])
     b = ClaimView(id="b", document_id="d2", chunk_id="c2", subject="x", metric="m", value="2", assumptions=[])
     assert compare_attributes(a, b).assumptions_differ is False
+
+
+def test_the_same_claim_returned_twice_for_a_document_is_kept_once_and_a_rule_flag_is_not_lost(session, room):  # noqa: F811
+    client = FakeClient({"claims": [claim(), claim(), claim(is_rule=True), claim(metric="capacity at year end"),
+                                    claim(claim_text="capacity is 120,000 tonnes per year, as stated again")]})
+    summary = ExtractionSummary()
+    extractor(session, room, client).extract_document(room.deck, summary)
+    rows = session.scalars(select(Claim)).all()
+    assert len(rows) == 2 and summary.claims_skipped_duplicates == 3 and summary.claims_created == 2  # the same sentence with another wording of the metric is a repeat; another sentence is not
+    assert rows[0].assumptions == ["@rule: yes"]  # the repeat carried the flag

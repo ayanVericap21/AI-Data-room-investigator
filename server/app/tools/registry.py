@@ -17,8 +17,9 @@ from app.llm.metrics import CallMetric, LatencySummary, summarize
 from app.tools.base import (SearchBackend, ToolBudget, ToolCallRecord, ToolContext, ToolDescription, ToolError,
                             ToolErrorInfo, ToolResult, ToolSpec)
 from app.tools.calculate import calculate
+from app.tools.compare import compare
 from app.tools.reading import coverage, get_chunk, get_outline, list_documents, read_section
-from app.tools.schemas import (CalculateInput, Coverage, GetChunkInput, GetOutlineInput, ListDocumentsInput, ReadSectionInput,
+from app.tools.schemas import (CalculateInput, CompareValuesInput, Coverage, GetChunkInput, GetOutlineInput, ListDocumentsInput, ReadSectionInput,
                                SearchInput, SubmitFindingInput)
 from app.tools.search import search
 from app.tools.submit import submit_finding
@@ -60,6 +61,13 @@ TOOLS: list[ToolSpec] = [
         "Exact arithmetic on plain numbers (+ - * / % ** and parentheses). Always use this for differences, "
         "ratios and percentages instead of computing them yourself.",
         CalculateInput, calculate, lambda o: f"{o.expression} = {o.result}",
+    ),
+    ToolSpec(
+        "compare_values",
+        "Compare two values as written, by code: scale words (thousand, million, crore), units of one dimension (kg and tonne), "
+        "dates at their stated precision and names without legal-form words are normalised first. Returns equal, different or unknown. "
+        "Use it before calling two values different or the same.",
+        CompareValuesInput, compare, lambda o: f"{o.relation}: {o.note}",
     ),
     ToolSpec(
         "submit_finding",
@@ -149,6 +157,7 @@ class ToolRegistry:
 
 
 def build_registry(session: Session, retrieval: SearchBackend | None, investigation_id: str | None,
-                   budget: ToolBudget | None = None) -> ToolRegistry:
+                   budget: ToolBudget | None = None, search_min_score: float | None = None,
+                   agent_checks: bool = False) -> ToolRegistry:
     return ToolRegistry(ToolContext(session=session, retrieval=retrieval, investigation_id=investigation_id,
-                                    budget=budget or ToolBudget()))
+                                    budget=budget or ToolBudget(), search_min_score=search_min_score, agent_checks=agent_checks))

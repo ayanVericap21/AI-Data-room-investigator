@@ -37,6 +37,15 @@ class Settings(BaseModel):
     llm_provider: str = "google"  # groq | google | llamaextract | ollama (a model on this machine) | mock
     llm_model: str = "gemini-3.5-flash-lite"  # for llamaextract this is the tier; for the others a model name
     llm_requests_per_minute: int = Field(default=30, ge=1)  # the provider's request limit; Groq calls are spaced to stay under it
+    google_requests_per_minute: int = Field(default=15, ge=0)  # Gemini request limit (15 on the free tier); calls are spaced to stay under it, 0 = no pacing (a paid key)
+    # Two-step judging on Gemini: the smaller models screen every group, the bigger models decide the groups the screen calls findings. Each tier is an ordered chain:
+    # a call goes to the first model that can take it, and to the next when one is out of quota or fails. The free tier gives Flash Lite models 15 requests a minute and
+    # 500 a day, Flash models 5 a minute and 20 a day (failed attempts count), so the bigger tier makes few attempts and paces itself harder.
+    judge_two_step: bool = False  # switched off for now (was True): every group is judged by the one settings model; set True to screen with the smaller models again
+    llm_small_models: list[str] = Field(default_factory=lambda: ["gemini-3.1-flash-lite", "gemini-3.5-flash-lite"])
+    llm_big_models: list[str] = Field(default_factory=lambda: ["gemini-3.6-flash", "gemini-3.8-flash"])
+    google_big_requests_per_minute: int = Field(default=5, ge=0)
+    google_big_max_attempts: int = Field(default=2, ge=1)
     llm_tokens_per_minute: int = Field(default=8000, ge=1)  # the provider's token limit (what Groq's response headers report for this key)
     # Groq models tried when the preferred one is rate limited or out of quota (each model has its own limits). Chat models only: the prompt-guard
     # models are classifiers and reject chat requests.
@@ -46,13 +55,33 @@ class Settings(BaseModel):
     # Set to false to refuse every hosted API (Google, LlamaExtract) and keep a run entirely on this machine.
     allow_third_party_apis: bool = True
     llm_api_key: str = Field(default="", repr=False)
+    # Google keys from several accounts or projects, used in turn: a call that fails on one key is tried on the next. LLM_API_KEY is used when none of these is set.
+    llm_api_key_1: str = Field(default="", repr=False)
+    llm_api_key_2: str = Field(default="", repr=False)
+    llm_api_key_3: str = Field(default="", repr=False)
+
+    def google_api_keys(self) -> list[str]:
+        """The Google keys to use, in order, without repeats and without blanks."""
+        keys = [k.strip() for k in (self.llm_api_key_1, self.llm_api_key_2, self.llm_api_key_3) if k and k.strip()]
+        return list(dict.fromkeys(keys)) or ([self.llm_api_key.strip()] if self.llm_api_key.strip() else [])
+
     llama_cloud_api_key: str = Field(default="", repr=False)  # LlamaExtract (only used with --extractor llamaextract)
     llama_cloud_project_id: str = ""  # optional
+    # OCR of picture-only PDF pages through LlamaParse (uses the LlamaCloud key above; billed per page: cost_effective = 3 credits). Off when the key is empty or
+    # allow_third_party_apis is false; set OCR_ENABLED=false to turn it off.
+    ocr_enabled: bool = True
+    ocr_tier: str = "cost_effective"
 
     embedding_provider: str = "local"  # runs on this machine
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     # Must match the vector(N) column on document_chunks.embedding (see migration 0002).
     embedding_dimensions: int = 384
+
+    # Price per million tokens of the model in use, to calculate a run's cost (left empty: the cost is not calculated and the run says so).
+    llm_input_price_per_mtok: float | None = None
+    llm_output_price_per_mtok: float | None = None
+    # Minimum similarity of a search hit for the investigation agent (empty: none).
+    search_min_score: float | None = None
 
     max_investigation_iterations: int = 3
     max_llm_calls: int = 30
@@ -64,6 +93,14 @@ class Settings(BaseModel):
     extract_workers: int = Field(default=4, ge=1)
 
     @property
+    def ocr_config(self):
+        """What a parsing worker needs to run OCR (an ``OcrConfig``), or None when OCR is off or cannot run (no key, third-party APIs not allowed)."""
+        if not (self.ocr_enabled and self.allow_third_party_apis and self.llama_cloud_api_key):
+            return None
+        from app.llm.llama_parse import OcrConfig
+        return OcrConfig(api_key=self.llama_cloud_api_key, project_id=self.llama_cloud_project_id, tier=self.ocr_tier)
+
+    @property
     def data_room_dir(self) -> Path:
         """Absolute data room directory; relative values resolve against server/."""
         p = self.data_room_path
@@ -72,7 +109,7 @@ class Settings(BaseModel):
 
 # Chosen in code, never from the environment, so a stale .env line cannot change them. Everything else (keys, the
 # database URL, paths) is still read from the environment.
-CODE_DEFINED = {"llm_provider", "llm_model", "llm_requests_per_minute", "llm_tokens_per_minute", "llm_fallback_models", "llm_base_url", "llm_context_tokens", "allow_third_party_apis",
+CODE_DEFINED = {"llm_provider", "llm_model", "llm_requests_per_minute", "judge_two_step", "llm_small_models", "llm_big_models", "google_big_requests_per_minute", "google_big_max_attempts", "google_requests_per_minute", "llm_tokens_per_minute", "llm_fallback_models", "llm_base_url", "llm_context_tokens", "allow_third_party_apis",
                 "embedding_provider", "embedding_model", "embedding_dimensions"}
 
 

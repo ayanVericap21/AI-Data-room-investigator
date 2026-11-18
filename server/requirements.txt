@@ -13,3 +13,4 @@ pytest>=8.0
 httpx>=0.27            # required by FastAPI's TestClient
 ollama>=0.6            # client for the local Ollama server (LLM_PROVIDER=ollama)
 fastembed>=0.3         # local embedding model (EMBEDDING_PROVIDER=local)
+numpy>=1.26            # claim similarity in stage 2 (already installed by fastembed; listed because the code imports it directly)

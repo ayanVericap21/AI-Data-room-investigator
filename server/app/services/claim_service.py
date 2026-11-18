@@ -11,7 +11,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Callable
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
 from app.llm.base import LLMClient
@@ -30,6 +30,16 @@ ProgressFn = Callable[[str, dict], None]
 EXCERPT_TYPES_SKIPPED = {"heading"}
 
 
+def delete_claims(session: Session, document_id: str | None = None) -> int:
+    """Delete the claims of one document, or all of them. Findings of an earlier run keep their evidence (the quote and its chunk): an evidence row that
+    cited one of these claims only loses the link, because ``evidence.claim_id`` has no cascade and would otherwise block the delete. Returns the
+    number of claims deleted."""
+    claims = select(Claim.id) if document_id is None else select(Claim.id).where(Claim.document_id == document_id)
+    session.execute(update(Evidence).where(Evidence.claim_id.in_(claims)).values(claim_id=None))
+    stmt = delete(Claim) if document_id is None else delete(Claim).where(Claim.document_id == document_id)
+    return session.execute(stmt).rowcount or 0
+
+
 @dataclass
 class ExtractionSummary:
     documents_processed: int = 0
@@ -39,6 +49,8 @@ class ExtractionSummary:
     claims_rejected: int = 0
     claims_ellipsis_expanded: int = 0  # claims whose value the extractor shortened with an ellipsis and code restored from the source text
     claims_skipped_by_rule: int = 0  # a year inside a name returned as a date, and disclaimer sentences
+    claims_skipped_page_numbers: int = 0  # page numbers and page counts printed on a page: layout, not facts
+    claims_skipped_duplicates: int = 0  # the same claim (subject, value, unit, period, conditions and sentence; the metric is worded differently each time) returned again for the same document: kept once
     claims_skipped_as_labels: int = 0  # claims whose value is only the label of their own row (the ID), which is not a value
     llm_calls: int = 0
     coverage_chunks_checked: int = 0  # chunks with at least one number no claim accounted for
@@ -48,6 +60,8 @@ class ExtractionSummary:
     coverage_claims_added: int = 0
     external_calls: int = 0  # documents sent to an external extractor (LlamaExtract)
     external_credits: float = 0.0
+    documents_from_cache: int = 0  # documents whose every extraction job came from the extraction cache (not uploaded, no credits)
+    extraction_credits_saved: float = 0.0  # what those stored jobs cost when they ran
     documents_without_claims: list[str] = field(default_factory=list)  # documents with values in their text for which the extractor returned no claim
     stopped: bool = False
     stop_reason: str | None = None
@@ -119,7 +133,7 @@ class ClaimService:
                 summary.documents_skipped += 1
                 summary.notes.append(f"{doc.filename}: claims are referenced by findings, not re-extracted")
                 return
-            self.session.execute(delete(Claim).where(Claim.document_id == doc.id))
+            delete_claims(self.session, doc.id)
             self.session.commit()
 
         chunks = list(self.session.scalars(
@@ -151,7 +165,7 @@ class ClaimService:
         if failed:
             # Keep extraction all-or-nothing per document so a rerun redoes it cleanly.
             self.session.rollback()
-            self.session.execute(delete(Claim).where(Claim.document_id == doc.id))
+            delete_claims(self.session, doc.id)
             self.session.commit()
             summary.claims_created -= created
             summary.documents_failed += 1

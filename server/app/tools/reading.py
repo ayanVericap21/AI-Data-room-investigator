@@ -60,14 +60,17 @@ def get_outline(ctx: ToolContext, inp: GetOutlineInput) -> DocumentOutline:
 
 
 def coverage(ctx: ToolContext) -> Coverage:
-    """Readable documents (those with chunks) the agent has not yet opened."""
+    """Readable documents (those with chunks) the agent has not yet opened, and the documents with no chunks (failed or skipped at processing), which are listed, never counted as covered."""
     rows = ctx.session.execute(
-        select(Document.id, Document.filename).join(DocumentChunk, DocumentChunk.document_id == Document.id)
+        select(Document.id, Document.filename, func.count(DocumentChunk.id))
+        .outerjoin(DocumentChunk, DocumentChunk.document_id == Document.id)
         .where(Document.processing_status != ProcessingStatus.missing.value)
         .group_by(Document.id, Document.filename).order_by(Document.filename)
     ).all()
-    not_opened = [name for doc_id, name in rows if doc_id not in ctx.opened_documents]
-    return Coverage(total=len(rows), opened=len(rows) - len(not_opened), not_opened=not_opened)
+    readable = [(doc_id, name) for doc_id, name, count in rows if count > 0]
+    unreadable = [name for _doc_id, name, count in rows if count == 0]
+    not_opened = [name for doc_id, name in readable if doc_id not in ctx.opened_documents]
+    return Coverage(total=len(readable), opened=len(readable) - len(not_opened), not_opened=not_opened, unreadable=unreadable)
 
 
 def get_chunk(ctx: ToolContext, inp: GetChunkInput) -> GetChunkOutput:

@@ -29,7 +29,10 @@ APPROX_BAND = Decimal("0.10")  # "about", "around", "approximately": plus or min
 
 SCALE_WORDS = {"thousand": Decimal(10) ** 3, "million": Decimal(10) ** 6, "mn": Decimal(10) ** 6, "billion": Decimal(10) ** 9,
                "bn": Decimal(10) ** 9, "trillion": Decimal(10) ** 12, "lakh": Decimal(10) ** 5, "lac": Decimal(10) ** 5,
-               "crore": Decimal(10) ** 7, "cr": Decimal(10) ** 7}
+               "crore": Decimal(10) ** 7, "cr": Decimal(10) ** 7,
+               # the plurals tables use in their headings ("$ in thousands", "thousands of dollars")
+               "thousands": Decimal(10) ** 3, "millions": Decimal(10) ** 6, "billions": Decimal(10) ** 9, "trillions": Decimal(10) ** 12,
+               "lakhs": Decimal(10) ** 5, "lacs": Decimal(10) ** 5, "crores": Decimal(10) ** 7}
 
 # unit -> (dimension, factor to the dimension's base unit). Only units of one dimension are ever converted into each other.
 _D = Decimal
@@ -79,6 +82,8 @@ def unit_info(unit: str | None, normalize: Callable[[str | None], str | None] | 
             scale = SCALE_WORDS[word]
         else:
             rest.append(token)
+    if scale != 1:  # "$ in thousands", "thousands of dollars": the filler words are not part of the unit; a lone "in" is not inches here
+        rest = [t for t in rest if t.strip(".,;()") not in ("in", "of")]
     remaining = " ".join(rest).strip()
     if not remaining:
         return UnitInfo(None, None, scale)

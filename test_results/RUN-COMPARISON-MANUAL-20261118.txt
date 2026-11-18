@@ -1,0 +1,117 @@
+MANUAL SCORING of the 3 runs of 2026-11-18 (12:02, 12:10, 12:14) against the answer key, HTC01 only (39 cases; HTC02 rows in the key are a different data room, not tested).
+Each case was checked by reading the findings of all three reports. This replaces the automatic matching in RUN-COMPARISON-20261118-121935.txt, which mis-credited some cases.
+
+Marks:  YES = the finding states the planted issue with the right documents.
+        part = the finding surfaces the same figures or claim but labels it harmless (low / contextual) or compares the wrong pair; counted as half.
+        no  = nothing.
+
+case        key class / sev             run1   run2   run3   note
+HTC01-001   Contradiction / Critical    YES    YES    YES    code check: 24,600 x 0.2 = 4,920 should equal $5,120,000 (DOC-05)
+HTC01-002   Contradiction / Critical    part   part   part   24.6M vs 25.31M reported as "minor gap", low contextual; parking lot and furniture not named
+HTC01-003   Contradiction / High        part   part   part   22.54M vs 21.9M reported (DOC-04 vs DOC-06), explained as change orders; DOC-08 not used
+HTC01-004   Contradiction / High        part   YES    YES    run1: 5,043,000 vs 5,227,500 proceeds found, not tied to the signed price
+HTC01-005   Contextual / Medium         YES    YES    YES    run1 labelled it contradiction/high and critical (over-severe)
+HTC01-006   Contradiction / High        part   no     no     run1: Total Sources 31.15M vs Total Uses 31.75M found; memo "fully funded" claim not linked
+HTC01-007   Contradiction / Critical    part   part   part   memo "2024 return" vs model 2025 reported as low/contextual update
+HTC01-008   Contradiction / High        no     no     no
+HTC01-009   Insufficient / Critical     part   part   part   Part 3 claim touched, wrong reasoning (Part 2 vs Part 3); no "approval not in data room" finding
+HTC01-010   Insufficient / High         part   part   part   shop drawings routing and "date of approved shop drawings" missing; not the missing NPS approval
+HTC01-011   Contradiction / Critical    no     no     no     vinyl vs wood never found (script credit was wrong)
+HTC01-012   Contradiction / Medium      YES    no     YES    84 vs 86 units; run2 produced a garbled floors finding instead
+HTC01-013   Contextual / Medium         no     no     no
+HTC01-014   Contradiction / High        YES    YES    no     installments sum 4,429,600 vs 4,329,600; run3 lacks the sum check
+HTC01-015   Contradiction / High        YES    YES    YES    run1 and run3 labelled low/contextual, run2 critical
+HTC01-016   Contradiction / High        no     no     no
+HTC01-017   Contradiction / Critical    no     no     no
+HTC01-018   Contradiction / Low         no     no     no
+HTC01-022   Contextual / Medium         no     no     no
+HTC01-023   Contextual / Medium         no     no     no
+HTC01-025   Contradiction / High        no     YES    YES    hard cost lines vs subtotal (cross-document check)
+HTC01-026   Insufficient / Medium       no     no     no     script credit was wrong
+HTC01-027   Insufficient / Medium       no     no     no
+HTC01-028   Contradiction / Medium      no     no     no     12 units/month compared with 48 units complete, not with the 7 in the market study
+HTC01-031   Contextual / Low            no     no     no
+HTC01-032   Insufficient / High         no     part   part   memo "final certification issued" shown as a contextual progression
+HTC01-033   Contradiction / Medium      YES    YES    YES    March 28 TCO vs July 15 placed in service (script credited this to 009)
+HTC01-035   Contradiction / High        part   part   part   credits 2025 only / 0 for 2026-2029 reported as low/contextual
+HTC01-036   Contradiction / Critical    no     no     YES    planned sale vs memo "no sale planned"
+HTC01-037   Contradiction / High        no     no     no
+HTC01-038   Contradiction / High        no     no     no     run2 touches the DHR outside date only against DOC-12/13, not the model date (counted no)
+Consistent cases (019 020 021 024 029 030 034 039): none flagged in any run = 8 of 8 safe in each run.
+
+TOTALS (39 cases)             run1    run2    run3
+YES (flaggable cases)          6       7       8
+part                           8       7       7
+Accuracy, strict (YES + 8 safe traps) / 39        36%     38%     41%
+Accuracy, part counted half                       46%     47%     50%
+Weighted by key weights, strict (total weight 165)  36%     39%     43%
+
+CAUGHT IN ALL 3 RUNS: 001, 005, 015, 033
+CAUGHT IN 2 RUNS: 004, 012, 014, 025
+CAUGHT IN 1 RUN: 036
+SURFACED BUT UNDER-CLASSIFIED (part) in all runs: 002, 003, 007, 009, 010, 035
+NEVER SURFACED: 008, 011, 013, 016, 017, 018, 022, 023, 026, 027, 028, 031, 037, 038
+
+FALSE ALARMS NOT IN THE KEY (high / critical severity), found by reading the findings
+run1: code checks "$5,120,000 x 0.88 = 4,505,600 should equal 4,505.6" (units not applied), "24,600 x 0.25 + 0.85 = 6,151 should equal 5,227.5" (the price was added, not multiplied), "$4,920,000 + $0.88 = 4,920,001" (critical),
+      "20% + 30% + 40% + 10% = 100 should equal $4,329,600" (critical), Part 2 vs Part 3 "contradiction" (high)
+run2: same three code checks, "20% federal vs 25% Virginia rate conflict" (high), "federal investor equity vs sponsor equity" (high), Part 3 vs Part 2 entities (high), garbled floors finding with the words "Wait, DOC-02..." in it
+run3: same code checks, "legal and accounting 310,000 vs 450,000" (high)
+Of the 81, 94 and 76 findings in the reports, 19 in each are references to items "not in the data room" (mostly low value).
+
+
+=========================================================================================================================
+RUN 4: TEST-RUN-20261118-124327-ui-run.txt (12:43, after the arithmetic-check fix and the same-document routes). Scored by hand like the others.
+valid for scoring: yes; wall time 275.5s; 1,773 candidates (625 inside one document, was 480); 1,044 groups judged; 40 findings saved, 2 rejected; 47 provider attempts, 10 failed (HTTP 429).
+YES (11): 001 (code check now reads 24,600 x 0.2 = 4,920,000 against $5,120,000), 002 (25.31M vs 24.6M, gap $710,000, high), 004, 005, 012, 014, 016 (new: guaranty caps $1.0M vs $1.5M, critical), 018 (new: Ashbey vs Ashby, labelled high), 025, 033 (labelled low), 036
+part (6): 003, 007, 009, 010, 032, 035
+lost versus runs 1-3: 015 (developer fee over the cap was in all three earlier runs)
+consistent cases flagged: 0 of 8
+Accuracy: strict (11 + 8 safe) / 39 = 49%; part counted half = 56%; weighted strict = 51%
+Arithmetic false alarms from the earlier runs (units, price added to an amount, percentages against an amount): none in this run.
+High or critical false alarms outside the key (7): timber columns "shall not be sandblasted" vs "retained and cleaned" (critical), federal equity price 0.88 vs Virginia price 0.85 (high), deposit 10% vs 30% window deposit (high),
+  legal and accounting 310,000 vs budget total (high), stabilization 12 months vs 93% occupancy (high), land acquisition qualified status (high), commercial space location (high).
+
+[Correction: run 2 has 7 partial cases, not 8, so its half-credit accuracy is 47%, not 49%.]
+
+
+=========================================================================================================================
+RUN 6: TEST-RUN-20261118-175030-ui-run.txt (17:50: single-model judge, claims in document order, instructions after the claims). Scored by hand like the others.
+grouping: 34 groups covering 132 of 1,333 claims (run 5: 206 / 917); rule linking: 18 rules, 82 links; 868 groups judged in 17 calls; 70 findings saved, 0 rejected; 7 provider attempts failed (503, 429).
+YES (9): 001, 002 (25.31M vs 24.6M, high), 003 (22.54M vs 21.9M labelled contradiction/medium, DOC-08 used; borderline), 004, 005, 012, 014, 016 (guaranty caps, critical), 033 (labelled low)
+part (6): 006 (sources sum 32.85M vs 31.1M, memo not linked), 007, 009, 010, 032, 035
+lost versus run 4: 018 (Ashbey vs Ashby), 025 (hard cost lines vs subtotal), 036 (planned sale vs "no sale planned"); gained: 003
+lost versus runs 1-3: 015 (developer fee over the cap)
+consistent cases flagged: 0 of 8 (low contextual notes that restate agreeing dates exist, e.g. the June 30 inspection, the Dec 13 windows date)
+Accuracy: strict (9 + 8 safe) / 39 = 44% (41% if 003 counts as part); part counted half = 51% (50%)
+High or critical false alarms outside the key (about 11): deposit 30% vs 10% (high), federal equity 4,329,600 vs 5,120,000 credit (high), architecture and engineering vs legal and accounting (high),
+  Virginia proceeds vs price 0.85 (high), "base of the percentage" missing information (high), six findings that compare the capital contribution shares 10/20/30/40% of different installments with each other (high).
+
+
+=========================================================================================================================
+RUN 8: TEST-RUN-20261119-020655-ui-run.txt (02:06, single-model judge, grouping in 4 calls of up to 100,000 characters with the group map, three API keys, A5/A6/A11/A13 changes). Scored by hand like the others.
+(run 7, 01:28, was not scored: 36 of 73 provider attempts failed, 40 findings saved.)
+claims 1352 (19 more than before: entity claims such as "Taxpayer: ..." are no longer skipped as labels); grouping 49 groups covering 239 claims, 53 claims joined an earlier group; rule linking 3 rules, 11 links;
+943 groups judged in 18 calls (1 batch failed); 57 findings saved by the judge, 82 in the report; 0 rejected by the quote check; wall time 491 s; 19 of 60 attempts failed (18 HTTP 503, 1 HTTP 429).
+YES (9): 001, 003 (borderline: contradiction/medium), 004, 005, 012, 014, 016, 018 (labelled critical), 033
+part (6): 006 (Total Sources 31.15M vs Total Uses 31.75M, memo not linked), 007, 009, 010, 032, 035
+lost versus run 6: 002 (25.31M vs 24.6M); gained: 018
+still missing that run 4 had: 002, 025, 036; missing since runs 1-3: 015
+consistent cases flagged: 0 of 8
+Accuracy: strict (9 + 8 safe) / 39 = 44% (41% if 003 counts as part); part counted half = 51% (50%)
+High or critical false alarms outside the key (about 10): capital contribution shares of different installments (high), section numbering 9.1/9.2/9.3 (high), federal equity price 0.88 vs Virginia price 0.82 and 0.85 (2, high),
+  a Virginia price finding whose own text says the figures agree (high), Part 2 approval date vs Part 3 approval date (high), Virginia proceeds vs expected total credits (critical), developer fee total vs qualified part (high),
+  federal credit vs investor equity (2, high)
+
+
+=========================================================================================================================
+RUN 10: TEST-RUN-20261119-025638-ui-run.txt (02:56, first run with the is_rule extraction flag, repeats removed, oversized clusters divided by similarity). Scored by hand like the others.
+(the 02:28 and 02:33 runs were stopped: no credits, then 12,489 groups.)
+claims 1121 (236 repeats and 99 rejected, re-extracted: not the cached claims of runs 1-8); 409 flagged as rules; grouping 46 groups covering 162 claims, 41 joined an earlier group, 138 unknown refs;
+rule linking 123 rules, 307 links; 658 claim groups (was 12,489); 763 judged in 16 calls; 57 findings saved, 3 rejected by the quote check, 80 in the report; 289 s; 4 failed attempts (503).
+YES (6): 001, 005 (labelled critical), 015 (developer fee above the cap, critical), 016, 018, 025
+part (7): 002 (25.31M vs 24.6M, labelled contextual/medium), 003 (22.54M vs 21.9M only inside DOC-08, low), 004 (5,227.5 against 24,600 x 25% found, not the 5,043,000 pair), 006, 007, 009, 010
+lost versus run 8: 012 (84 vs 86 units: the pair WAS grouped and the judge set it aside as not the same attribute), 014 (installment sum: the internal check did not propose it), 033 (the four placed-in-service claims were grouped; the judge's contradiction among the July 15 claims was rejected by the quote check and the March 28 claim was set aside), 032, 035; gained: 015, 025
+consistent cases flagged: 0 of 8 (low contextual notes that restate agreeing figures exist, e.g. $4,920,000 vs $4.9M)
+Accuracy: strict (6 + 8 safe) / 39 = 36%; part counted half = 45%
+High or critical false alarms outside the key (about 5): sponsor cash flow vs bridge loan memo (critical), section numbering across documents (critical), federal equity vs credit (high), developer fee total vs qualified part (high), federal vs Virginia credit rate (high)

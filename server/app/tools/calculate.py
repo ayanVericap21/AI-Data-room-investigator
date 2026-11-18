@@ -45,4 +45,6 @@ def calculate(ctx: ToolContext, inp: CalculateInput) -> CalculateOutput:
         raise ToolError("invalid_expression", "Could not parse the expression. Use plain numbers and operators.") from exc
     except ArithmeticError as exc:  # division by zero, invalid operation, overflow
         raise ToolError("invalid_expression", f"Arithmetic error: {exc.__class__.__name__}.") from exc
-    return CalculateOutput(expression=inp.expression.strip(), result=format(result.normalize(), "f"))
+    output = CalculateOutput(expression=inp.expression.strip(), result=format(result.normalize(), "f"))
+    ctx.calculations.append({"expression": output.expression, "result": output.result, "label": inp.label})  # stored with the next saved finding
+    return output
