@@ -1,10 +1,10 @@
-"""Pydantic schemas for claims: LLM output, API output, and candidate matching."""
+"""Pydantic schemas for claims: LLM output, API output, and claim matching."""
 from __future__ import annotations
 
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class ExtractedClaim(BaseModel):
@@ -80,8 +80,7 @@ class ChunkOut(BaseModel):
     heading: str | None
 
 
-# ---- candidate matching -------------------------------------------------------
-RelationHint = Literal["exact", "partial", "conflicting", "contextual"]
+# ---- claim matching -----------------------------------------------------------
 
 
 class ClaimView(BaseModel):
@@ -102,45 +101,34 @@ class ClaimView(BaseModel):
     table_key: str | None = None  # set when the claim was read from a table; claims with the same key are rows of one table
 
 
-class AttributeComparison(BaseModel):
-    subject_match: bool | None
-    metric_match: bool | None
-    unit_match: bool | None  # None = at least one side unknown
-    period_match: bool | None
-    value_relation: Literal["equal", "different", "unknown"]
-    conditions_differ: bool
-    assumptions_differ: bool
+ROUTES = Literal["lexical", "label", "embedding", "llm", "identifier", "rule"]
 
 
-class Candidate(BaseModel):
-    """A *candidate* comparison. relation_hint is a deterministic hint, not a finding."""
+class Cluster(BaseModel):
+    """Claims that may state one fact: the grouping model's cluster, a rule and the records that may fall under it, or claims the code's matching put together
+    (labels, meaning, a record id) that the model left alone. A claim is in one cluster only. Whether the claims state one value or differ is decided later, by the judge."""
 
-    claim_id: str
-    candidate_id: str
-    topic_score: float
-    relation_hint: RelationHint
-    comparison: AttributeComparison
-    matched_by: Literal["lexical", "embedding", "llm", "identifier", "rule"] = "lexical"
+    claim_ids: list[str]
+    topic: str = ""
+    matched_by: ROUTES = "lexical"
+    topic_score: float = 1.0
+    rule_id: str | None = None  # a rule cluster: the claim that is the rule (the first of ``claim_ids``)
+    via: dict[str, str] = Field(default_factory=dict)  # claim id -> what put it in the cluster: llm, rule, lexical, label, embedding, identifier, negation or window
 
-
-class CandidateLink(BaseModel):
-    """Another claim that may state the same fact as the claim it is listed under, and how it was found."""
-
-    claim: ClaimOut
-    relation_hint: RelationHint
-    topic_score: float
-    matched_by: Literal["lexical", "embedding", "llm", "identifier", "rule"]
-
-
-class GroupedClaim(BaseModel):
-    claim: ClaimOut
-    candidates: list[CandidateLink]  # the group's other claims this one may be compared with
+    @model_validator(mode="after")
+    def _distinct_and_at_least_two(self) -> "Cluster":
+        self.claim_ids = list(dict.fromkeys(self.claim_ids))
+        if len(self.claim_ids) < 2:
+            raise ValueError("a cluster holds at least two claims")
+        return self
 
 
 class ClaimGroup(BaseModel):
-    """A fact and the claims that may state it: each claim with its candidates."""
+    """A fact and the claims that may state it."""
 
-    claims: list[GroupedClaim]
+    claims: list[ClaimOut]
+    topic: str = ""
+    matched_by: ROUTES = "lexical"
 
 
 class ClaimGroupListOut(BaseModel):

@@ -7,8 +7,8 @@ from app.llm.errors import LLMTransientError
 from app.llm.mock import MockLLMClient
 from app.models import Claim, Document, DocumentChunk
 from app.schemas.claim import ClaimExtractionResult, ClaimView, ExtractedClaim
-from app.services.candidate_matching import (compare_attributes, generate_candidates, normalize_period,
-                                              normalize_unit, relation_hint)
+from app.services.claim_matching import match_clusters, normalize_period, normalize_unit
+from app.services.value_rules import compare_values
 from app.services.claim_service import ClaimService
 from app.services.numbers import numbers_in_text, parse_number, value_supported_by_text
 
@@ -131,11 +131,16 @@ def test_batching_splits_by_size(session, doc_with_chunks):
     assert len(llm.prompts) == 2
 
 
-# ---- candidate matching ----------------------------------------------------
+# ---- claim matching --------------------------------------------------------
 def view(id, doc="d1", chunk=None, **kw):
     base = dict(subject="Production", metric="Annual capacity", value=30000, unit="tonnes", period="annual")
     base.update(kw)
     return ClaimView(id=id, document_id=doc, chunk_id=chunk or f"chk_{id}", **base)
+
+
+def relation(a, b):
+    """How the values of two claims relate by the value rules: equal, different or unknown."""
+    return compare_values(a.value, a.unit, b.value, b.unit, a.value_type, b.value_type, normalize_unit)
 
 
 def test_normalisation():
@@ -144,55 +149,47 @@ def test_normalisation():
     assert normalize_unit(" ") is None
 
 
-def test_partial_match_example_from_spec_is_contextual_not_finding():
+def test_claims_with_different_values_and_conditions_are_put_together_for_the_judge_not_found_as_a_difference():
     a = view("a", doc="eng", conditions="optimized operations")
     b = view("b", doc="sup", value=25000, conditions="normal conditions")
-    comp = compare_attributes(a, b)
-    assert comp.unit_match and comp.period_match and comp.value_relation == "different" and comp.conditions_differ
-    assert relation_hint(comp) == "contextual"
-    candidates = generate_candidates([a, b])
-    assert len(candidates) == 1 and candidates[0].relation_hint == "contextual"
+    clusters = match_clusters([a, b])
+    assert len(clusters) == 1 and set(clusters[0].claim_ids) == {"a", "b"} and clusters[0].matched_by == "lexical" and relation(a, b) == "different"
 
 
-def test_hints_exact_conflicting_partial():
-    assert generate_candidates([view("a"), view("b")])[0].relation_hint == "exact"
-    assert generate_candidates([view("a"), view("b", value=25000)])[0].relation_hint == "conflicting"
-    assert generate_candidates([view("a", unit=None), view("b", value=25000, unit=None)])[0].relation_hint == "conflicting"
-    assert generate_candidates([view("a"), view("b", value=None)])[0].relation_hint == "partial"
-    assert generate_candidates([view("a", unit="eur"), view("b", value=25000)])[0].relation_hint == "partial"  # units that cannot be converted
-    assert generate_candidates([view("a", value=30, unit="t"), view("b", value=30000, unit="kg")])[0].relation_hint == "exact"  # kg and tonne convert
+def test_values_are_equal_different_or_unknown():
+    assert relation(view("a"), view("b")) == "equal"
+    assert relation(view("a"), view("b", value=25000)) == "different"
+    assert relation(view("a", unit=None), view("b", value=25000, unit=None)) == "different"
+    assert relation(view("a"), view("b", value=None)) == "unknown"
+    assert relation(view("a", value=30, unit="t"), view("b", value=30000, unit="kg")) == "equal"  # kg and tonne convert
 
 
 def test_unrelated_claims_are_not_grouped():
     a = view("a")
     b = view("b", subject="Office lease", metric="Monthly rent", value=5000, unit="USD", period="monthly")
-    assert generate_candidates([a, b]) == []
+    assert match_clusters([a, b]) == []
 
 
-def test_same_chunk_claims_are_grouped_but_never_a_claim_with_itself_and_candidates_are_deduplicated():
+def test_same_chunk_claims_are_grouped_but_never_a_claim_with_itself_and_a_cluster_is_not_repeated():
     a, b = view("a", chunk="same"), view("b", chunk="same")
-    assert len(generate_candidates([a, b])) == 1  # a passage can contradict itself
-    assert generate_candidates([a]) == []
-    candidates = generate_candidates([view("a"), view("b"), view("c")])
-    keys = {frozenset((p.claim_id, p.candidate_id)) for p in candidates}
-    assert len(candidates) == len(keys) == 3
+    assert len(match_clusters([a, b])) == 1  # a passage can contradict itself
+    assert match_clusters([a]) == []
+    clusters = match_clusters([view("a"), view("b"), view("c")])
+    assert len(clusters) == 1 and set(clusters[0].claim_ids) == {"a", "b", "c"}
 
 
-def test_partner_cap_limits_candidates_per_claim():
+def test_partner_cap_limits_the_claims_a_claim_is_matched_with():
     claims = [view(f"c{i}") for i in range(10)]
-    candidates = generate_candidates(claims, max_partners_per_claim=2)
-    from collections import Counter
-    counts = Counter(x for p in candidates for x in (p.claim_id, p.candidate_id))
-    assert max(counts.values()) <= 2  # hard cap per claim
-    assert len(candidates) <= 10
-    assert generate_candidates(claims, max_candidates=3).__len__() == 3
+    clusters = match_clusters(claims, max_partners_per_claim=2)
+    assert clusters and max(len(c.claim_ids) for c in clusters) <= 3  # a claim and at most two partners
+    assert len({i for c in match_clusters(claims, max_matches=3) for i in c.claim_ids}) <= 6
 
 
 def test_missing_attributes_fall_back_to_available_field():
     a = view("a", subject=None)
     b = view("b", subject=None, value=25000)
-    assert len(generate_candidates([a, b])) == 1
-    assert generate_candidates([view("x", metric=None, subject=None), view("y", metric=None, subject=None)]) == []
+    assert len(match_clusters([a, b])) == 1
+    assert match_clusters([view("x", metric=None, subject=None), view("y", metric=None, subject=None)]) == []
 
 
 # ---- running vocabulary ----------------------------------------------------
@@ -241,21 +238,16 @@ def test_a_range_value_is_supported_when_every_number_of_it_appears_in_the_text(
     assert not value_supported_by_text("395 to 8,000", text)
 
 
-def test_equal_values_agree_whatever_the_conditions_say_but_not_across_different_units_or_periods():
-    from app.services.candidate_matching import compare_attributes
-
+def test_equal_values_agree_whatever_the_conditions_say():
     same = (view("a", conditions="under optimized operations"), view("b", doc="x", conditions="in a normal scenario"))
-    assert relation_hint(compare_attributes(*same)) == "exact"
-    assert relation_hint(compare_attributes(view("a", period="annual"), view("b", doc="x", period="monthly"))) != "exact"
-    assert relation_hint(compare_attributes(view("a", unit="kg"), view("b", doc="x"))) != "exact"
-    assert relation_hint(compare_attributes(view("a", unit=None), view("b", doc="x"))) == "exact"  # unknown unit: still the same value
-    assert relation_hint(compare_attributes(view("a"), view("b", doc="x", value=25000))) == "conflicting"
+    assert relation(*same) == "equal"
+    assert relation(view("a", unit=None), view("b", doc="x")) == "equal"  # unknown unit: still the same value
+    assert relation(view("a"), view("b", doc="x", value=25000)) == "different"
 
 
 def test_ranges_are_compared_by_their_two_ends():
     from decimal import Decimal
 
-    from app.services.candidate_matching import compare_attributes
     from app.services.numbers import parse_range
 
     assert parse_range("395-7,916") == parse_range("395 to 7,916") == parse_range("395m2 – 7,916m2") == (Decimal(395), Decimal(7916))
@@ -263,7 +255,6 @@ def test_ranges_are_compared_by_their_two_ends():
     assert parse_range("-5 to 5") == (Decimal(-5), Decimal(5))
     for not_a_range in ["8.5", "30 kN, 50 kN", "FM2 floor", "1 2 3", None, 5, "from 395m2"]:
         assert parse_range(not_a_range) is None, not_a_range
-    same = compare_attributes(view("a", value="395-7,916"), view("b", doc="x", value="395 to 7,916"))
-    assert same.value_relation == "equal" and relation_hint(same) == "exact"
-    assert compare_attributes(view("a", value="395-7,916"), view("b", doc="x", value="395-8,000")).value_relation == "different"
-    assert compare_attributes(view("a", value="395-7,916"), view("b", doc="x", value=395)).value_relation == "different"  # a range is not a number
+    assert relation(view("a", value="395-7,916"), view("b", doc="x", value="395 to 7,916")) == "equal"
+    assert relation(view("a", value="395-7,916"), view("b", doc="x", value="395-8,000")) == "different"
+    assert relation(view("a", value="395-7,916"), view("b", doc="x", value=395)) == "different"  # a range is not a number

@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 
 from app.models import Document, DocumentChunk
 from app.models.base import ProcessingStatus
-from app.services.candidate_matching import TABLE_TYPES
+from app.services.claim_matching import TABLE_TYPES
 from app.services.severity import missing_severity
 from app.tools.registry import ToolRegistry
 

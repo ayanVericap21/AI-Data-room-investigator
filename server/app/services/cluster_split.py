@@ -2,7 +2,7 @@
 
 A cluster the grouping model made (or a set of claims the code chained together) can hold dozens of claims. The judge reads about fifteen at a time. A larger set
 is divided by meaning into clusters: claims are joined, the most alike first, into clusters that never exceed the cap, and a cluster stops growing when the claims
-that remain are not alike enough. Only clusters come out of it; the links between the clusters are dropped, never turned into groups of two. The similarity is the cosine of the claims' embeddings (subject, metric and sentence), the same vectors the matching already uses.
+that remain are not alike enough. Only clusters come out of it; a claim that is alike to nothing stays alone and is left out. The similarity is the cosine of the claims' embeddings (subject, metric and sentence), the same vectors the matching already uses.
 """
 from __future__ import annotations
 
@@ -12,12 +12,12 @@ import numpy as np
 
 SPLIT_FLOOR = 0.5  # two clusters are joined only while their claims are this alike on average
 COHERENCE_FLOOR = 0.4  # a cluster of the grouping model whose claims are less alike than this on average is divided even when it is small
-MAX_AVERAGE_LINKAGE = 1200  # above this many claims joining by the average of all pairs is too slow, and the strongest single link is used
+MAX_AVERAGE_LINKAGE = 1200  # above this many claims, joining by the average over all the claims of two clusters is too slow, and the strongest single match is used
 
 
 def split_by_similarity(vectors: np.ndarray, cap: int, floor: float = SPLIT_FLOOR) -> list[list[int]]:
     """Clusters of row indexes, none larger than ``cap``: the two clusters whose claims are on average the most alike are joined, again and again, until the
-    best pair is below ``floor`` or no pair fits under the cap. Claims that are alike to nothing stay alone."""
+    the most alike two clusters are below ``floor`` or none of them fit under the cap together. Claims that are alike to nothing stay alone."""
     n = len(vectors)
     if n == 0:
         return []
@@ -25,7 +25,7 @@ def split_by_similarity(vectors: np.ndarray, cap: int, floor: float = SPLIT_FLOO
     if n == 1:
         return [[0]]
     if n > MAX_AVERAGE_LINKAGE:
-        return _single_link(similarity, cap, floor)
+        return _strongest_match(similarity, cap, floor)
     total = similarity.astype(np.float64).copy()  # the sum of the similarities between the claims of cluster i and of cluster j
     np.fill_diagonal(total, 0.0)
     size = np.ones(n)
@@ -51,8 +51,8 @@ def split_by_similarity(vectors: np.ndarray, cap: int, floor: float = SPLIT_FLOO
     return [sorted(members[i]) for i in range(n) if alive[i]]
 
 
-def _single_link(similarity: np.ndarray, cap: int, floor: float) -> list[list[int]]:
-    """The same for a very large set: the strongest links first, joining two clusters when together they fit under the cap."""
+def _strongest_match(similarity: np.ndarray, cap: int, floor: float) -> list[list[int]]:
+    """The same for a very large set: the strongest matches first, joining two clusters when together they fit under the cap."""
     n = len(similarity)
     parent = list(range(n))
     size = [1] * n
@@ -97,7 +97,7 @@ class ClaimSimilarity:
         return np.stack([self._vectors[i] for i in ids])
 
     def coherence(self, ids: list[str]) -> float:
-        """The average similarity of every pair of the claims."""
+        """The average similarity between each claim and each of the other claims."""
         if len(ids) < 2:
             return 1.0
         vectors = self.matrix(ids)

@@ -50,12 +50,18 @@ def value_supported_by_text(value: object, text: str) -> bool:
     wanted = str(value).strip().lower()
     if wanted in text.lower():
         return True
-    if isinstance(value, str):  # the same numbers and the same words, whatever the separators and spacing
-        numbers = numbers_in_text(value)
-        words = re.findall(r"[a-z]+", wanted)
-        if numbers and set(numbers) <= set(numbers_in_text(text)) and all(w in text.lower() for w in words):
-            return True
+    if isinstance(value, str):  # the same characters in the same order, whatever the thousands commas, dashes, quotes and spacing
+        return _plain(wanted) in _plain(text.lower())
     return False
+
+
+def _plain(text: str) -> str:
+    text = re.sub(r"(?<=\d),(?=\d{3}\b)", "", text)
+    text = text.translate(_PUNCTUATION)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+_PUNCTUATION = str.maketrans({"–": "-", "—": "-", "‘": "'", "’": "'", "“": '"', "”": '"', " ": " "})
 
 
 def numbers_with_context(text: str, width: int = 90) -> list[tuple[Decimal, str]]:

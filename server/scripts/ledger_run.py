@@ -40,6 +40,8 @@ from app.llm.errors import LLMError  # noqa: E402
 from app.llm.local import DEFAULT_LOCAL_MODEL  # noqa: E402
 from app.models import Claim, Document, DocumentChunk, Evidence, Finding, Investigation  # noqa: E402
 from app.tools.reading import locator_text  # noqa: E402
+from app.schemas.claim import Cluster  # noqa: E402
+from app.services.clusters import merge_overlapping  # noqa: E402
 from app.schemas.run_metrics import LLMTotals, PhaseMetrics, RunCounts, RunMetrics, RunSettings, StageTiming  # noqa: E402
 from app.services.run_metrics import write_metrics  # noqa: E402
 from app.models.base import InvestigationStatus, ProcessingStatus, utcnow  # noqa: E402
@@ -57,7 +59,6 @@ from app.services.doc_profiles import BATCH_CHARS, ProfileBuilder, ProfileStats,
 from app.services.group_gates import apply_gates, decide_entity_groups  # noqa: E402
 from app.services.cross_checks import CrossChecker  # noqa: E402
 from app.services.internal_checks import InternalChecker  # noqa: E402
-from app.services.rule_links import RuleLinker  # noqa: E402
 from app.tools import build_registry  # noqa: E402
 
 table, clip, pct = base.table, base.clip, base.pct
@@ -81,7 +82,7 @@ Use only the statistics and finding titles given. verdict is one of: consistent 
 def phase_rows(R):
     """(phase, attempt) for every LLM provider attempt, in order."""
     bounds = R.llm_bounds
-    names = ["extract claims", "describe documents", "entity gate", "group claims (LLM)", "link rules to records (LLM)", "judge claim groups", "checks inside each document", "cross-document relations", "document verdicts"]
+    names = ["extract claims", "describe documents", "entity gate", "group claims (LLM)", "judge claim groups", "checks inside each document", "cross-document relations", "document verdicts"]
     for i, m in enumerate(R.llm.call_metrics):
         yield names[sum(i >= b for b in bounds)], m  # a call belongs to the first phase whose end it has not passed
 
@@ -93,7 +94,7 @@ def sec_how(R):
         ("1. Reading: the documents selected for this run were uploaded to LlamaExtract (LlamaIndex Cloud, cost_effective tier), which returns claims with the page and text they came from; "
          "each claim is tied to a stored chunk and kept only if its value appears in that chunk text." if a.extractor == "llamaextract" else
          f"1. Reading: every chunk of every processed document{' except ' + ', '.join(R.excluded) if R.excluded else ''} (database '{R.db_name}') was sent to the LLM in batches of up to {a.batch_chars:,} characters; each batch returns claims, kept only if their value appears in the cited chunk (existing claim extractor, no chunk or call limits)."),
-        (f"2. Ledger: accepted claims are stored in the claims table; the claims are put in document order and sent to the LLM in batches of up to {min(a.grouping_call_chars, a.grouping_batch_chars):,} characters, which groups the ones that state the same attribute of the same subject (no code matching, no fixed number of documents or claims assumed)."
+        (f"2. Ledger: accepted claims are stored in the claims table; the claims are put in document order and sent to the LLM in batches of up to {min(a.grouping_call_chars, a.grouping_batch_chars):,} characters, which groups the ones that state the same attribute of the same subject, and puts a rule with the records under it (every call is shown the claims the extraction flagged as rules); the code's own matching groups the claims the model left alone (no fixed number of documents or claims assumed)."
          if a.grouping == "llm" else
          f"2. Ledger: accepted claims are stored in the claims table; claims are matched across and within documents by wording and by local embeddings ({s.embedding_model}), without a fixed number of documents or claims assumed."),
         f"3. Judging: a group whose claims all state the same value counts as corroboration; every other group goes to the LLM, several groups to a call, in batches of up to {a.judge_batch_chars:,} characters. The model gives one verdict per group: consistent when all its claims agree, a contradiction when any one differs.",
@@ -120,7 +121,7 @@ def sec_glance(R):
     out = ([">>> THIS RUN WAS STOPPED BEFORE IT FINISHED" + (" BECAUSE THE PROVIDER'S DAILY QUOTA IS USED UP (" + reason[:160] + ")" if reason else "") + ": everything below covers only the part that ran. <<<"] if R.stopped else [])
     lost = [f"{n} {what}" for n, what in (
         (getattr(js, "groups_unjudged", 0), "claim groups were never judged"), (js.batches_failed, "judging call(s) failed"),
-        (getattr(getattr(R, "grouping_stats", None), "batches_failed", 0), "grouping call(s) failed"), (getattr(getattr(R, "rule_stats", None), "batches_failed", 0), "rule-linking call(s) failed"),
+        (getattr(getattr(R, "grouping_stats", None), "batches_failed", 0), "grouping call(s) failed"),
         (getattr(getattr(R, "internal", None), "failed", 0), "internal-check call(s) failed"),
         (getattr(getattr(R, "cross", None), "failed", 0), "cross-document relation call(s) failed")) if n]
     if lost:
@@ -133,6 +134,7 @@ def sec_glance(R):
     docs = list(R.doc_stats.values())
     if R.excluded:
         out.append(f"Excluded      : {', '.join(R.excluded)} (by request: not read, not compared)")
+    out += other_entity_lines(R)
     out += [f"Documents     : {len(docs)}; fully read {sum(d['ok'] for d in docs)}, incomplete {sum(not d['ok'] for d in docs)}",
             f"Chunks        : {sum(d['chunks'] for d in docs)} total; sent to the LLM {sum(d['readable'] for d in docs if d['ok'])} "
             f"(headings are skipped by the extractor: {sum(d['chunks'] - d['readable'] for d in docs)})",
@@ -149,8 +151,8 @@ def sec_glance(R):
                    f"{ex.external_credits:g} credits used, {ex.documents_failed} documents failed (the batch and coverage settings above do not apply); "
                    + (f"{ex.documents_from_cache} documents came from the extraction cache ({ex.extraction_credits_saved:g} credits not spent)" if not R.args.refresh_extraction
                       else "extraction cache refreshed: every document was read again and the stored response replaced"))
-    if R.candidates is not None:
-        out.append(f"Claim groups  : {js.groups_total} groups from {len(R.candidates)} candidates; {js.groups_agreed} agreed (every claim states the same value, not sent to the LLM); "
+    if R.clusters is not None:
+        out.append(f"Claim groups  : {js.groups_total} groups ({group_sources(js)}) from {len(R.clusters)} clusters; {js.groups_agreed} agreed (every claim states the same value, not sent to the LLM); "
                    f"{js.groups_judged} judged; verdicts {dict(js.verdict_counts)}")
         out.append(f"Findings      : {js.findings_saved} saved with verified quotes; {js.findings_rejected} rejected (quotes missing or not exact)")
     out += [f"LLM calls     : {len(R.llm.call_metrics)} provider attempts ({sum(not m.ok for m in R.llm.call_metrics)} failed, {R.llm.retry_count} retries incl. invalid-output retries), "
@@ -221,17 +223,34 @@ def profile_comparison(R):
     return out
 
 
-def gate_lines(R) -> list[str]:
-    """The entity gate (which documents it grouped, how many candidates it and the list guard dropped, and which) for the report."""
+def other_entity_lines(R) -> list[str]:
+    """Which documents were dropped because they are about another entity than most of the data room, or that the entity groups were too even to drop any."""
     g = R.gate
-    out = ["", "ENTITY GATE: " + ("off (--no-entity-gate or --no-profiles)" if g is None else f"{'applied' if g.applied else 'not applied'}; {g.note}; {g.calls} call")]
+    if g is None or not g.applied:
+        return []
+    if getattr(R, "other_entity", []):
+        main = g.names.get(g.main, "?")
+        docs = "; ".join(f"{x['file']} (about {x['entity']}; {x['claims']} claims removed)" for x in getattr(R, "other_entity", []))
+        return [f"DROPPED       : {len(getattr(R, "other_entity", []))} document(s) about another entity than the main one ({main}, {sum(1 for n in g.doc_group.values() if n == g.main)} documents): {docs}. "
+                f"They are not grouped, judged or checked, and nothing in this report compares them with the other documents."]
+    if len(set(g.doc_group.values())) > 1 and g.main is None:
+        return ["Other entities: the documents fall into several entity groups and none holds most of them, so no document was dropped (see the entity gate below)"]
+    return []
+
+
+def gate_lines(R) -> list[str]:
+    """The entity gate (which documents it grouped, how many claims it and the list guard took out of clusters, and which) for the report."""
+    g = R.gate
+    out = ["", "ENTITY GATE: " + ("off (--no-entity-gate or --no-profiles)" if g is None else f"{'applied' if g.applied else 'not applied'}; {g.note}; {g.calls} call"),
+           *([f"  rule: the entity that holds more than half of the documents stays, with the groups the model marked as related to it; every other document is dropped with its claims ({len(getattr(R, "other_entity", []))} dropped)"] if g is not None and g.applied else [])]
     if g is not None:
         for number, (entity, names) in enumerate(g.groups, start=1):
             out.append(f"  group {number}: {entity}: " + "; ".join(names))
         out += [f"  related groups: {a} and {b}" for a, b in g.related]
     gates = R.gates
     if gates is not None:
-        out += ["", f"candidates dropped by the entity gate: {gates.entity_dropped}; dropped as list members (name or statement claims on one page of one document): {gates.list_dropped}"]
+        out += ["", f"claims left out of clusters by the entity gate: {gates.entity_dropped}; left out as list members (name or statement claims on one page of one document): {gates.list_dropped}; "
+                    f"clusters that fell below two claims and were dropped: {gates.clusters_dropped}"]
         out += [f"  - {x}" for x in gates.log]
     return out
 
@@ -269,32 +288,33 @@ def sec_ledger(R):
     return out
 
 
+def group_sources(js) -> str:
+    """How the groups came about: by the model, with a rule, or by the code's matching of the claims the model left alone."""
+    kinds = Counter("rule" if g.kind == "rule" else "model" if g.via and set(g.via.values()) == {"llm"} else "code" for g in js.groups)
+    return f"{kinds['model']} by the model, {kinds['rule']} with a rule, {kinds['code']} by code matching of the claims the model left alone"
+
+
 def sec_groups(R):
     js = R.judge
     out = []
     if R.grouping_stats:
         gs = R.grouping_stats
-        out += [f"grouping mode: LLM grouping of sorted claims: {gs.claims} claims in {gs.batches} batch(es), {gs.llm_calls} call(s) ({gs.batches_failed} failed; {gs.batches_split} failed batch(es) were asked again as two halves), "
-                f"{gs.claims_filtered} claims not sent (no other claim shares their subject or metric words); {gs.groups} groups covering {gs.claims_grouped} claims (largest {gs.largest_group}; {gs.distinct_values} distinct values in all), "
-                f"{gs.candidates} candidates ({gs.neighbor_candidates} added from nearest neighbours in other documents), {gs.unknown_refs} unknown refs ignored",
-                (f"  note: the batches went one after the other, each call after the first was shown the groups and the ungrouped claims of the earlier ones; {gs.joined} claims joined a group an earlier call had formed"
-                 if gs.carried else "  note: claims in different batches are never grouped together" + (" (more than one batch in this run)" if gs.batches > 1 else " (one batch: no such gap in this run)"))]
+        out += [f"grouping: LLM grouping of sorted claims, with the claims flagged as rules shown to every call: {gs.claims} claims in {gs.batches} batch(es), {gs.llm_calls} call(s) ({gs.batches_failed} failed; {gs.batches_split} failed batch(es) were asked again as two halves), "
+                f"{gs.claims_filtered} claims not sent (no other claim shares their subject or metric words); {gs.rules_shown} claims flagged as rules by the extraction were shown to every call; "
+                f"the model made {gs.groups} groups covering {gs.claims_grouped} claims ({gs.rule_groups} of them a rule with its records; largest {gs.largest_group}; {gs.distinct_values} distinct values in all), {gs.unknown_refs} unknown refs ignored",
+                f"  clusters of the stage: {gs.clusters} ({gs.model_clusters} by the model covering {gs.claims_by_model} claims, {gs.rule_clusters} with a rule covering {gs.claims_by_rule} claims, "
+                f"{gs.code_clusters} by code matching of the {gs.claims_left} claims the model left alone, covering {gs.claims_by_code} claims)",
+                "  note: the calls were independent and ran in parallel; claims in different batches are never grouped together by the model" + (" (more than one batch in this run)" if gs.batches > 1 else " (one batch: no such gap in this run)")]
         out += [f"  grouping problem: {e}" for e in gs.errors]
-        out.append(f"  candidates by claims that mention the same record id and state the same kind of value: {gs.identifier_candidates}; by subject and metric words that largely coincide: {gs.lexical_candidates}; by a rare word of their labels shared across documents: {gs.label_candidates}; "
-                   f"claims that say there is none of something, linked to the claims that mention it: {gs.polarity_candidates}")
+        out.append(f"  code matching of the claims left, clusters found before the ones that share a claim are joined: same record id and kind of value {gs.identifier_clusters}; subject and metric words that largely coincide {gs.lexical_clusters}; "
+                   f"a rare word of the labels across documents {gs.label_clusters}; nearest neighbours by meaning {gs.neighbor_clusters}; a claim that says there is none of something, with the claims that mention it {gs.negation_clusters}; "
+                   f"a restriction between two dates, with the claims dated inside {gs.window_clusters}")
     else:
         out.append("grouping mode: code (word overlap and local embeddings)")
-    rs = getattr(R, "rule_stats", None)
-    if rs is not None:
-        out += [f"rule linking: {rs.claims} claims in {rs.batches} batch(es), {rs.llm_calls} call(s) ({rs.batches_failed} failed); "
-                + (f"{rs.marked} claims were flagged as rules by the extraction (every call was shown all of them; the model only looked for their records); " if rs.marked
-                   else "no claim was flagged as a rule by the extraction, so the model chose the rules itself; ") + f"{rs.links} rules with records under them, {rs.candidates} rule-to-record links ({rs.temporal_candidates} added by code from dates), {rs.unknown_refs} unknown refs ignored",
-                *[f"  rule: {t}" for t in rs.topics[:30]], *[f"  rule linking problem: {e}" for e in rs.errors]]
-    else:
-        out.append("rule linking: off (--no-rule-links) or not run")
-    out += [f"candidates: {len(R.candidates)}", f"  by relation hint : {dict(Counter(c.relation_hint for c in R.candidates))}",
-           f"  by match route   : {dict(Counter(c.matched_by for c in R.candidates))}",
-           f"  across documents : {R.candidates_cross}   inside one document: {len(R.candidates) - R.candidates_cross}",
+    docs_of = dict(R.session.execute(select(Claim.id, Claim.document_id)).all()) if getattr(R, "session", None) is not None else {}
+    across = sum(len({docs_of.get(i) for i in g.claim_ids}) > 1 for g in js.groups)
+    out += [f"clusters handed to the judge: {len(R.clusters)}", f"  claims by what put them in a cluster: {dict(Counter(v for c in R.clusters for v in c.via.values()))}",
+           f"  groups formed    : {js.groups_total} ({group_sources(js)}); across documents: {across}; inside one document: {js.groups_total - across}" if docs_of else f"  groups formed    : {js.groups_total}",
            f"claim groups: {js.groups_total}; agreed (every claim states the same value, no LLM): {js.groups_agreed}; series (one value for each period, not compared): {js.groups_series}; document labels only (not compared): {js.groups_labels}; decided in code: {js.groups_basis} basis differences, {js.groups_superseded} superseded editions, {js.groups_currency} currency differences; judged by the LLM: {js.groups_judged} in {js.llm_calls} calls ({js.batches_failed} batches failed)",
            f"LLM verdicts: {dict(js.verdict_counts)}", f"findings saved {js.findings_saved}; rejected {js.findings_rejected}; claims left out of a finding because their quote did not show their value {js.claims_dropped}",
            f"groups asked again {js.retries}; not-comparable verdicts whose own reason names a difference (asked again) {js.reason_contradicts_verdict}; verdicts whose values did not match their claims (echoed values) {js.misaligned}; verdicts without echoed values {js.echo_missing}; "
@@ -308,7 +328,7 @@ def sec_groups(R):
              + [f"[{n}] {e['outcome']}\n      screen : {e['screen']}\n      bigger : {e['bigger']}\n" + "".join(f"      claim  : {c}\n" for c in e["claims"]) + (f"      (+{e['more']} more claims)\n" if e["more"] else "")
                 for n, e in enumerate(js.strong_log, start=1)] + [""]
              if getattr(R, "strong", None) is not None and js.strong_log else []),
-           f"{js.clusters_split} sets of claims divided into clusters of at most {MAX_GROUP_CLAIMS} by how alike the claims are ({js.links_dropped} links in no cluster: between two clusters, or to a claim that cannot join one); consistent findings grouped {js.grouped}; findings merged because they state one difference in several documents: {js.merged}", *[f"  - {m}" for m in js.merge_log[:30]],
+           f"{js.clusters_split} sets of claims divided into clusters of at most {MAX_GROUP_CLAIMS} by how alike the claims are ({js.claims_unplaced} claims in no group); consistent findings grouped {js.grouped}; findings merged because they state one difference in several documents: {js.merged}", *[f"  - {m}" for m in js.merge_log[:30]],
            "", "Verdicts whose values did not match their claims (first 20):"]
     out += [f"  - {e}" for e in js.echo_log[:20]] or ["  none"]
     out += ["", "Rejected findings (first 15):"]
@@ -317,11 +337,10 @@ def sec_groups(R):
 
 
 def sec_group_log(R):
-    """Every claim group (a fact and the claims that may state it), one row per claim with its candidates, and what happened to each, so a missed
+    """Every claim group (a fact and the claims that may state it), one row per claim with the route that found it and what happened to it, so a missed
     discrepancy can be traced."""
     js = R.judge
-    records = js.records
-    ids = {i for g in js.groups for i in g.claim_ids}
+    ids = {i for g in js.groups for i in g.claim_ids} | set(js.unplaced)
     claims = {c.id: c for c in R.session.scalars(select(Claim).where(Claim.id.in_(ids)))} if ids else {}
     chunks = {c.id: c for c in R.session.scalars(select(DocumentChunk).where(DocumentChunk.id.in_({c.chunk_id for c in claims.values()})))} if claims else {}
     names = dict(R.session.execute(select(Document.id, Document.filename)).all())
@@ -332,8 +351,8 @@ def sec_group_log(R):
             return "-"
         return f"sheet {ch.sheet_name}, {ch.cell_reference}" if ch.sheet_name else (f"page {ch.page_number}" if ch.page_number else (ch.heading or ch.content_type))
 
-    outcomes = Counter(r.outcome.split(":")[0].split(",")[0] for r in records.values())
-    out = [f"{len(js.groups)} claim groups; {len(records)} candidates between their claims. What happened to the candidates: {dict(outcomes)}"]
+    outcomes = Counter(o.split(":")[0].split(",")[0] for g in js.groups for o in g.outcome.values())
+    out = [f"{len(js.groups)} claim groups holding {sum(len(g.claim_ids) for g in js.groups)} claims. What happened to the claims: {dict(outcomes)}; in no group: {js.claims_unplaced}"]
     for n, g in enumerate(js.groups, start=1):
         number = {c: i for i, c in enumerate(g.claim_ids, start=1)}
         first = claims.get(g.claim_ids[0])
@@ -342,14 +361,15 @@ def sec_group_log(R):
         rows = []
         for c in g.claim_ids:
             cl = claims.get(c)
-            mine = [e.candidate_id if e.claim_id == c else e.claim_id for e in g.edges if c in (e.claim_id, e.candidate_id)]
             rows.append([number[c], clip(names.get(cl.document_id, "?") if cl else "?", 34), clip(where(cl), 30) if cl else "-", clip(cl.subject or "-", 40) if cl else "-",
                          clip(cl.metric or "-", 30) if cl else "-", clip(str(cl.value) + (f" {cl.unit}" if cl and cl.unit else ""), 34) if cl else "-",
-                         ", ".join(str(number[k]) for k in mine if k in number)])
-        out += table(["claim", "document", "where", "subject", "metric", "value", "candidates"], rows)
-        for e in g.edges:
-            r = records[(e.claim_id, e.candidate_id)]
-            out.append(f"  claim {number[e.claim_id]} with claim {number[e.candidate_id]} [{r.hint}, found by {r.route}]: {clip(r.outcome, 170)}")
+                         g.via.get(c, "-"), clip(g.outcome.get(c, "-"), 150)])
+        out += table(["claim", "document", "where", "subject", "metric", "value", "found by", "what happened"], rows)
+    if js.unplaced:
+        out += ["", f"CLAIMS IN NO GROUP ({len(js.unplaced)}): found together with other claims by a route, but not alike enough to stay in a cluster with them"]
+        for claim_id, reason in js.unplaced.items():
+            cl = claims.get(claim_id)
+            out.append(f"  {names.get(cl.document_id, '?') if cl else '?'} | {clip((cl.subject or '-') if cl else '-', 40)} | {clip((cl.metric or '-') if cl else '-', 30)} | {clip(str(cl.value) if cl else '-', 30)}: {clip(reason, 150)}")
     return out
 
 
@@ -460,11 +480,10 @@ def sec_timing(R):
 def sec_limits(R):
     from app.services.blocking import NEGATION_PARTNERS, PARTNERS
     from app.services.claim_group_judge import MAX_GROUP_CLAIMS
-    from app.services.claim_grouping import LEXICAL_PARTNERS
-    from app.services.rule_links import MAX_RECORDS_PER_RULE
+    from app.services.claim_grouping import LEXICAL_PARTNERS, MAX_RECORDS_PER_RULE
     return [
         "- Reading is all-or-nothing per document: if one batch fails after all retries, that document's claims are discarded and it counts as not read.",
-        f"- The code routes cap the partners of one claim: {LEXICAL_PARTNERS} by word overlap, {PARTNERS} by a shared rare label word, {NEGATION_PARTNERS} for a negation; a rule keeps at most {MAX_RECORDS_PER_RULE} records and a group at most {MAX_GROUP_CLAIMS} claims, so some comparable claims are never judged.",
+        f"- The code's matching of the claims the model left alone caps the partners of one claim: {LEXICAL_PARTNERS} by word overlap, {PARTNERS} by a shared rare label word, {NEGATION_PARTNERS} for a negation; a rule keeps at most {MAX_RECORDS_PER_RULE} records and a group at most {MAX_GROUP_CLAIMS} claims, so some comparable claims are never judged.",
         "- The claim-extraction prompt lists business categories (capacity, supply, pricing, ...) and is not yet domain-agnostic.",
         "- Claims inside one document are also grouped and judged; matching quality depends on how the model labels subject/metric/unit/period.",
         "- Exact agreements are trusted as corroboration without an LLM check.",
@@ -498,7 +517,8 @@ def build_metrics(R, results_path) -> RunMetrics:
     ex, js, emb = R.extraction, R.judge, R.embedder.call_metrics
     counts = RunCounts(
         documents=len(docs), documents_fully_read=sum(d["ok"] for d in docs), chunks=sum(d["chunks"] for d in docs),
-        claims_recorded=ex.claims_created, claims_rejected=ex.claims_rejected, candidates=len(R.candidates or []),
+        claims_recorded=ex.claims_created, claims_rejected=ex.claims_rejected, clusters=len(R.clusters or []),
+        documents_other_entity=[f"{x['file']} (about {x['entity']})" for x in getattr(R, "other_entity", [])], claims_other_entity=sum(x["claims"] for x in getattr(R, "other_entity", [])),
         claim_groups=js.groups_total, groups_agreed=js.groups_agreed, groups_judged=js.groups_judged, verdicts=dict(js.verdict_counts),
         findings_saved=js.findings_saved + (R.internal.saved if getattr(R, "internal", None) else 0) + (R.cross.saved if getattr(R, "cross", None) else 0) + (R.missing.saved if getattr(R, "missing", None) else 0) + (R.records.saved if getattr(R, "records", None) else 0),
         findings_rejected=js.findings_rejected + (R.missing.rejected if getattr(R, "missing", None) else 0) + (R.records.rejected if getattr(R, "records", None) else 0), embedding_calls=len(emb),
@@ -549,13 +569,11 @@ def main():
     ap.add_argument("--claim-filter", action="store_true", help="send only the claims that the code's own matching finds a partner for to the grouping calls (off by default: it can withhold claims the LLM would group, such as the same sample worded differently)")
     ap.add_argument("--no-two-step", action="store_true", help="judge every group with one model (the settings model) instead of screening with the smaller models and letting the bigger models decide the groups the screen calls findings")
     ap.add_argument("--grouping-call-chars", type=int, default=100_000, help="characters of claims in one grouping call (the other calls that read claims keep --grouping-batch-chars): a call of about 300,000 characters (80,000 tokens) often came back nearly empty, so the grouping goes in smaller calls, one after the other, each shown the groups of the earlier ones")
-    ap.add_argument("--no-group-map", action="store_true", help="send the grouping batches independently, in parallel (claims in different batches are then never grouped together) instead of one after the other with the groups of the earlier calls shown to the later ones")
     ap.add_argument("--no-cross-checks", action="store_true",
                     help="do not look for relations between figures and dates of different documents (a credit that is a rate times a base, a payment due after the loan it repays)")
     ap.add_argument("--no-internal-checks", action="store_true", help="do not check arithmetic and part-of-whole relations inside each document, nor relative dates with no anchor")
-    ap.add_argument("--no-rule-links", action="store_true", help="do not look for rules (what is prohibited, required, limited or suspended) and the records that fall under them")
     ap.add_argument("--grouping", choices=["code", "llm"], default="llm",
-                    help="llm = the LLM groups the sorted claims (default); code = candidates from word overlap and embeddings")
+                    help="llm = the LLM groups the sorted claims (default); code = clusters from word overlap and embeddings")
     ap.add_argument("--grouping-batch-chars", type=int, default=None, help="characters of claims per grouping call (--grouping llm; default: by provider)")
     ap.add_argument("--extractor", choices=["llm", "llamaextract"], default="llamaextract",
                     help="llamaextract = each selected document is uploaded to LlamaExtract (LlamaIndex Cloud; default); llm = the LLM reads the chunks")
@@ -636,8 +654,8 @@ def main():
         return bool(llm.quota_exhausted) or (bool(args.stop_file) and os.path.exists(args.stop_file))  # a used-up daily quota ends the run like a stop request
 
     R = SimpleNamespace(args=args, settings=settings, started=started, config=config, db_name=args.db_name, llm=llm, embedder=embedder,
-                        error=None, stopped=False, doc_stats={}, excluded=[], claims_cleared=0, scan=None, processed=[], extraction=ExtractionSummary(), candidates=None, candidates_cross=0, judge=None, profiler=None, profiles={}, extract_profiles={}, gate=None, gates=None,
-                        stage={}, llm_bounds=[0, 0, 0, 0, 0, 0, 0, 0], grouping_stats=None, rule_stats=None, start_wall=time.time(), session=session)
+                        error=None, stopped=False, doc_stats={}, excluded=[], other_entity=[], claims_cleared=0, scan=None, processed=[], extraction=ExtractionSummary(), clusters=None, judge=None, profiler=None, profiles={}, extract_profiles={}, gate=None, gates=None,
+                        stage={}, llm_bounds=[0, 0, 0, 0, 0, 0, 0], grouping_stats=None, start_wall=time.time(), session=session)
     from app.services.claim_group_judge import JudgeStats
     R.judge = JudgeStats()
     t_run = time.perf_counter()
@@ -744,6 +762,20 @@ def main():
             t_gate = time.perf_counter()
             R.gate = decide_entity_groups(llm, R.profiles)  # one call: which documents are about the same subject
             print(f"[gate] entity gate: {R.gate.note}", flush=True)
+            if R.gate.dropped:  # a document about another entity than most of the data room: its claims are removed before any claim is grouped
+                dropped_ids = {doc_id for doc_id, _, _ in R.gate.dropped}
+                for doc_id, name, entity in R.gate.dropped:
+                    removed = session.scalar(select(func.count()).select_from(Claim).where(Claim.document_id == doc_id)) or 0
+                    delete_claims(session, doc_id)
+                    R.other_entity.append(dict(id=doc_id, file=name, entity=entity, claims=removed))
+                    R.extraction.claims_created -= removed
+                    R.profiles.pop(doc_id, None)  # the grouping and judging calls no longer see its card
+                    if doc_id in R.doc_stats:
+                        R.doc_stats[doc_id]["claims"] = 0
+                    print(f"[gate] DROPPED {name}: about {entity}, not the main entity of the data room ({R.gate.names.get(R.gate.main, '?')}); its {removed} claims are removed from this run", flush=True)
+                session.commit()
+                if extractor is not None:
+                    extractor.references = [x for x in extractor.references if x.document_id not in dropped_ids]
             R.stage["1c. entity gate (which documents are about the same subject)"] = round((time.perf_counter() - t_gate) * 1000)
             R.llm_bounds[2] = len(llm.call_metrics)
 
@@ -752,26 +784,18 @@ def main():
         t = time.perf_counter()
         print("[match] matching claims across documents", flush=True)
         if args.grouping == "llm":
-            R.candidates, R.grouping_stats = ClaimGrouper(session, llm, max_chars_per_call=min(args.grouping_call_chars, args.grouping_batch_chars), should_stop=stopped, embedder=embedder, prefilter=args.claim_filter,
-                                                workers=args.judge_workers, carry_groups=not args.no_group_map, on_progress=lambda m: print(f"[match] {m}", flush=True),
+            R.clusters, R.grouping_stats = ClaimGrouper(session, llm, max_chars_per_call=min(args.grouping_call_chars, args.grouping_batch_chars), should_stop=stopped, embedder=embedder, prefilter=args.claim_filter,
+                                                workers=max(args.judge_workers, 4), on_progress=lambda m: print(f"[match] {m}", flush=True),
                                                 cards=render_cards(R.profiles) if R.profiles else "").run()
         else:
-            R.candidates = service.candidates(embedder)
-        R.llm_bounds[3] = len(llm.call_metrics)
-        if not args.no_rule_links and args.grouping == "llm":
-            check_stop()
-            R.rule_candidates, R.rule_stats = RuleLinker(session, llm, max_chars_per_call=args.grouping_batch_chars, should_stop=stopped, workers=args.judge_workers,
-                                                         on_progress=lambda m: print(f"[rules] {m}", flush=True), cards=render_cards(R.profiles) if R.profiles else "").run()
-            R.candidates = list(R.candidates) + R.rule_candidates
-            print(f"[rules] {R.rule_stats.links} rules with records under them, {R.rule_stats.candidates} rule-to-record links", flush=True)
-        R.llm_bounds[4] = len(llm.call_metrics)
-        R.gates = apply_gates(session, R.candidates, R.gate, list_guard=not args.no_list_guard)
-        R.candidates = R.gates.candidates
-        print(f"[gate] {R.gates.entity_dropped} candidates dropped by the entity gate, {R.gates.list_dropped} as list members; {len(R.candidates)} remain", flush=True)
+            R.clusters = [Cluster(claim_ids=ids) for ids in merge_overlapping([c.claim_ids for c in service.clusters(embedder)])]  # the code's own matching: clusters that share a claim are one
+        R.llm_bounds[3] = R.llm_bounds[4] = len(llm.call_metrics)
+        R.gates = apply_gates(session, R.clusters, R.gate, list_guard=not args.no_list_guard)
+        R.clusters = R.gates.clusters
+        print(f"[gate] {R.gates.entity_dropped} claims left out of clusters by the entity gate, {R.gates.list_dropped} as list members, {R.gates.clusters_dropped} clusters below two claims dropped; {len(R.clusters)} clusters remain", flush=True)
         claim_doc = dict(session.execute(select(Claim.id, Claim.document_id)).all())
-        R.candidates_cross = sum(claim_doc[c.claim_id] != claim_doc[c.candidate_id] for c in R.candidates)
         R.stage["2. match claims (" + ("LLM grouping of sorted claims" if args.grouping == "llm" else "code + local embeddings") + ")"] = round((time.perf_counter() - t) * 1000)
-        print(f"[match] {len(ClaimGroupJudge._form_groups(R.candidates))} claim groups from {len(R.candidates)} candidates (all the claims of a group are judged together)", flush=True)
+        print(f"[match] {len(ClaimGroupJudge._form_groups(R.clusters))} claim groups from {len(R.clusters)} clusters (all the claims of a group are judged together)", flush=True)
 
         check_stop()
         # ---- stage 3: judge claim groups
@@ -780,9 +804,9 @@ def main():
         R.screen, R.strong = screen, strong
         R.judge = ClaimGroupJudge(session, screen or llm, registry, max_chars_per_call=args.judge_batch_chars, should_stop=stopped, workers=args.judge_workers,
                             on_progress=lambda m, d: print(f"[judge] {m}", flush=True), save_consistent=args.save_consistent,
-                            profiles=R.profiles, retry_pause_seconds=30.0, strong_llm=strong, embedder=embedder).run(R.candidates)
+                            profiles=R.profiles, retry_pause_seconds=30.0, strong_llm=strong, embedder=embedder).run(R.clusters)
         R.stage["3. judge claim groups, verify quotes, save findings"] = round((time.perf_counter() - t) * 1000)
-        R.llm_bounds[5] = R.llm_bounds[6] = R.llm_bounds[7] = len(llm.call_metrics)  # the checks that follow stay empty when they do not run
+        R.llm_bounds[4] = R.llm_bounds[5] = R.llm_bounds[6] = len(llm.call_metrics)  # the checks that follow stay empty when they do not run
 
         check_stop()
         if not args.no_internal_checks:
@@ -791,7 +815,7 @@ def main():
             R.internal = InternalChecker(session, llm, registry, max_chars_per_call=args.grouping_batch_chars, should_stop=stopped, workers=args.judge_workers,
                                          on_progress=lambda m: print(f"[internal] {m}", flush=True)).run()
             R.stage["3a. checks inside each document (arithmetic, part of whole, relative dates)"] = round((time.perf_counter() - t) * 1000)
-            R.llm_bounds[6] = R.llm_bounds[7] = len(llm.call_metrics)
+            R.llm_bounds[5] = R.llm_bounds[6] = len(llm.call_metrics)
             print(f"[internal] {R.internal.patterns} found by sentence patterns, {R.internal.proposed} relations proposed by the model, {R.internal.checked} checkable, {R.internal.broken} broken; "
                   f"{R.internal.anchors_missing} relative dates with no anchor; {R.internal.saved} saved", flush=True)
         # ---- stage 3d: relations between figures of different documents (arithmetic and the order of dates); the model proposes, code checks
@@ -801,7 +825,7 @@ def main():
             R.cross = CrossChecker(session, llm, registry, max_chars_per_call=args.grouping_batch_chars, should_stop=stopped,
                                    on_progress=lambda m: print(f"[cross] {m}", flush=True)).run()
             R.stage["3d. relations across documents (arithmetic and the order of dates)"] = round((time.perf_counter() - t) * 1000)
-            R.llm_bounds[7] = len(llm.call_metrics)
+            R.llm_bounds[6] = len(llm.call_metrics)
             print(f"[cross] {R.cross.claims} figures and dates read, {R.cross.proposed} relations proposed, {R.cross.checked} checkable, {R.cross.broken} broken; "
                   f"{R.cross.saved} saved, {R.cross.already_reported} already in a finding", flush=True)
         # ---- stage 3b: items a document refers to that the data room does not hold (no LLM call; the references came with the claims)
@@ -835,6 +859,10 @@ def main():
             mine = claims_by_doc.get(d["id"], set())
             d.update(claims_grouped=len(mine & R.judge.grouped_claims), claims_corroborated=len(mine & R.judge.corroborated_claims),
                      claims_alone=len(mine - R.judge.grouped_claims), groups_judged=judged_by_doc[d["id"]], findings=R.judge.findings_by_document[d["id"]])
+            other = next((x for x in R.other_entity if x["id"] == d["id"]), None)
+            if other is not None:
+                d["verdict"], d["reason"] = "dropped", f"about {other['entity']}, not the main entity of the data room; its {other['claims']} claims were removed and not compared"
+                continue
             if not d["ok"]:
                 d["verdict"], d["reason"] = "partly_unverified", "reading was incomplete, so its claims were not compared"
                 continue
@@ -889,7 +917,7 @@ def main():
     for title, fn in [("AT A GLANCE", sec_glance), ("NEW OR CHANGED FILES AND CLAIM RESET", sec_new_files),
                       ("CONTRADICTIONS ONLY (classification = contradiction)", sec_contradictions),
                       ("FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)", base.sec_findings),
-                      ("COVERAGE AND PER-DOCUMENT VERDICTS", sec_documents), ("DOCUMENT PROFILES AND CANDIDATE GATES", sec_profiles), ("CLAIM LEDGER", sec_ledger), ("CLAIM GROUPING AND JUDGING", sec_groups), ("EVERY CLAIM GROUP, ITS CLAIMS AND WHAT HAPPENED TO THEIR CANDIDATES", sec_group_log),
+                      ("COVERAGE AND PER-DOCUMENT VERDICTS", sec_documents), ("DOCUMENT PROFILES AND GATES", sec_profiles), ("CLAIM LEDGER", sec_ledger), ("CLAIM GROUPING AND JUDGING", sec_groups), ("EVERY CLAIM GROUP, ITS CLAIMS AND WHAT HAPPENED TO THEIR CANDIDATES", sec_group_log),
                       ("CHECKS INSIDE EACH DOCUMENT (arithmetic, part of whole, relative dates)", sec_internal),
                       ("RELATIONS ACROSS DOCUMENTS (arithmetic and the order of dates; the model proposes, code checks)", sec_cross),
                       ("REFERENCED ITEMS NOT IN THE DATA ROOM (single-claim missing information)", sec_missing),

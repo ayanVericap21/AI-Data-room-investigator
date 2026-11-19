@@ -1,4 +1,4 @@
-"""Nearest-neighbour grouping across documents, and PDF table cells that keep their spaces and decimals."""
+"""Nearest-neighbour clusters across documents, and PDF table cells that keep their spaces and decimals."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -20,40 +20,35 @@ class KeywordEmbedder:
 
 
 def neighbors(views, **kw):
-    grouper = ClaimGrouper(None, None, embedder=KeywordEmbedder(), **kw)
-    candidates: dict = {}
-    grouper._add_neighbors(views, candidates)
-    return candidates
+    return ClaimGrouper(None, None, embedder=KeywordEmbedder(), **kw)._neighbor_clusters(views, set())
+
+
+def together(clusters):
+    return {frozenset(c.claim_ids) for c in clusters}
 
 
 def test_a_claim_is_grouped_with_its_nearest_neighbours_in_other_documents_whatever_the_labels_say():
     a = view("a", doc="d1", subject="Designed nameplate", metric="Management-reported position", value="20,000", claim_text="capacity 20,000 per month")
     b = view("b", doc="d2", subject="Designed nameplate", metric="Model_Value", value="24000", claim_text="capacity 24000")
     c = view("c", doc="d3", subject="SiliconForge", metric="certification", value="ISO 9001", claim_text="certification held")
-    candidates = neighbors([a, b, c])
-    assert set(candidates) == {("a", "b")}  # the capacity claims, although the labels share nothing; c is about something else
-    only = candidates[("a", "b")]
-    assert only.matched_by == "embedding" and only.relation_hint == "conflicting"  # the values differ: the judge will decide
+    clusters = neighbors([a, b, c])
+    assert together(clusters) == {frozenset(("a", "b"))}  # the capacity claims, although the labels share nothing; c is about something else
+    assert clusters[0].matched_by == "embedding"
 
 
-def test_claims_of_one_document_are_not_grouped_by_neighbourhood_and_equal_values_are_agreement():
+def test_claims_of_one_document_are_not_matched_by_neighbourhood_with_each_other():
     a = view("a", doc="d1", metric="capacity", value=100, claim_text="capacity 100")
     same_doc = view("b", doc="d1", metric="capacity", value=200, claim_text="capacity 200")
     equal = view("c", doc="d2", metric="capacity", value=100, claim_text="capacity of 100 per month")
-    candidates = neighbors([a, same_doc, equal])
-    assert ("a", "b") not in candidates and candidates[("a", "c")].relation_hint == "exact"
-    assert ("b", "c") in candidates and candidates[("b", "c")].relation_hint == "conflicting"
+    assert neighbors([a, same_doc]) == []
+    assert together(neighbors([a, same_doc, equal])) == {frozenset(("a", "b", "c"))}  # each of them matched the claim of the other document
 
 
-def test_each_claim_takes_at_most_the_requested_number_of_neighbours_and_a_grouped_candidate_is_kept():
+def test_each_claim_takes_at_most_the_requested_number_of_neighbours():
     views = [view("a", doc="d1", metric="capacity", value=1, claim_text="capacity 1")] + \
             [view(f"x{i}", doc=f"e{i}", metric="capacity", value=10 + i, claim_text=f"capacity {10 + i}") for i in range(4)]
-    candidates = neighbors(views, neighbors=1)
-    assert sum(1 for k in candidates if "a" in k) <= 4  # the others also pick a as their own nearest neighbour
-    existing = {("a", "x0"): "from the grouping"}
-    grouper = ClaimGrouper(None, None, embedder=KeywordEmbedder(), neighbors=4)
-    grouper._add_neighbors(views, existing)
-    assert existing[("a", "x0")] == "from the grouping"  # a candidate the grouping already made is not replaced
+    clusters = neighbors(views, neighbors=1)
+    assert clusters and all(len(c.claim_ids) <= 5 for c in clusters)
 
 
 def _table_pdf(path: Path) -> Path:

@@ -4,8 +4,8 @@ import type { ClaimGroupList, Chunk, ClaimList, Job } from "../types/claim";
 export const fetchClaims = async (limit = 200, offset = 0): Promise<ClaimList> =>
   (await http.get<ClaimList>("/claims", { params: { limit, offset } })).data;
 
-export const fetchCandidates = async (): Promise<ClaimGroupList> =>
-  (await http.get<ClaimGroupList>("/claims/candidates")).data;
+export const fetchClusters = async (): Promise<ClaimGroupList> =>
+  (await http.get<ClaimGroupList>("/claims/clusters")).data;
 
 export const fetchChunk = async (id: string): Promise<Chunk> => (await http.get<Chunk>(`/chunks/${id}`)).data;
 

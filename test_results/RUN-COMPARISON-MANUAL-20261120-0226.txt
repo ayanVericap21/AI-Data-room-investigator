@@ -1,0 +1,11 @@
+RUN 14: TEST-RUN-20261120-022648-ui-run.txt (20 Nov 02:26, 16 documents, one grouping stage). Scored by hand against HTC01 (39 cases).
+claims 1184; 166 clusters -> 225 groups (111 by the model, 24 with a rule, 90 by code matching of the claims the model left alone); 190 judged in 8 calls; 23 findings saved by the judge, 1 rejected; 46 in the report; 151.9 s; 1 failed attempt (HTTP 503, retried); 125,955 prompt tokens cached; grouping stage 64.5 s (run 13: about 150 s).
+
+YES (5): 001 (finding 24), 012 (finding 15, group 162), 014 (finding 25), 015 (finding 2, rule group 3), 016 (finding 14, group 158)
+part (4): 004 (finding 4: proceeds $5,043,000 vs 5,227.5 found, the price and the signed agreement not named), 006 (finding 27, memo loan summed), 033 (finding 19: March 28 vs July 15 saved as one low contextual finding among 7 milestone dates), 036 (finding 11: unit C-1 sale vs Section 8.2 saved as low insufficient_evidence, memo not cited)
+missed (22): 002, 003, 005, 007, 008, 009, 010, 011, 013, 017, 018, 022, 023, 025, 026, 027, 028, 031, 032, 035, 037, 038
+versus run 13: gained 015 (hit), 004 and 036 (partial); lost 033 (hit to partial), 005, 007 and 035 (partial to missed)
+consistent cases flagged: 0 of 8
+Accuracy: strict (5 + 8) / 39 = 33%; half credit (5 + 8 + 2) / 39 = 38%
+High or critical false alarms outside the key: 5 (finding 5 legal/accounting 450,000 vs 310,000; finding 6 change order signatories, critical; finding 10 85 cents vs $0.85; finding 20 building complete vs floors 1 to 3; finding 28 Virginia proceeds formula without the credit price)
+Same score as run 13 (33% / 38%); different cases.

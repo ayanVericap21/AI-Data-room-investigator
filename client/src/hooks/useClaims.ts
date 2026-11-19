@@ -1,16 +1,16 @@
 import { useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchCandidates, fetchChunk, fetchClaims, fetchJobs, startExtraction, startProcessing } from "../api/claims";
+import { fetchClusters, fetchChunk, fetchClaims, fetchJobs, startExtraction, startProcessing } from "../api/claims";
 import { DOCUMENTS_KEY } from "./useDocuments";
 
 export const CLAIMS_KEY = ["claims"] as const;
-export const CANDIDATES_KEY = ["candidates"] as const;
+export const CLUSTERS_KEY = ["clusters"] as const;
 export const JOBS_KEY = ["jobs"] as const;
 const JOB_POLL_MS = 3000;
 
 export const useClaims = () => useQuery({ queryKey: CLAIMS_KEY, queryFn: () => fetchClaims() });
 
-export const useCandidates = () => useQuery({ queryKey: CANDIDATES_KEY, queryFn: fetchCandidates });
+export const useClusters = () => useQuery({ queryKey: CLUSTERS_KEY, queryFn: fetchClusters });
 
 export const useChunk = (id: string | null) =>
   useQuery({ queryKey: ["chunk", id], queryFn: () => fetchChunk(id!), enabled: id !== null });
@@ -29,7 +29,7 @@ export function useJobs() {
     if (wasRunning.current && !running) {
       qc.invalidateQueries({ queryKey: DOCUMENTS_KEY });
       qc.invalidateQueries({ queryKey: CLAIMS_KEY });
-      qc.invalidateQueries({ queryKey: CANDIDATES_KEY });
+      qc.invalidateQueries({ queryKey: CLUSTERS_KEY });
     }
     wasRunning.current = running;
   }, [running, qc]);

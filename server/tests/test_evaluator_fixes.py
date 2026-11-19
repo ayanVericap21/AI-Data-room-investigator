@@ -9,7 +9,7 @@ from app.services.aliases import defined_names, resolve
 from app.services.internal_checks import InternalChecker, clause_quote
 from app.services.severity import contradiction_severity, missing_severity
 from app.tools import build_registry
-from tests.test_claim_group_judge import answer, candidate, judge, verdict
+from tests.test_claim_group_judge import answer, cluster, judge, verdict
 from tests.test_tools import add_doc, room  # noqa: F401  (fixtures and helper)
 
 
@@ -89,7 +89,7 @@ def test_a_contracted_and_an_actual_figure_are_a_contextual_difference_decided_w
     plan = claim_in(session, "msa.pdf", "Works commence on 1 March 2025 for a term of 6 months.", "1 March 2025", metric="start date", category="date")
     actual = claim_in(session, "progress.pdf", "Works commenced on 3 March 2025 according to the site log.", "3 March 2025", metric="start date", category="date")
     llm = MockLLMClient([])
-    stats = judge(session, room, llm).run([candidate(plan, actual)])
+    stats = judge(session, room, llm).run([cluster(plan, actual)])
     finding = session.scalars(select(Finding)).one()
     assert llm.prompts == [] and stats.groups_basis == 1 and finding.classification == "contextual_difference" and finding.severity == "low"
 
@@ -98,7 +98,7 @@ def test_a_percentage_set_against_a_count_with_no_stated_base_is_missing_informa
     pct = claim_in(session, "close.pdf", "Defects at handover: 3% of installed bays.", "3%", metric="defects", category="quantity")
     cnt = claim_in(session, "msa.pdf", "Defects at handover shall not exceed 40 bays.", "40 bays", metric="defects limit", category="quantity")
     quotes = {"3%": "Defects at handover: 3% of installed bays.", "40 bays": "Defects at handover shall not exceed 40 bays."}
-    stats = judge(session, room, MockLLMClient([answer(verdict([pct, cnt], cls="consistent", quote=lambda v: quotes[v]))])).run([candidate(pct, cnt)])
+    stats = judge(session, room, MockLLMClient([answer(verdict([pct, cnt], cls="consistent", quote=lambda v: quotes[v]))])).run([cluster(pct, cnt)])
     finding = session.scalars(select(Finding)).one()
     assert stats.base_missing == 1 and finding.classification == "missing_information" and "not stated" in finding.description and "within" not in finding.description
 
@@ -107,7 +107,7 @@ def test_two_claims_for_two_periods_are_judged_not_dropped_as_a_series(session, 
     a = claim_in(session, "a.pdf", "Balance at 31 May 2025: GBP 384,000.", "GBP 384,000", metric="balance", period="31 May 2025")
     b = claim_in(session, "b.pdf", "Balance at 15 September 2025: nil.", "nil", metric="balance", period="15 September 2025")
     llm = MockLLMClient([{"verdicts": []}] * 20)
-    stats = judge(session, room, llm).run([candidate(a, b)])
+    stats = judge(session, room, llm).run([cluster(a, b)])
     assert stats.groups_series == 0 and llm.prompts
 
 
@@ -116,7 +116,7 @@ def test_the_same_values_from_the_same_passages_are_one_finding_and_a_conflictin
     b = claim_in(session, "b.pdf", "The cap remains at 120% of the contract value.", "120%", metric="liability cap")
     q = {"150%": "The cap is 150% of the contract value.", "120%": "The cap remains at 120% of the contract value."}
     verdicts = [verdict([a, b], quote=lambda v: q[v]), verdict([a, b], quote=lambda v: q[v]), verdict([a, b], cls="contextual_difference", quote=lambda v: q[v])]
-    stats = judge(session, room, MockLLMClient([answer(*verdicts)])).run([candidate(a, b)])
+    stats = judge(session, room, MockLLMClient([answer(*verdicts)])).run([cluster(a, b)])
     assert stats.findings_saved == 1 and stats.duplicates_skipped == 1 and len(stats.conflicts) == 1
 
 

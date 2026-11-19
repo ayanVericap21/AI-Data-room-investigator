@@ -5,7 +5,7 @@
 
 Paragraphs are separated by blank lines (any number, 1 to as many as given). Each becomes a small Word file (P01.docx, P02.docx, ...) in a scratch data
 room, and the real pipeline runs on them in a scratch database that is created for the run and dropped at its end: parsing and chunking, LlamaExtract
-(a few credits per paragraph), the entity gate, grouping, rule linking, the judge, and the missing-item and identifier checks. Nothing in the real
+(a few credits per paragraph), the entity gate, grouping (with rules), the judge, and the missing-item and identifier checks. Nothing in the real
 data room or the real database is touched.
 
 The report (printed and written to ../test_results/MINI-<stamp>.txt) is: the paragraph each document holds, then the pipeline's own report, which ends with every claim

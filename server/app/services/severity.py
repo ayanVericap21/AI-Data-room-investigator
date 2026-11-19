@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 from typing import Iterable
 
-from app.services.candidate_matching import normalize_unit
+from app.services.claim_matching import normalize_unit
 from app.services.value_rules import relative_gap
 
 PROMINENT = re.compile(r"\b(total|summary|overall|contract value|liabilit\w*|cap(?:ped)?|shall|must|obligation\w*|payable|definition|signed|signature|warrant\w*|penalt\w*)\b", re.IGNORECASE)

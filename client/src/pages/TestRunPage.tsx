@@ -8,7 +8,7 @@ import StopIcon from "@mui/icons-material/Stop";
 import { errorMessage } from "../api/client";
 import ClaimsPanel from "../components/common/ClaimsPanel";
 import FileTree from "../components/common/FileTree";
-import { CANDIDATES_KEY, CLAIMS_KEY } from "../hooks/useClaims";
+import { CLUSTERS_KEY, CLAIMS_KEY } from "../hooks/useClaims";
 import { useScanDocuments } from "../hooks/useDocuments";
 import { POLL_MS, useRunFiles, useRunLog, useStartRun, useStopRun } from "../hooks/useTestRun";
 import type { RunState } from "../types/testRun";
@@ -54,7 +54,7 @@ export default function TestRunPage() {
   useEffect(() => {
     if (run.state === "finished" || run.state === "stopped" || run.state === "failed") {
       void qc.invalidateQueries({ queryKey: CLAIMS_KEY });
-      void qc.invalidateQueries({ queryKey: CANDIDATES_KEY });
+      void qc.invalidateQueries({ queryKey: CLUSTERS_KEY });
       void qc.invalidateQueries({ queryKey: ["findings"] });
     }
   }, [run.state, qc]);
@@ -88,7 +88,7 @@ export default function TestRunPage() {
     clear.mutate(undefined, {
       onSuccess: () => {
         void qc.invalidateQueries({ queryKey: CLAIMS_KEY });
-        void qc.invalidateQueries({ queryKey: CANDIDATES_KEY });
+        void qc.invalidateQueries({ queryKey: CLUSTERS_KEY });
         void qc.invalidateQueries({ queryKey: ["findings"] });
       },
     });

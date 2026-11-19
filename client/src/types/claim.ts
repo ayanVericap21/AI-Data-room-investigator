@@ -41,24 +41,11 @@ export interface Chunk {
   heading: string | null;
 }
 
-export type RelationHint = "exact" | "partial" | "conflicting" | "contextual";
-
-/** Another claim that may state the same fact as the claim it is listed under. */
-export interface CandidateLink {
-  claim: Claim;
-  relation_hint: RelationHint;
-  topic_score: number;
-  matched_by: "lexical" | "embedding" | "llm" | "identifier" | "rule";
-}
-
-export interface GroupedClaim {
-  claim: Claim;
-  candidates: CandidateLink[];
-}
-
-/** A fact and the claims that may state it, each with its candidates. */
+/** A fact and the claims that may state it, with the route that found them. */
 export interface ClaimGroup {
-  claims: GroupedClaim[];
+  claims: Claim[];
+  topic: string;
+  matched_by: "lexical" | "label" | "embedding" | "llm" | "identifier" | "rule";
 }
 
 export interface ClaimGroupList {

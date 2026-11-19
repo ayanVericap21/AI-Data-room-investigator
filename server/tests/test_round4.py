@@ -4,18 +4,13 @@ from sqlalchemy import select
 
 from app.llm.mock import MockLLMClient
 from app.models import Claim, Evidence, Finding
-from app.schemas.claim import Candidate
 from app.services.missing_items import DocReference, MissingItemChecker
 from app.services.claim_group_judge import ClaimGroupJudge
 from app.tools import build_registry
-from tests.test_claim_group_judge import comparison, make_claims
+from tests.test_claim_group_judge import make_claims  # noqa: F401
 from tests.test_tools import add_doc, room  # noqa: F401  (fixtures and helper)
 
 
-
-
-def exact(a, b):
-    return Candidate(claim_id=a.id, candidate_id=b.id, topic_score=1.0, relation_hint="exact", comparison=comparison(value_relation="equal"), matched_by="llm")
 
 
 # ---- 1: a start date and a volume stated by the same two passages are two findings ---------------

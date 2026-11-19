@@ -2,7 +2,7 @@
 
 Two checks use them. Identifier reconciliation reads the identifiers a document names and compares them with another document's list of the same kind,
 and must not count an identifier a line only gives as a limit ("up to 10 samples (RC-01 through RC-10)" authorises ten, it does not say RC-10 exists).
-Grouping must not make candidates of two claims whose subjects name different records (RC-02 and RC-04 are different samples, however alike their sentences read).
+Grouping must not put together claims whose subjects name different records (RC-02 and RC-04 are different samples, however alike their sentences read).
 """
 from __future__ import annotations
 

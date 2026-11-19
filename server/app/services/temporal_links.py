@@ -2,8 +2,8 @@
 
 A claim that suspends, closes, prohibits or restricts something between two dates ("all operations are suspended from May 13 at 15:30 until May 15 at
 07:30") is a rule with a time window. Any claim from elsewhere dated inside that window (a log row of the 14th) is a record that falls under it. The
-rule linker asks the model for such links, but a date comparison is exact and the model sometimes misses it, so code adds them: window to record,
-the same kind of candidate the model's links make, judged by the same rule check.
+grouping model is asked for the records under each rule, but a date comparison is exact and the model sometimes misses it, so the code's matching adds
+them for the claims the model left alone: a window and its records are one rule cluster, judged by the same rule check.
 
 Dates are read in ISO form (2026-05-14), as "May 13, 2026" and as "13 May 2026", with an optional time. A date without a year takes the year most
 often written in its own document, then in the whole collection; without any year it is not used.
@@ -14,7 +14,7 @@ import re
 from collections import Counter
 from datetime import datetime
 
-from app.schemas.claim import AttributeComparison, Candidate, ClaimView
+from app.schemas.claim import ClaimView, Cluster
 
 MONTHS = {m: i for i, names in enumerate(
     ("jan january", "feb february", "mar march", "apr april", "may", "jun june", "jul july", "aug august", "sep sept september", "oct october", "nov november",
@@ -68,8 +68,8 @@ def _years(views: list[ClaimView]) -> tuple[dict[str, int], int | None]:
     return {doc: c.most_common(1)[0][0] for doc, c in per_doc.items()}, (total.most_common(1)[0][0] if total else None)
 
 
-def windows_and_records(views: list[ClaimView]) -> list[Candidate]:
-    """Candidates from each claim that restricts something between two dates to each claim from another place dated inside that window."""
+def windows_and_records(views: list[ClaimView]) -> list[Cluster]:
+    """For each claim that restricts something between two dates: a rule cluster of that claim and each claim from another place dated inside that window."""
     doc_year, any_year = _years(views)
     dated = {v.id: parse_dates(_blob(v), doc_year.get(v.document_id, any_year)) for v in views}
     windows: dict[str, tuple[datetime, datetime]] = {}
@@ -77,14 +77,12 @@ def windows_and_records(views: list[ClaimView]) -> list[Candidate]:
         dates = dated[v.id]
         if len(set(dates)) >= 2 and RESTRICTION.search(f"{v.metric or ''} {v.value or ''} {v.claim_text or ''}"):
             windows[v.id] = (min(dates), max(dates))
-    found: list[Candidate] = []
+    found: list[Cluster] = []
     for window in views:
         if window.id not in windows:
             continue
         start, end = windows[window.id]
         records = [v for v in views if v.id not in windows and v.chunk_id != window.chunk_id and any(start <= d <= end for d in dated[v.id])]
-        for record in records[:MAX_RECORDS]:
-            found.append(Candidate(claim_id=window.id, candidate_id=record.id, topic_score=1.0, relation_hint="partial", matched_by="rule",
-                                   comparison=AttributeComparison(subject_match=None, metric_match=None, unit_match=None, period_match=None, value_relation="unknown",
-                                                                  conditions_differ=False, assumptions_differ=False)))
+        if records:
+            found.append(Cluster(claim_ids=[window.id, *[r.id for r in records[:MAX_RECORDS]]], matched_by="rule", rule_id=window.id))
     return found

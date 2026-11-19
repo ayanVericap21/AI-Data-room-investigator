@@ -42,7 +42,9 @@ export interface RunMetrics {
     chunks: number;
     claims_recorded: number;
     claims_rejected: number;
-    candidates: number;
+    documents_other_entity?: string[];
+    claims_other_entity?: number;
+    clusters: number;
     claim_groups: number;
     groups_agreed: number;
     groups_judged: number;

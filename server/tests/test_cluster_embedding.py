@@ -1,7 +1,7 @@
-"""Embedding route of candidate generation, and safety of forced re-extraction."""
+"""Embedding route of claim matching, and safety of forced re-extraction."""
 from app.llm.mock import MockLLMClient
 from app.models import Claim, Finding, FindingClaim, Investigation
-from app.services.candidate_matching import generate_candidates
+from app.services.claim_matching import match_clusters
 from app.services.claim_service import ClaimService
 from tests.test_claims import claim, doc_with_chunks, view  # noqa: F401  (fixtures/helpers)
 
@@ -11,25 +11,25 @@ def test_embedding_route_finds_synonyms_but_is_gated():
     sup = view("sup", doc="s", subject="supplier", metric="delivery volume", value=25000)
     rent = view("rent", subject="office", metric="monthly rent", value=5000, unit="USD", period="monthly")
     lease = view("lease", subject="office lease", metric="lease end year", value=2031, unit=None, period=None)
-    assert generate_candidates([cap, sup]) == []  # lexical alone misses the synonym
+    assert match_clusters([cap, sup]) == []  # lexical alone misses the synonym
     vec = {"cap": [1.0, 0.0], "sup": [0.9, 0.1], "rent": [0.95, 0.05], "lease": [0.9, 0.1]}
-    candidates = generate_candidates([cap, sup, rent, lease], vectors=vec)
-    keys = {frozenset((p.claim_id, p.candidate_id)) for p in candidates}
+    clusters = match_clusters([cap, sup, rent, lease], vectors=vec)
+    keys = {frozenset(c.claim_ids) for c in clusters}
     assert frozenset(("cap", "sup")) in keys
-    assert all(p.matched_by == "embedding" for p in candidates)
+    assert all(c.matched_by == "embedding" for c in clusters)
     assert not any({"rent", "cap"} <= k for k in keys)  # unit mismatch gate (USD vs tonne)
     assert not any("lease" in k for k in keys)  # unknown-unit gate
-    assert generate_candidates([cap, sup], vectors={"cap": [1.0, 0.0], "sup": [0.0, 1.0]}) == []
+    assert match_clusters([cap, sup], vectors={"cap": [1.0, 0.0], "sup": [0.0, 1.0]}) == []
 
 
 def test_embedding_route_respects_period_conflict():
     a = view("a", subject="x", metric="alpha", period="annual")
     b = view("b", subject="y", metric="beta", period="monthly")
-    assert generate_candidates([a, b], vectors={"a": [1.0, 0.0], "b": [1.0, 0.0]}) == []
+    assert match_clusters([a, b], vectors={"a": [1.0, 0.0], "b": [1.0, 0.0]}) == []
 
 
-def test_lexical_candidates_keep_lexical_label():
-    assert generate_candidates([view("a"), view("b")])[0].matched_by == "lexical"
+def test_lexical_clusters_keep_the_lexical_label():
+    assert match_clusters([view("a"), view("b")])[0].matched_by == "lexical"
 
 
 def test_force_never_deletes_claims_cited_by_findings(session, doc_with_chunks):
@@ -53,25 +53,24 @@ def test_force_never_deletes_claims_cited_by_findings(session, doc_with_chunks):
 
 def test_read_paths_do_not_need_an_llm(session, doc_with_chunks):
     assert ClaimService(session).list_claims() == ([], 0)
-    assert ClaimService(session).candidates() == []
+    assert ClaimService(session).clusters() == []
 
 
 def test_same_metric_about_a_different_subject_is_not_grouped():
     a = view("a", subject="Light Industrial Units", metric="Total Area", value=396, unit="sq.m")
     b = view("b", doc="d2", subject="Standard Warehouses", metric="Total Area", value=787, unit="sq.m")
     c = view("c", doc="d3", subject="Light Industrial Unit", metric="Total Area", value=400, unit="sq.m")
-    keys = {frozenset((p.claim_id, p.candidate_id)) for p in generate_candidates([a, b, c])}
-    assert keys == {frozenset(("a", "c"))}  # plural/singular of the same subject still candidates
-    assert generate_candidates([a, b], min_subject_overlap=None)  # the check can be turned off
+    keys = {frozenset(c.claim_ids) for c in match_clusters([a, b, c])}
+    assert keys == {frozenset(("a", "c"))}  # plural/singular of the same subject still go together
+    assert match_clusters([a, b], min_subject_overlap=None)  # the check can be turned off
     vec = {"a": [1.0, 0.0], "b": [1.0, 0.0]}
-    assert generate_candidates([a, b], vectors=vec) == []  # embeddings do not bring it back
-    assert generate_candidates([a, view("n", doc="d4", subject=None, metric="Total Area", unit="sq.m")])  # no subject: kept
+    assert match_clusters([a, b], vectors=vec) == []  # embeddings do not bring it back
+    assert match_clusters([a, view("n", doc="d4", subject=None, metric="Total Area", unit="sq.m")])  # no subject: kept
 
 
-def test_two_claims_with_the_same_statement_are_corroboration_not_something_to_judge():
+def test_two_claims_with_the_same_statement_are_put_together_so_that_the_judge_can_count_them_as_agreement():
     a = view("a", claim_text="Unit Sizes from 395m2", conditions="x")
     b = view("b", doc="d2", claim_text="unit sizes from 395m2.", conditions="different wording of the condition")
     c = view("c", doc="d3", claim_text="Unit sizes from 400m2", value=400)
-    hints = {frozenset((p.claim_id, p.candidate_id)): p.relation_hint for p in generate_candidates([a, b, c])}
-    assert hints[frozenset(("a", "b"))] == "exact"  # same text: never sent to the LLM, counted as agreement
-    assert hints[frozenset(("a", "c"))] != "exact"
+    keys = {frozenset(cluster.claim_ids) for cluster in match_clusters([a, b, c])}
+    assert frozenset(("a", "b", "c")) in keys or frozenset(("a", "b")) in keys

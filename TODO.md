@@ -12,7 +12,7 @@ Status: [ ] not started, [~] in progress, [x] done. 299 offline tests pass. No r
 - [x] 2a. Numerical in code (`value_rules.py`): precision intervals, "about" (+/-10%), bounds, ranges, scale words, units of one dimension, bracketed negatives
 - [x] 2b. Date in code: formats, intervals at stated precision, quarters and halves, ambiguous day/month = unknown, bare year only when both claims are typed date, durations as numbers with units
 - [x] 2c. Textual in code: identifiers, phone numbers and names compare equal after case, accents, spacing, punctuation and legal-form words are removed
-- [x] 2d. Wired in: `compare_attributes` uses the rules (so exact / conflicting hints change); the judge sees a "Code check" line per candidate with the gap
+- [x] 2d. Wired in: the value rules decide whether claims agree; the judge sees "Code check" lines for the claims of a group with the gap
 - [x] 2e. Per-type rules written into the judge prompt (currency, percent vs points, fiscal periods, relative dates, polarity, statements stay with the judge)
 
 ## Task 3: single-claim missing-information check

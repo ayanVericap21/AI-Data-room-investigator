@@ -1,4 +1,4 @@
-"""Sets of claims that are too large to be one fact are divided by how alike the claims are, not into one group for every pair."""
+"""Sets of claims that are too large to be one fact are divided by how alike the claims are, not cut at random."""
 from __future__ import annotations
 
 from types import SimpleNamespace
@@ -7,7 +7,7 @@ import numpy as np
 
 from app.services.claim_group_judge import ClaimGroupJudge
 from app.services.cluster_split import ClaimSimilarity, split_by_similarity
-from tests.test_claim_group_judge import candidate, candidates_of
+from app.schemas.claim import Cluster
 
 TOPICS = 8
 
@@ -23,6 +23,10 @@ class TopicEmbedder:
             v[-1] = 0.05 * (hash(text) % 7)  # claims of one topic are alike but not identical
             out.append(v)
         return out
+
+
+def cluster_of(members, how="llm"):
+    return [Cluster(claim_ids=[c.id for c in members], matched_by=how)]
 
 
 def claims(topics: list[int], per_topic: int):
@@ -44,35 +48,32 @@ def test_claims_that_are_alike_to_nothing_stay_alone():
 
 
 def test_a_large_cluster_of_the_model_is_divided_by_meaning_into_clusters():
-    members = claims([0, 1, 2, 3], 10)  # 40 claims, four topics, every claim a candidate of every other (780 links)
-    edges = candidates_of(members)
+    members = claims([0, 1, 2, 3], 10)  # 40 claims, four topics, one cluster of the model
+    clusters = cluster_of(members)
     similarity = ClaimSimilarity(TopicEmbedder(), {c.id: c for c in members})
-    tally = {"split": 0, "dropped": 0}
-    groups = ClaimGroupJudge._form_groups(edges, similarity=similarity, tally=tally)
+    tally = {"split": 0}
+    groups = ClaimGroupJudge._form_groups(clusters, similarity=similarity, tally=tally)
     assert sorted(len(g.claim_ids) for g in groups) == [10, 10, 10, 10] and tally["split"] == 1
     assert all(len({i.split("-")[0] for i in g.claim_ids}) == 1 for g in groups)  # each cluster is one topic
-    linked = ClaimGroupJudge._form_groups(edges)  # without the embedder the set is cut along its links into clusters of at most 15
-    assert sorted(len(g.claim_ids) for g in linked) == [10, 15, 15]
+    cut = ClaimGroupJudge._form_groups(clusters)  # without the embedder the set is cut in the order of its claims into clusters of nearly equal size
+    assert sorted(len(g.claim_ids) for g in cut) == [12, 14, 14] and all(len(g.claim_ids) <= 15 for g in cut)
 
 
-def test_the_links_between_the_clusters_of_a_divided_set_are_dropped():
-    members = claims([0, 1], 3) + claims([0], 1)[:0]
-    edges = candidates_of(members)
+def test_a_cluster_over_the_cap_with_two_topics_is_divided_into_one_cluster_for_each_topic():
+    members = claims([0, 1], 3)
     near = SimpleNamespace(id="t0-9", subject="topic0", metric="m", claim_text="topic0 claim 9", value=9)
     members.append(near)
-    edges += [candidate(near, m) for m in members[:-1]]
     similarity = ClaimSimilarity(TopicEmbedder(), {c.id: c for c in members})
-    groups = ClaimGroupJudge._form_groups(edges, similarity=similarity, cap=4)  # 7 claims: more than the cap, two topics
+    groups = ClaimGroupJudge._form_groups(cluster_of(members), similarity=similarity, cap=4)  # 7 claims: more than the cap, two topics
     topics = sorted(sorted(i.split("-")[0] for i in g.claim_ids) for g in groups)
-    assert ["t0", "t0", "t0", "t0"] in topics and ["t1", "t1", "t1"] in topics and len(groups) == 2  # the links across topics are weak: dropped
+    assert ["t0", "t0", "t0", "t0"] in topics and ["t1", "t1", "t1"] in topics and len(groups) == 2
 
 
 def test_a_cluster_whose_claims_are_not_alike_is_divided_even_when_it_is_small_and_an_alike_one_is_kept_whole():
     scattered = claims([0, 1, 2], 2)  # three topics, two claims each: on average the claims are far from alike
-    edges = candidates_of(scattered)
     similarity = ClaimSimilarity(TopicEmbedder(), {c.id: c for c in scattered})
-    groups = ClaimGroupJudge._form_groups(edges, similarity=similarity)
+    groups = ClaimGroupJudge._form_groups(cluster_of(scattered), similarity=similarity)
     assert sorted(len(g.claim_ids) for g in groups) == [2, 2, 2]
     alike = claims([2], 5)
-    kept = ClaimGroupJudge._form_groups(candidates_of(alike), similarity=ClaimSimilarity(TopicEmbedder(), {c.id: c for c in alike}))
+    kept = ClaimGroupJudge._form_groups(cluster_of(alike), similarity=ClaimSimilarity(TopicEmbedder(), {c.id: c for c in alike}))
     assert [len(g.claim_ids) for g in kept] == [5]

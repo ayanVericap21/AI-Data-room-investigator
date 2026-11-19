@@ -9,12 +9,12 @@ from app.llm.errors import LLMPermanentError, LLMQuotaError, LLMTransientError
 from app.llm.mock import MockLLMClient
 from app.llm.router import RoutedLLMClient
 from app.models import Finding
-from tests.test_claim_group_judge import answer, candidates_of, judge, short, verdict, warehouse_claims
+from tests.test_claim_group_judge import answer, clusters_of, judge, short, verdict, warehouse_claims
 from tests.test_tools import room  # noqa: F401  (fixture)
 
 
 def run(session, room, screen, strong, claims):  # noqa: F811
-    return judge(session, room, screen, strong_llm=strong, save_consistent=False).run(candidates_of(claims))
+    return judge(session, room, screen, strong_llm=strong, save_consistent=False).run(clusters_of(claims))
 
 
 def test_a_group_the_screen_calls_consistent_never_reaches_the_bigger_model(session, room):  # noqa: F811
@@ -51,7 +51,7 @@ def test_only_the_candidate_groups_go_to_the_bigger_model(session, room):  # noq
     first, second = warehouse_claims(session, [500, 450], prefix="a"), warehouse_claims(session, [300, 300], prefix="b")
     screen = MockLLMClient([answer(verdict(first), short(second, group=2))])
     strong = MockLLMClient([answer(verdict(first, title="Decided"))])
-    stats = judge(session, room, screen, strong_llm=strong, save_consistent=False).run(candidates_of(first) + candidates_of(second))
+    stats = judge(session, room, screen, strong_llm=strong, save_consistent=False).run(clusters_of(first) + clusters_of(second))
     assert stats.escalated == 1 and len(strong.prompts) == 1 and "### Group 2" not in strong.prompts[0]  # the consistent group stayed with the screen
     assert session.scalars(select(Finding)).one().title == "Decided"
 
@@ -115,7 +115,7 @@ def test_the_chain_shares_one_report_with_the_run_client_and_names_the_model():
     assert len(main.call_metrics) == 1 and main.call_metrics[0].model == "model-0"
 
 
-def test_the_report_records_the_screens_and_the_bigger_models_verdict_for_every_candidate(session, room):  # noqa: F811
+def test_the_report_records_the_screens_and_the_bigger_models_verdict_for_every_group(session, room):  # noqa: F811
     claims = warehouse_claims(session, [500, 450])
     stats = run(session, room, MockLLMClient([answer(verdict(claims, title="Screen title"))]), MockLLMClient([answer(short(claims, reasoning="same milestone"))]), claims)
     (entry,) = stats.strong_log

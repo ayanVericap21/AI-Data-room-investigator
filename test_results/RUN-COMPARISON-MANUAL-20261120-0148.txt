@@ -1,0 +1,11 @@
+RUN 13: TEST-RUN-20261120-014840-ui-run.txt (20 Nov 01:48, 16 documents, cluster-only code, entity drop and stricter value check). Scored by hand against HTC01 (39 cases).
+The run ended with NameError claim_doc in the per-document verdict stage (fixed afterwards); every stage before it, and the report, are complete, so it is scored.
+claims 1184 (13 rejected, 259 repeats skipped); 192 groups from 706 clusters; 165 judged; 23 findings saved by the judge, 1 rejected; 45 in the report; 152.0 s; 0 failed calls (5 attempts moved to another key); 60,596 cached prompt tokens; entity gate: 1 group, nothing dropped.
+
+YES (5): 001 (finding 24), 012 (finding 20), 014 (finding 25), 016 (finding 10), 033 (finding 12)
+part (4): 005 (finding 2 found, saved as a critical contradiction, the key says contextual), 006 (finding 27 adds the $1.7M memo loan: 32.85M vs 31.15M), 007 and 035 (finding 9: memo 2024 return vs model credits in 2025, saved as low contextual)
+missed (22): 002, 003, 004, 008, 009, 010, 011, 013, 015, 017, 018, 022, 023, 025, 026, 027, 028, 031, 032, 036, 037, 038
+versus run 12: gained 012, 016, 033 (hits), 005, 007, 035 (partials); lost 015, 004 (partial), 009 and 010 (partials)
+consistent cases flagged: 0 of 8 by the earlier rule (020 caveat: finding 1 is a low contextual finding restating $24.6M and $4.9M against $4,920,000)
+Accuracy: strict (5 + 8) / 39 = 33%; half credit (5 + 8 + 2) / 39 = 38%
+High or critical false alarms outside the key: 2 (finding 3, window quotation total $1,180,000 against its item $1,058,000, which adds up with the other two items; finding 27, memo loan summed) plus finding 2 overcalled (005 is contextual).

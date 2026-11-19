@@ -1,4 +1,4 @@
-"""API-level tests for processing, claims, candidates and jobs (SQLite + mocks)."""
+"""API-level tests for processing, claims, clusters and jobs (SQLite + mocks)."""
 import pytest
 from fastapi.testclient import TestClient
 
@@ -56,7 +56,7 @@ def test_process_then_extract_then_list_claims(ctx, session_factory):
     assert claims["total"] == 1 and claims["items"][0]["source"]["page_number"] == 1
     chunk = client.get(f"/api/chunks/{cid}").json()
     assert "30000 tonnes" in chunk["content"] and chunk["filename"] == "a.pdf"
-    assert client.get("/api/claims/candidates").json() == {"items": [], "total": 0}
+    assert client.get("/api/claims/clusters").json() == {"items": [], "total": 0}
     assert client.get("/api/chunks/chk_nope").status_code == 404
 
 

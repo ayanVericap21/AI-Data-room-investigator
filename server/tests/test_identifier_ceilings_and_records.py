@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from app.models import Finding
 from app.schemas.claim import ClaimView
-from app.services.candidate_matching import different_records, comparable_subjects
+from app.services.claim_matching import different_records, comparable_subjects
 from app.services.identifiers import ceiling_idents, entity_ids
 from app.services.record_checks import IdentifierChecker, mentions_in
 from app.tools import build_registry

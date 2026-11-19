@@ -5,14 +5,10 @@ import {
 } from "@mui/material";
 import { errorMessage } from "../../api/client";
 import DiscrepanciesPanel from "./DiscrepanciesPanel";
-import { useCandidates, useChunk, useClaims } from "../../hooks/useClaims";
+import { useChunk, useClaims, useClusters } from "../../hooks/useClaims";
 import { useVirtualRows } from "../../hooks/useVirtualRows";
-import type { Claim, RelationHint } from "../../types/claim";
+import type { Claim } from "../../types/claim";
 import { locationLabel } from "../../utils/location";
-
-const HINT_COLOR: Record<RelationHint, "default" | "success" | "warning" | "info"> = {
-  exact: "success", conflicting: "warning", contextual: "info", partial: "default",
-};
 
 function SourceDialog({ chunkId, onClose }: { chunkId: string | null; onClose: () => void }) {
   const chunk = useChunk(chunkId);
@@ -38,16 +34,16 @@ export default function ClaimsPanel() {
   const [tab, setTab] = useState(0);
   const [chunkId, setChunkId] = useState<string | null>(null);
   const claims = useClaims();
-  const candidates = useCandidates();
+  const clusters = useClusters();
   const claimRows = useVirtualRows(tab === 0 ? claims.data?.items.length ?? 0 : 0, 76, (i) => claims.data?.items[i]?.id ?? i);
-  const groupRows = useVirtualRows(tab === 1 ? candidates.data?.items.length ?? 0 : 0, 320);
+  const groupRows = useVirtualRows(tab === 1 ? clusters.data?.items.length ?? 0 : 0, 320);
 
   return (
     <Box>
       <Typography variant="h6" sx={{ mb: 1.5 }}>Claims and findings</Typography>
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 1 }}>
         <Tab label={`Claims (${claims.data?.total ?? 0})`} />
-        <Tab label={`Claim groups (${candidates.data?.total ?? 0})`} />
+        <Tab label={`Claim groups (${clusters.data?.total ?? 0})`} />
         <Tab label="Main discrepancies" />
       </Tabs>
 
@@ -99,16 +95,16 @@ export default function ClaimsPanel() {
 
       {tab === 1 && (
         <Box>
-          {candidates.isError && <Alert severity="error">{errorMessage(candidates.error)}</Alert>}
+          {clusters.isError && <Alert severity="error">{errorMessage(clusters.error)}</Alert>}
           <Alert severity="info" icon={false} sx={{ mb: 1.5 }}>
-            Each group is a fact and the claims that may state it, shown with the sentence each one comes from. Under every claim are its candidates: the other claims of
-            its group it may be compared with, each with its source. These are candidates, not findings.
+            Each group is a fact and the claims that may state it, shown with the sentence each one comes from and the route that found the group. These are
+            claims to compare, not findings.
           </Alert>
           <Box ref={groupRows.ref} sx={{ pt: `${groupRows.before}px`, pb: `${groupRows.after}px` }}>
           {groupRows.items.map((row) => {
-            const g = candidates.data!.items[row.index];
+            const g = clusters.data!.items[row.index];
             const gi = row.index;
-            const first = g.claims[0]?.claim;
+            const first = g.claims[0];
             return (
               <Box key={gi} ref={groupRows.measure} data-index={row.index} sx={{ pb: 4 }}>
               <Paper variant="outlined" sx={{ overflow: "hidden", borderColor: "text.disabled" }}>
@@ -117,12 +113,12 @@ export default function ClaimsPanel() {
                     Group {gi + 1}: {first?.metric ?? first?.subject ?? "claims"}
                   </Typography>
                   <Chip size="small" label={`${g.claims.length} claims`} />
+                  <Tooltip title="the route that found the group"><Chip size="small" variant="outlined" label={g.matched_by} /></Tooltip>
                 </Box>
                 <Stack divider={<Divider flexItem />}>
-                  {g.claims.map((gc) => {
-                    const c = gc.claim;
+                  {g.claims.map((c) => {
                     return (
-                      <Box key={gc.claim.id} sx={{ px: 2, py: 1.5 }}>
+                      <Box key={c.id} sx={{ px: 2, py: 1.5 }}>
                         <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap" }}>
                           {c ? (
                             <Link component="button" type="button" underline="hover" variant="body2" sx={{ fontWeight: 600, textAlign: "left" }}
@@ -139,32 +135,6 @@ export default function ClaimsPanel() {
                             </Typography>
                           )}
                         </Box>
-                        {gc.candidates.length > 0 && (
-                          <Box sx={{ mt: 1, ml: 0.5 }}>
-                            <Typography variant="caption" color="text.secondary">Candidates</Typography>
-                            <Stack spacing={1} sx={{ mt: 0.5 }}>
-                              {gc.candidates.map((k) => {
-                                const other = k.claim;
-                                return (
-                                  <Box key={k.claim.id} sx={{ pl: 1.5, borderLeft: 3, borderColor: "divider" }}>
-                                    <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 0.5 }}>
-                                      {other ? (
-                                        <Link component="button" type="button" underline="hover" variant="body2" sx={{ fontWeight: 600, textAlign: "left" }}
-                                          onClick={() => setChunkId(other.source.chunk_id)}>
-                                          {other.source.filename} · {locationLabel(other.source)}
-                                        </Link>
-                                      ) : <Typography variant="body2">unknown claim</Typography>}
-                                      <Tooltip title={`found by ${k.matched_by} · score ${k.topic_score.toFixed(2)}`}>
-                                        <Chip size="small" variant="outlined" color={HINT_COLOR[k.relation_hint]} label={k.relation_hint} />
-                                      </Tooltip>
-                                    </Stack>
-                                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>{other?.claim_text || describe(other)}</Typography>
-                                  </Box>
-                                );
-                              })}
-                            </Stack>
-                          </Box>
-                        )}
                       </Box>
                     );
                   })}
@@ -174,7 +144,7 @@ export default function ClaimsPanel() {
             );
           })}
           </Box>
-          {candidates.data?.items.length === 0 && (
+          {clusters.data?.items.length === 0 && (
             <Paper variant="outlined" sx={{ p: 2, textAlign: "center" }}>No claim groups.</Paper>
           )}
         </Box>

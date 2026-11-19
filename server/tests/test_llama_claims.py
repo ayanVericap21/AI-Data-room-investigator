@@ -290,14 +290,6 @@ def test_the_issuer_goes_into_the_purpose_and_the_main_entity_stays_what_the_doc
     assert profile.main_entity == "Lakeside Health Forum 2025" and profile.purpose == "Reports the costs. Issued by Norvale Medical Society."
 
 
-def test_tags_never_make_two_claims_differ_in_context():
-    from app.schemas.claim import ClaimView
-    from app.services.candidate_matching import compare_attributes
-    a = ClaimView(id="a", document_id="d1", chunk_id="c1", subject="x", metric="m", value="1", assumptions=["@basis: actual"])
-    b = ClaimView(id="b", document_id="d2", chunk_id="c2", subject="x", metric="m", value="2", assumptions=[])
-    assert compare_attributes(a, b).assumptions_differ is False
-
-
 def test_the_same_claim_returned_twice_for_a_document_is_kept_once_and_a_rule_flag_is_not_lost(session, room):  # noqa: F811
     client = FakeClient({"claims": [claim(), claim(), claim(is_rule=True), claim(metric="capacity at year end"),
                                     claim(claim_text="capacity is 120,000 tonnes per year, as stated again")]})

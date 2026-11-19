@@ -14,7 +14,7 @@ class Claim(Base):
 
     Written by: Extract Claims node (LLM, validated by Pydantic). Unknown attributes
     are NULL, never invented.
-    Used by: candidate generation (matches on subject/metric/unit/period),
+    Used by: claim matching (clusters on subject/metric/unit/period),
     discrepancy detection, and ``finding_claims`` / ``evidence`` for traceability.
     """
 

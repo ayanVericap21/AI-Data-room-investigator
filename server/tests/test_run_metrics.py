@@ -46,9 +46,9 @@ def finished_run(**overrides):
     judge.verdict_counts.update({"contradiction": 1, "not_comparable": 2})
     run = SimpleNamespace(
         llm=llm, embedder=embedder, doc_stats={"a": dict(chunks=4, readable=4, ok=True), "b": dict(chunks=2, readable=2, ok=False)},
-        extraction=ExtractionSummary(claims_created=7, claims_rejected=1), judge=judge, candidates=[object()] * 9, wall_s=12.34,
+        extraction=ExtractionSummary(claims_created=7, claims_rejected=1), judge=judge, clusters=[object()] * 9, wall_s=12.34,
         started=datetime(2026, 11, 11, 10, 0, 0), finished=datetime(2026, 11, 11, 10, 0, 12), config="ui-run", error=None, stopped=False,
-        result=SimpleNamespace(investigation_id="inv_1"), llm_bounds=[2, 2, 2, 2, 2, 3], stage={"1. read": 8000, "3. judge": 4000},
+        result=SimpleNamespace(investigation_id="inv_1"), llm_bounds=[2, 2, 2, 2, 3], stage={"1. read": 8000, "3. judge": 4000},
         args=SimpleNamespace(extractor="llm", grouping="llm", vocabulary="off", coverage_check="off", batch_chunks=0, batch_chars=8000),
         settings=SimpleNamespace(llm_model="m", embedding_model="e"))
     for key, value in overrides.items():
@@ -60,7 +60,7 @@ def test_the_script_builds_the_same_numbers_the_results_file_shows(script):
     m = script.build_metrics(finished_run(), Path("/x/TEST-RUN-1.txt"))
     assert (m.investigation_id, m.state, m.wall_s) == ("inv_1", "completed", 12.3)
     assert (m.counts.documents, m.counts.documents_fully_read, m.counts.chunks, m.counts.claims_recorded, m.counts.claims_rejected) == (2, 1, 6, 7, 1)
-    assert (m.counts.candidates, m.counts.claim_groups, m.counts.groups_agreed, m.counts.groups_judged, m.counts.findings_saved) == (9, 5, 2, 3, 1)
+    assert (m.counts.clusters, m.counts.claim_groups, m.counts.groups_agreed, m.counts.groups_judged, m.counts.findings_saved) == (9, 5, 2, 3, 1)
     assert m.counts.verdicts == {"contradiction": 1, "not_comparable": 2} and m.counts.embedding_texts == 5
     assert (m.llm.attempts, m.llm.failed, m.llm.retries, m.llm.total_s) == (3, 1, 1, 4.5)
     assert (m.llm.min_context_tokens, m.llm.avg_context_tokens, m.llm.max_context_tokens) == (100, 200, 300)

@@ -1,6 +1,6 @@
 """One sentence repeated on several pages of a document is one statement: two claims read from it are never compared with each other."""
 from app.schemas.claim import ClaimView
-from app.services.candidate_matching import comparable_subjects, one_sentence_in_one_document
+from app.services.claim_matching import comparable_subjects, one_sentence_in_one_document
 from app.services.claim_grouping import ClaimGrouper
 
 SENTENCE = "The Managing Member shall deliver quarterly financial statements and annual audited statements."
@@ -13,9 +13,7 @@ def claim(id, doc, chunk, value, text=SENTENCE, metric="delivery frequency"):
 def test_the_same_sentence_on_two_pages_of_one_document_is_one_statement_whatever_the_page():
     quarterly, annual = claim("a", "d1", "page4", "quarterly"), claim("b", "d1", "page15", "annual")
     assert one_sentence_in_one_document(quarterly, annual) and not comparable_subjects(quarterly, annual)
-    found = {}
-    ClaimGrouper._add_candidate(found, quarterly, annual, how="llm")
-    assert found == {}  # no candidate is made, by any route
+    assert not ClaimGrouper._together(quarterly, annual)  # they never go into one cluster, by any route
 
 
 def test_the_same_sentence_in_one_chunk_is_still_one_statement():

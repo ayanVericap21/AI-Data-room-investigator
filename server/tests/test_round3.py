@@ -3,11 +3,10 @@ from sqlalchemy import select
 
 from app.llm.mock import MockLLMClient
 from app.models import Claim, Evidence, Finding
-from app.schemas.claim import Candidate
 from app.services.llama_claims import SCHEMA, SYSTEM_PROMPT, LlamaClaim, _is_own_label
 from app.services.claim_group_judge import ClaimGroupJudge, _shown
 from app.tools import build_registry
-from tests.test_claim_group_judge import comparison, make_claims
+from tests.test_claim_group_judge import make_claims
 from tests.test_tools import add_doc, room  # noqa: F401  (fixtures and helper)
 
 

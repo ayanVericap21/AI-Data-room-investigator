@@ -140,7 +140,7 @@ def sec_how(R) -> list[str]:
         f"{'run locally on this machine (fastembed, no API)' if (s.embedding_provider or s.llm_provider) == 'local' else 'via the Google API'}, "
         f"batches of up to {R.embedder.MAX_BATCH}, stored with each chunk in Postgres/pgvector (HNSW cosine) in database '{R.db_name}'.",
         f"4. Investigation: a tool-using agent loop ({s.llm_model}, temperature 0, JSON action protocol, 7 tools, {a.max_steps or 'no'} step limit, "
-        f"{a.tool_budget or 'no'} tool-call limit); the agent must open every document before it may finish; no claim extraction or candidates were used.",
+        f"{a.tool_budget or 'no'} tool-call limit); the agent must open every document before it may finish; no claim extraction or clusters were used.",
         f"5. Safeguards: every finding quote is checked in code as an exact substring of its stored chunk before saving; arithmetic only through "
         f"the calculate tool; provider retries up to {a.llm_attempts} attempts honouring Google's retry delay.",
     ]

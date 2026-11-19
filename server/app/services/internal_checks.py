@@ -23,7 +23,7 @@ from app.llm.base import LLMClient
 from app.llm.errors import LLMError
 from app.models import Document, DocumentChunk
 from app.models.base import ProcessingStatus
-from app.services.candidate_matching import normalize_unit
+from app.services.claim_matching import normalize_unit
 from app.services.claim_grouping import _line, load_claim_rows
 from app.services.internal_patterns import find_relations
 from app.services.severity import contradiction_severity, missing_severity

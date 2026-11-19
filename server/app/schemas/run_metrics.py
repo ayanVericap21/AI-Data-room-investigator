@@ -49,7 +49,9 @@ class RunCounts(BaseModel):
     chunks: int = 0
     claims_recorded: int = 0
     claims_rejected: int = 0
-    candidates: int = 0  # links between two claims that may state one fact
+    documents_other_entity: list[str] = []  # documents dropped because they are about another entity than most of the data room
+    claims_other_entity: int = 0  # the claims removed with them
+    clusters: int = 0  # clusters of claims that may state one fact, as the routes found them
     claim_groups: int = 0
     groups_agreed: int = 0  # every claim states the same value: not sent to the LLM
     groups_judged: int = 0

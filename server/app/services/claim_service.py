@@ -20,8 +20,8 @@ from app.llm.errors import LLMInvalidOutputError, LLMTransientError
 from app.llm.prompts import claim_extraction
 from app.models import Claim, Document, DocumentChunk, Evidence, FindingClaim
 from app.models.base import ProcessingStatus
-from app.schemas.claim import Candidate, ClaimExtractionResult, ClaimOut, ClaimView, ExtractedClaim, SourceRef
-from app.services.candidate_matching import generate_candidates, table_key, topic_text
+from app.schemas.claim import ClaimExtractionResult, ClaimOut, ClaimView, Cluster, ExtractedClaim, SourceRef
+from app.services.claim_matching import match_clusters, table_key, topic_text
 from app.services.numbers import numbers_in_text, numbers_with_context, parse_number, value_supported_by_text
 from app.services.vocabulary import RunningVocabulary
 
@@ -304,10 +304,10 @@ class ClaimService:
                           value_type=c.claim_category, table_key=table_key(c.document_id, kind, sheet, page))
                 for c, kind, sheet, page in self.session.execute(stmt)]
 
-    def candidates(self, embedder: EmbeddingProvider | None = None, **options) -> list[Candidate]:
-        """Deterministic candidate generation; embeddings (if given) add a synonym route."""
+    def clusters(self, embedder: EmbeddingProvider | None = None, **options) -> list[Cluster]:
+        """Deterministic clustering of the claims; embeddings (if given) add a synonym route."""
         views = self.claim_views()
         vectors = None
         if embedder is not None and views:
             vectors = dict(zip((v.id for v in views), embedder.embed([topic_text(v) for v in views], task="document")))
-        return generate_candidates(views, vectors=vectors, **options)
+        return match_clusters(views, vectors=vectors, **options)

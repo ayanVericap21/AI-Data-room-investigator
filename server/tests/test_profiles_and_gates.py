@@ -8,7 +8,7 @@ from sqlalchemy import select
 from app.llm.errors import LLMPermanentError
 from app.llm.mock import MockLLMClient
 from app.models import Claim, DocumentChunk, Finding
-from app.schemas.claim import AttributeComparison, Candidate
+from app.schemas.claim import Cluster
 from app.services.claim_service import ExtractionSummary
 from app.services.doc_profiles import DocProfile, ProfileBuilder, Unit, card, pack, render_cards, split_parts
 from app.services.group_gates import EntityGate, apply_gates, decide_entity_groups
@@ -126,7 +126,7 @@ def test_documents_about_different_subjects_are_separated_and_related_ones_are_n
     assert related.allows("da", "db") and related.related == [(1, 2)]
 
 
-def test_a_failed_or_partial_gate_call_never_drops_a_candidate():
+def test_a_failed_or_partial_gate_call_never_drops_a_claim():
     failed = decide_entity_groups(MockLLMClient([LLMPermanentError("boom"), LLMPermanentError("boom")]), entries())
     assert not failed.applied and "failed" in failed.note
     partial = decide_entity_groups(MockLLMClient([{"groups": [{"docs": ["d1"], "entity": "Alpha"}]}]), entries())
@@ -134,24 +134,47 @@ def test_a_failed_or_partial_gate_call_never_drops_a_candidate():
     assert not decide_entity_groups(MockLLMClient([]), {"da": entries()["da"]}).applied  # one document: no call, nothing to separate
 
 
-def candidate_of(a, b, hint="conflicting"):
-    first, second = (a, b) if a.id <= b.id else (b, a)
-    return Candidate(claim_id=first.id, candidate_id=second.id, topic_score=0.9, relation_hint=hint, matched_by="llm",
-                         comparison=AttributeComparison(subject_match=True, metric_match=True, unit_match=True, period_match=True, value_relation="different",
-                                                        conditions_differ=False, assumptions_differ=False))
+def test_the_entity_with_most_of_the_documents_stays_and_every_other_document_is_dropped_unless_related():
+    reply = {"groups": [{"docs": ["d1", "d2"], "entity": "Alpha Ltd"}, {"docs": ["d3"], "entity": "Beta Inc"}], "related": []}
+    gate = decide_entity_groups(MockLLMClient([reply]), entries())
+    assert gate.main == 1 and gate.dropped == [("db", "b_company.pdf", "Beta Inc")] and "dropped: b_company.pdf" in gate.note
+    related = decide_entity_groups(MockLLMClient([{**reply, "related": [{"a": 1, "b": 2}]}]), entries())
+    assert related.main == 1 and related.dropped == []  # a group the model marked as related to the main one stays
+    split = {"groups": [{"docs": ["d1"], "entity": "Alpha Ltd"}, {"docs": ["d2"], "entity": "Beta Inc"}, {"docs": ["d3"], "entity": "Gamma"}], "related": []}
+    even = decide_entity_groups(MockLLMClient([split]), entries())
+    assert even.main is None and even.dropped == [] and "no group holds most of the documents" in even.note  # no majority: nothing is dropped
+    one = decide_entity_groups(MockLLMClient([{"groups": [{"docs": ["d1", "d2", "d3"], "entity": "All"}]}]), entries())
+    assert one.main == 1 and one.dropped == []
 
 
-def test_candidates_across_unrelated_documents_are_dropped_before_judging(session, room):  # noqa: F811
+def cluster_of(*claims):
+    return Cluster(claim_ids=[c.id for c in claims], matched_by="llm")
+
+
+def test_claims_of_a_document_about_an_unrelated_entity_are_taken_out_of_a_cluster_before_judging(session, room):  # noqa: F811
     a = Claim(document_id=room.deck.id, chunk_id=room.deck_p1, subject="plant", metric="capacity", value=120000, unit="tonnes", claim_text="Capacity is 120,000 tonnes")
     b = Claim(document_id=room.capex.id, chunk_id=room.capex_current, subject="plant", metric="capacity", value=100000, unit="tonnes", claim_text="Capacity 100,000 tonnes")
     c = Claim(document_id=room.lease.id, chunk_id=room.term, subject="lease", metric="term", value=9, unit="years", claim_text="The lease term is 9 years.")
     session.add_all([a, b, c])
     session.commit()
     gate = EntityGate(applied=True, doc_group={room.deck.id: 1, room.capex.id: 2, room.lease.id: 1})
-    result = apply_gates(session, [candidate_of(a, b), candidate_of(a, c)], gate)
-    assert result.entity_dropped == 1 and [(p.claim_id, p.candidate_id) for p in result.candidates] == [(candidate_of(a, c).claim_id, candidate_of(a, c).candidate_id)]
+    result = apply_gates(session, [cluster_of(a, b, c)], gate)
+    assert result.entity_dropped == 1 and [cl.claim_ids for cl in result.clusters] == [[a.id, c.id]]  # b is about another entity than most of the cluster
     assert "entity gate" in result.log[0]
-    assert len(apply_gates(session, [candidate_of(a, b)], None).candidates) == 1  # no gate: nothing dropped
+    alone = apply_gates(session, [cluster_of(a, b)], gate)
+    assert alone.clusters == [] and alone.entity_dropped == 1 and alone.clusters_dropped == 1  # a cluster below two claims is dropped
+    assert len(apply_gates(session, [cluster_of(a, b)], None).clusters) == 1  # no gate: nothing dropped
+
+
+def test_a_rule_cluster_is_measured_against_the_document_of_its_rule(session, room):  # noqa: F811
+    rule = Claim(document_id=room.deck.id, chunk_id=room.deck_p1, subject="plant", metric="ban", value="no", claim_text="No storage")
+    kept = Claim(document_id=room.lease.id, chunk_id=room.term, subject="lease", metric="term", value=9, unit="years", claim_text="The lease term is 9 years.")
+    other = Claim(document_id=room.capex.id, chunk_id=room.capex_current, subject="plant", metric="capacity", value=1, claim_text="Capacity 1")
+    session.add_all([rule, kept, other])
+    session.commit()
+    gate = EntityGate(applied=True, doc_group={room.deck.id: 1, room.lease.id: 1, room.capex.id: 2})
+    result = apply_gates(session, [Cluster(claim_ids=[rule.id, other.id, kept.id], matched_by="rule", rule_id=rule.id)], gate)
+    assert [(c.rule_id, c.claim_ids) for c in result.clusters] == [(rule.id, [rule.id, kept.id])]
 
 
 # ---- the list-member guard ---------------------------------------------------------------------------------------------------------------------
@@ -163,9 +186,13 @@ def test_two_name_claims_on_one_page_of_one_document_are_list_items(session):
     a, b, far, num = mk(chunks[0], "Sustainable Agriculture", "name"), mk(chunks[1], "Marine and Terrestrial", "name"), mk(chunks[2], "Forestry", "name"), mk(chunks[3], "5", "quantity")
     session.add_all([a, b, far, num])
     session.commit()
-    result = apply_gates(session, [candidate_of(a, b), candidate_of(a, far), candidate_of(a, num)], None)
-    assert result.list_dropped == 1 and len(result.candidates) == 2 and "list members" in result.log[0]  # other page and a quantity still compare
-    assert apply_gates(session, [candidate_of(a, b)], None, list_guard=False).candidates != []
+    result = apply_gates(session, [cluster_of(a, b)], None)
+    assert result.list_dropped == 2 and result.clusters == [] and result.clusters_dropped == 1 and "list members" in result.log[0]  # two items of one list do not go together
+    kept = apply_gates(session, [cluster_of(a, far, num)], None)
+    assert kept.list_dropped == 0 and [set(c.claim_ids) for c in kept.clusters] == [{a.id, far.id, num.id}]  # another page and a quantity still compare
+    mixed = apply_gates(session, [cluster_of(a, b, far, num)], None)
+    assert [set(c.claim_ids) for c in mixed.clusters] == [{a.id, b.id, far.id, num.id}]  # the other claims still join both list items
+    assert apply_gates(session, [cluster_of(a, b)], None, list_guard=False).clusters != []
 
 
 # ---- the judge: cards, withdrawn contradictions, consistent results --------------------------------------------------------------------------

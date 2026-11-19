@@ -1,16 +1,14 @@
-"""Candidate generation (deterministic).
+"""Claim matching (deterministic).
 
-Goal: avoid comparing every claim with every other claim by proposing candidates that look
-like they are about the same thing (subject + metric overlap), then compare their
-attributes. The output is a *candidate* with a relation hint; whether it is a real
-contradiction, a contextual difference, etc. is decided later by evidence + LLM reasoning.
+Goal: avoid comparing every claim with every other claim by finding the claims that look like they are about the same thing (subject + metric
+overlap). The output is clusters; whether the claims of a cluster contradict each other, differ in context, etc. is decided later by evidence + LLM
+reasoning.
 
 Design notes:
 - Matching is lexical on normalised subject/metric tokens plus unit/period metadata, with an
-  optional embedding route (gated by unit/period) to catch synonyms. Each candidate records which
-  route proposed it. Similarity is never used to *decide* a contradiction.
-- A differing unit does not remove a candidate (it may be a unit-conversion case); it is
-  recorded in ``comparison.unit_match``.
+  optional embedding route (gated by unit/period) to catch synonyms. Each cluster records which
+  route found it. Similarity is never used to *decide* a contradiction.
+- A differing unit does not keep claims apart (it may be a unit-conversion case).
 """
 from __future__ import annotations
 
@@ -18,9 +16,9 @@ import math
 import re
 from collections import defaultdict
 
-from app.schemas.claim import AttributeComparison, Candidate, ClaimView
+from app.schemas.claim import ClaimView, Cluster
 from app.services import value_rules
-from app.services.claim_tags import plain
+from app.services.clusters import clusters_from_matches
 from app.services.identifiers import entity_ids
 from app.services.numbers import value_supported_by_text
 
@@ -111,43 +109,6 @@ def same_statement(a: ClaimView, b: ClaimView) -> bool:
     return bool(norm(a)) and norm(a) == norm(b)
 
 
-def _norm_text(s: str | None) -> str:
-    return " ".join(sorted(tokens(s)))
-
-
-def compare_attributes(a: ClaimView, b: ClaimView) -> AttributeComparison:
-    pa, pb = normalize_period(a.period), normalize_period(b.period)
-    # the value rules (intervals, scale words, units of one dimension, dates, identifiers and names) decide equal / different / unknown
-    relation = value_rules.compare_values(a.value, a.unit, b.value, b.unit, a.value_type, b.value_type, normalize_unit)
-
-    def match(x, y):
-        return None if x is None or y is None else x == y
-
-    return AttributeComparison(
-        subject_match=match(_norm_text(a.subject) or None, _norm_text(b.subject) or None),
-        metric_match=match(_norm_text(a.metric) or None, _norm_text(b.metric) or None),
-        unit_match=value_rules.units_match(value_rules.unit_info(a.unit, normalize_unit), value_rules.unit_info(b.unit, normalize_unit)),
-        period_match=match(pa, pb),
-        value_relation=relation,
-        conditions_differ=_norm_text(a.conditions) != _norm_text(b.conditions),
-        assumptions_differ=frozenset(map(_norm_text, plain(a.assumptions))) != frozenset(map(_norm_text, plain(b.assumptions))),
-    )
-
-
-def relation_hint(c: AttributeComparison) -> str:
-    """exact | conflicting | contextual | partial. A hint for the investigator, never a verdict."""
-    comparable = c.unit_match is not False and c.period_match is not False
-    context_differs = c.conditions_differ or c.assumptions_differ or c.period_match is False
-    if c.value_relation == "equal" and comparable:
-        return "exact"  # the same value cannot contradict itself; free-text conditions that differ in wording do not matter
-    if c.value_relation == "different":
-        if context_differs:
-            return "contextual"
-        if comparable:
-            return "conflicting"
-    return "partial"
-
-
 DEFAULT_MIN_EMBEDDING_SIMILARITY = 0.80
 DEFAULT_MIN_SUBJECT_OVERLAP = 0.5
 
@@ -162,7 +123,7 @@ def subjects_overlap(subject_a: str | None, subject_b: str | None, min_overlap: 
 
 def subjects_compatible(a: ClaimView, b: ClaimView, min_overlap: float | None) -> bool:
     """A value is only comparable with another value about the same subject. When both claims name a
-    subject, their words must overlap enough; if either has no subject, nothing is known, so the candidate stays."""
+    subject, their words must overlap enough; if either has no subject, nothing is known, so the claims stay together."""
     if min_overlap is None:
         return True
     overlap = _jaccard(tokens(a.subject), tokens(b.subject))
@@ -171,7 +132,7 @@ def subjects_compatible(a: ClaimView, b: ClaimView, min_overlap: float | None) -
 
 def identifiers_about_one_subject(a: ClaimView, b: ClaimView) -> bool:
     """Two different identifiers say nothing against each other unless they label the same thing (two tools, two rows, two orders
-    each have their own). So a candidate with an identifier claim is kept only when both name the same subject (or one names none)."""
+    each have their own). So claims with an identifier are kept together only when both name the same subject (or one names none)."""
     if "identifier" not in (a.value_type, b.value_type):
         return True
     return subjects_compatible(a, b, DEFAULT_MIN_SUBJECT_OVERLAP)
@@ -210,7 +171,7 @@ def one_sentence_in_one_document(a: ClaimView, b: ClaimView) -> bool:
 
 
 def comparable_subjects(a: ClaimView, b: ClaimView) -> bool:
-    """The subject gates every candidate route applies: identifiers of different things, rows of different items, subjects that name different
+    """The subject gates every route applies: identifiers of different things, rows of different items, subjects that name different
     records, one sentence twice."""
     return (identifiers_about_one_subject(a, b) and table_rows_about_one_item(a, b) and not different_records(a, b)
             and not one_sentence_in_one_document(a, b))
@@ -228,16 +189,16 @@ def cosine(a: list[float], b: list[float]) -> float:
     return dot / (na * nb) if na and nb else 0.0
 
 
-def generate_candidates(claims: list[ClaimView], min_topic_score: float = DEFAULT_MIN_TOPIC_SCORE,
-                             max_partners_per_claim: int = 5, max_candidates: int | None = None,
-                             vectors: dict[str, list[float]] | None = None,
-                             min_embedding_similarity: float = DEFAULT_MIN_EMBEDDING_SIMILARITY,
-                             min_subject_overlap: float | None = DEFAULT_MIN_SUBJECT_OVERLAP) -> list[Candidate]:
-    """Propose comparable claims: for each claim, the other claims it may be compared with. Never a claim with itself. Claims from the same chunk
-    may be candidates of each other: a passage can contradict itself.
+def match_clusters(claims: list[ClaimView], min_topic_score: float = DEFAULT_MIN_TOPIC_SCORE,
+                   max_partners_per_claim: int = 5, max_matches: int | None = None,
+                   vectors: dict[str, list[float]] | None = None,
+                   min_embedding_similarity: float = DEFAULT_MIN_EMBEDDING_SIMILARITY,
+                   min_subject_overlap: float | None = DEFAULT_MIN_SUBJECT_OVERLAP) -> list[Cluster]:
+    """Find the claims that may state one fact: clusters of claims whose labels (or, with ``vectors``, whose meaning) match. Claims from the same chunk
+    may match: a passage can contradict itself.
 
     Claims that share metric words must also have overlapping subjects (``min_subject_overlap``, None turns
-    the check off), so a value is never compared with a value about a different subject just because the metric
+    the check off), so a value is never matched with a value about a different subject just because the metric
     label is the same. The embedding route may still match claims whose subjects and metrics are worded differently.
 
     Two routes, both recorded in ``matched_by``:
@@ -245,7 +206,7 @@ def generate_candidates(claims: list[ClaimView], min_topic_score: float = DEFAUL
        claims are never scored against each other);
     2. embedding (only when ``vectors`` is given) - catches synonyms such as "production
        capacity" vs "delivery volume". Embedding similarity alone is NOT trusted: it only
-       proposes a candidate when both units are known and equal and the periods do not conflict,
+       matches claims when both units are known and equal and the periods do not conflict,
        because unrelated metrics also score fairly high (e.g. "lease end year" vs "monthly rent").
     """
     index: dict[str, set[int]] = defaultdict(set)
@@ -256,14 +217,7 @@ def generate_candidates(claims: list[ClaimView], min_topic_score: float = DEFAUL
         for token in t:
             index[token].add(i)
 
-    def make_candidate(a: ClaimView, b: ClaimView, score: float, comparison: AttributeComparison, how: str) -> Candidate:
-        first, second = (a, b) if a.id <= b.id else (b, a)
-        # the same statement twice cannot disagree: it is corroboration and is never sent to the judge
-        hint = "exact" if same_statement(a, b) and comparison.value_relation != "different" else relation_hint(comparison)
-        return Candidate(claim_id=first.id, candidate_id=second.id, topic_score=round(score, 4),
-                             relation_hint=hint, comparison=comparison, matched_by=how)
-
-    scored: dict[tuple[str, str], Candidate] = {}
+    scored: dict[tuple[str, str], tuple[float, str]] = {}  # the claims two routes matched with each other: the score and the route
     for i, a in enumerate(claims):
         neighbours: set[int] = set()
         for token in toks[i]:
@@ -277,7 +231,7 @@ def generate_candidates(claims: list[ClaimView], min_topic_score: float = DEFAUL
             score = topic_score(a, b)
             if score < min_topic_score:
                 continue
-            scored[tuple(sorted((a.id, b.id)))] = make_candidate(a, b, score, compare_attributes(a, b), "lexical")
+            scored[tuple(sorted((a.id, b.id)))] = (score, "lexical")
 
     if vectors:
         for i, a in enumerate(claims):
@@ -287,22 +241,24 @@ def generate_candidates(claims: list[ClaimView], min_topic_score: float = DEFAUL
                     continue
                 if not subjects_compatible(a, b, min_subject_overlap) and _jaccard(tokens(a.metric), tokens(b.metric)):
                     continue  # same metric words, different subject: the lexical route already refused it
-                comparison = compare_attributes(a, b)
-                if comparison.unit_match is not True or comparison.period_match is False:
+                if value_rules.units_match(value_rules.unit_info(a.unit, normalize_unit), value_rules.unit_info(b.unit, normalize_unit)) is not True:
+                    continue
+                if normalize_period(a.period) is not None and normalize_period(b.period) is not None and normalize_period(a.period) != normalize_period(b.period):
                     continue
                 similarity = cosine(vectors[a.id], vectors[b.id])
                 if similarity >= min_embedding_similarity:
-                    scored[key] = make_candidate(a, b, similarity, comparison, "embedding")
+                    scored[key] = (similarity, "embedding")
 
-    # Greedy selection, best candidates first: a candidate is kept only while BOTH claims still have
+    # Greedy selection, best matches first: a match is kept only while BOTH claims still have
     # room, so no claim ever exceeds max_partners_per_claim (hubs cannot crowd others out).
-    ordered = sorted(scored.values(), key=lambda p: (-p.topic_score, p.claim_id, p.candidate_id))
+    ordered = sorted(scored.items(), key=lambda kv: (-kv[1][0], kv[0]))
     partners: dict[str, int] = defaultdict(int)
-    kept: list[Candidate] = []
-    for candidate in ordered:
-        if partners[candidate.claim_id] >= max_partners_per_claim or partners[candidate.candidate_id] >= max_partners_per_claim:
+    kept: list[tuple[str, str, float, str]] = []
+    for (a_id, b_id), (score, how) in ordered:
+        if partners[a_id] >= max_partners_per_claim or partners[b_id] >= max_partners_per_claim:
             continue
-        partners[candidate.claim_id] += 1
-        partners[candidate.candidate_id] += 1
-        kept.append(candidate)
-    return kept[:max_candidates] if max_candidates else kept
+        partners[a_id] += 1
+        partners[b_id] += 1
+        kept.append((a_id, b_id, score, how))
+    kept = kept[:max_matches] if max_matches else kept
+    return [cluster for how in ("lexical", "embedding") for cluster in clusters_from_matches([(a, b, s) for a, b, s, h in kept if h == how], how)]

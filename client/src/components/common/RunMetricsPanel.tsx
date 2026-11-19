@@ -1,4 +1,4 @@
-import { Box, Chip, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
+import { Alert, Box, Chip, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
 import type { RunMetrics } from "../../types/runMetrics";
 
 const n = (v?: number) => (v ?? 0).toLocaleString(); // a field missing from an older response shows 0, not a crash
@@ -34,11 +34,16 @@ export default function RunMetricsPanel({ metrics: m }: { metrics: RunMetrics })
         <Chip size="small" variant="outlined" label={m.settings.llm_model} />
       </Stack>
 
+      {(m.counts.documents_other_entity ?? []).length > 0 && (
+        <Alert severity="warning" sx={{ mb: 1.5 }}>
+          Dropped as a different entity ({n(m.counts.claims_other_entity)} claims removed, not compared with the rest): {m.counts.documents_other_entity!.join("; ")}
+        </Alert>
+      )}
       <Box sx={{ display: "grid", gap: 1.5, gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", mb: 2 }}>
         <Stat label="Total time" value={duration(m.wall_s)} detail={`LLM time ${duration(m.llm.total_s)}`} />
         <Stat label="Documents" value={`${m.counts.documents_fully_read} / ${m.counts.documents}`} detail={`fully read · ${n(m.counts.chunks)} chunks`} />
         <Stat label="Claims" value={n(m.counts.claims_recorded)} detail={`${n(m.counts.claims_rejected)} rejected`} />
-        <Stat label="Claim groups" value={n(m.counts.claim_groups)} detail={`${n(m.counts.candidates)} candidates · ${n(m.counts.groups_agreed)} agreed · ${n(m.counts.groups_judged)} judged`} />
+        <Stat label="Claim groups" value={n(m.counts.claim_groups)} detail={`${n(m.counts.clusters)} clusters · ${n(m.counts.groups_agreed)} agreed · ${n(m.counts.groups_judged)} judged`} />
         <Stat label="Findings" value={n(m.counts.findings_saved)} detail={`${n(m.counts.findings_rejected)} rejected (quotes not verified)`} />
         <Stat label="LLM calls" value={n(m.llm.attempts)} detail={`${m.llm.failed} failed · ${m.llm.retries} retries`} />
         <Stat label="Latency per call" value={`${n(m.llm.avg_ms)} ms avg`} detail={`p95 ${n(m.llm.p95_ms)} ms · max ${n(m.llm.max_ms)} ms`} />

@@ -1,13 +1,13 @@
-"""Blocking by code: candidates found from the labels extraction gave the claims, so a comparison never depends on a model noticing it.
+"""Blocking by code: clusters found from the labels extraction gave the claims, so a comparison never depends on a model noticing it.
 
 Two routes the LLM grouping and the nearest-neighbour matching miss:
 
-* shared labels: two claims in different documents (or two numbers or dates in two places of one document) whose metric names share a word that few claims use ("purchase order", "headcount"), or whose subject and
-  metric words together share two such words ("practical completion"), and that state the same kind of value. Common words (the metric "date") never link.
-* negation: a claim that says there is none of something ("No subcontractors are engaged", "No safety incidents have occurred") is linked to every claim
-  that asserts that thing. They go to the judge as a rule group: the negation is the rule and the claims that assert the thing are the records.
+* shared labels: claims in different documents (or numbers or dates in two places of one document) whose metric names share a word that few claims use ("purchase order", "headcount"), or whose subject and
+  metric words together share two such words ("practical completion"), and that state the same kind of value, are one cluster. Common words (the metric "date") never match.
+* negation: a claim that says there is none of something ("No subcontractors are engaged", "No safety incidents have occurred") and the claims
+  that assert that thing are one rule cluster: the negation is the rule and the claims that assert the thing are the records.
 
-``types_compatible`` also filters the nearest-neighbour candidates: a date is never a candidate of a yes/no status or an identifier.
+``types_compatible`` also filters the nearest-neighbour matches: a date never goes with a yes/no status or an identifier.
 """
 from __future__ import annotations
 
@@ -15,17 +15,17 @@ import re
 from collections import Counter, defaultdict
 from itertools import combinations
 
-from app.schemas.claim import AttributeComparison, Candidate, ClaimView
-from app.services.candidate_matching import (compare_attributes, different_records, one_sentence_in_one_document, relation_hint, same_statement, same_table,
-                                             table_rows_about_one_item, tokens)
+from app.schemas.claim import ClaimView, Cluster
+from app.services.claim_matching import different_records, one_sentence_in_one_document, same_table, table_rows_about_one_item, tokens
+from app.services.clusters import clusters_from_matches
 
 # words that name a kind of field, not what the field is about: a shared "date" or "value" says nothing
 GENERIC = frozenset({"date", "value", "identifier", "number", "name", "type", "status", "document", "title", "amount", "description", "period", "item",
                      "reference", "detail", "information", "role"})
 RARE_FLOOR, RARE_CAP, RARE_SHARE = 6, 12, 0.04  # a word is rare when at most this many claims use it: 4% of the claims, at least 6 and at most 12
-SAME_METRIC_MAX = 8  # claims whose metrics are word for word the same are linked when there are at most this many of them
-PARTNERS = 6  # at most this many shared-label candidates for one claim
-NEGATION_PARTNERS = 8  # at most this many claims linked to one negation
+SAME_METRIC_MAX = 8  # claims whose metrics are word for word the same go together when there are at most this many of them
+PARTNERS = 6  # a claim is matched with at most this many others by a shared label
+NEGATION_PARTNERS = 8  # at most this many claims are put with one negation
 INSIDE_TYPES = frozenset({"quantity", "date"})  # the claims of one document that are compared with each other
 KINDS = {"quantity": "number", "date": "time", "identifier": "id"}  # every other type is text (name, state, statement)
 NEGATIVE_VALUES = frozenset({"no", "none", "never", "nobody", "nothing", "not any"})  # not "nil" or "zero": a balance of nil is a quantity
@@ -49,7 +49,7 @@ def types_compatible(a: ClaimView, b: ClaimView) -> bool:
 
 def inside_document_ok(a: ClaimView, b: ClaimView) -> bool:
     """Whether two claims of ONE document are worth comparing: they come from different passages (one passage is one statement) and both state a number or a date,
-    which can be checked against each other. Two statements or names inside a document say too many different things for a pair to mean a conflict.
+    which can be checked against each other. Statements or names inside a document say too many different things for two of them to mean a conflict.
     Claims of different documents are always allowed here."""
     if a.document_id != b.document_id:
         return True
@@ -60,15 +60,8 @@ def rare_limit(claims: int) -> int:
     return max(RARE_FLOOR, min(RARE_CAP, int(claims * RARE_SHARE)))
 
 
-def _candidate(a: ClaimView, b: ClaimView, how: str, rule_first: bool = False) -> Candidate:
-    first, second = (a, b) if rule_first or a.id <= b.id else (b, a)
-    comparison = compare_attributes(first, second)
-    hint = "exact" if same_statement(first, second) and comparison.value_relation != "different" else relation_hint(comparison)
-    return Candidate(claim_id=first.id, candidate_id=second.id, topic_score=1.0, relation_hint=hint, comparison=comparison, matched_by=how)
-
-
-def shared_label_candidates(views: list[ClaimView]) -> list[Candidate]:
-    """Claims in different documents (or in different passages of one document) that state the same kind of value and share a rare word of their labels (see the module's text)."""
+def shared_label_clusters(views: list[ClaimView]) -> list[Cluster]:
+    """Clusters of claims in different documents (or in different passages of one document) that state the same kind of value and share a rare word of their labels (see the module's text)."""
     limit = rare_limit(len(views))
     metric = [frozenset(t for t in tokens(v.metric) - GENERIC if len(t) > 2) for v in views]
     both = [metric[i] | frozenset(t for t in tokens(v.subject) - GENERIC if len(t) > 2) for i, v in enumerate(views)]
@@ -86,7 +79,7 @@ def shared_label_candidates(views: list[ClaimView]) -> list[Candidate]:
                 continue
             a, b = views[i], views[j]
             if not inside_document_ok(a, b) or (a.value_type or "") != (b.value_type or ""):
-                continue  # two numbers or dates in two places of one document are candidates; two claims of one passage are parts of one statement
+                continue  # numbers or dates in two places of one document may go together; claims of one passage are parts of one statement
             shared_metric = {t for t in metric[i] & metric[j] if metric_df[t] <= limit}
             shared_both = {t for t in both[i] & both[j] if both_df[t] <= limit}
             if not shared_metric and len(shared_both) < 2:
@@ -96,7 +89,7 @@ def shared_label_candidates(views: list[ClaimView]) -> list[Candidate]:
             if a.value_type != "identifier" and different_records(a, b):  # two ids of one kind (two orders) may be a mistake in one; two records are not
                 continue
             scored[(i, j)] = len(shared_metric) * 2 + len(shared_both)
-    by_metric: dict[frozenset, list[int]] = defaultdict(list)  # the same metric, word for word ("purchase order" in two documents): linked whatever the subjects
+    by_metric: dict[frozenset, list[int]] = defaultdict(list)  # the same metric, word for word ("purchase order" in two documents): matched whatever the subjects
     for i, ts in enumerate(metric):
         if ts:
             by_metric[ts].append(i)
@@ -114,8 +107,8 @@ def shared_label_candidates(views: list[ClaimView]) -> list[Candidate]:
             continue
         taken[i] += 1
         taken[j] += 1
-        found.append(_candidate(views[i], views[j], "lexical"))
-    return found
+        found.append((views[i].id, views[j].id, 1.0))
+    return clusters_from_matches(found, "lexical")
 
 
 def negated_terms(claim: ClaimView) -> frozenset[str]:
@@ -133,8 +126,8 @@ def negated_terms(claim: ClaimView) -> frozenset[str]:
     return frozenset(t for t in tokens(" ".join(words)) if t not in GENERIC and len(t) > 3)
 
 
-def negation_candidates(views: list[ClaimView]) -> list[Candidate]:
-    """A claim that says there is none of something, linked (as the rule) to the claims that mention that thing."""
+def negation_clusters(views: list[ClaimView]) -> list[Cluster]:
+    """For each claim that says there is none of something: a rule cluster of that claim (the rule) and the claims that mention that thing (the records)."""
     limit = rare_limit(len(views))
     texts = [tokens(f"{v.subject or ''} {v.metric or ''} {v.claim_text or ''} {v.value or ''}") for v in views]
     df = Counter(t for ts in texts for t in ts)
@@ -143,14 +136,13 @@ def negation_candidates(views: list[ClaimView]) -> list[Candidate]:
         terms = {t for t in negated_terms(negated) if df[t] <= limit * 2}
         if not terms:
             continue
-        partners = []
+        partners = []  # the claims that mention what this claim says there is none of
         for j, other in enumerate(views):
             hits = terms & texts[j]
             if j == i or not hits or one_sentence_in_one_document(negated, other) or negated.claim_text == other.claim_text:
                 continue
             partners.append((-len(hits), j))
-        for _score, j in sorted(partners)[:NEGATION_PARTNERS]:
-            found.append(Candidate(claim_id=negated.id, candidate_id=views[j].id, topic_score=1.0, relation_hint="partial", matched_by="rule",
-                                   comparison=AttributeComparison(subject_match=None, metric_match=None, unit_match=None, period_match=None, value_relation="unknown",
-                                                                  conditions_differ=False, assumptions_differ=False)))
+        records = [views[j].id for _score, j in sorted(partners)[:NEGATION_PARTNERS]]
+        if records:
+            found.append(Cluster(claim_ids=[negated.id, *records], matched_by="rule", rule_id=negated.id))
     return found

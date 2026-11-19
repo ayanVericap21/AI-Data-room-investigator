@@ -12,7 +12,7 @@ from app.llm.embeddings import EmbeddingProvider
 from app.models import (Claim, Document, DocumentChunk, Evidence, Finding, FindingClaim, Investigation,
                         InvestigationEvent)
 from app.schemas.claim import ClaimGroupListOut, ChunkOut, ClaimListOut
-from app.services.claim_groups import group_candidates
+from app.services.claim_groups import group_clusters
 from app.schemas.job import JobOut
 from app.services.claim_service import ClaimService
 
@@ -49,18 +49,18 @@ def extract_claims(
     return JobOut.model_validate(jobs.start(EXTRACT_JOB, run), from_attributes=True)
 
 
-@router.get("/claims/candidates", response_model=ClaimGroupListOut)
-def candidate_groups(min_topic_score: float = Query(0.5, ge=0, le=1), max_partners_per_claim: int = Query(5, ge=1, le=50),
+@router.get("/claims/clusters", response_model=ClaimGroupListOut)
+def claim_clusters(min_topic_score: float = Query(0.5, ge=0, le=1), max_partners_per_claim: int = Query(5, ge=1, le=50),
                     min_embedding_similarity: float = Query(0.80, ge=0, le=1), use_embeddings: bool = True,
                     session: Session = Depends(get_session),
                     embedder: EmbeddingProvider | None = Depends(get_optional_embedder)) -> ClaimGroupListOut:
-    """Claim groups: the extracted claims that may state one fact, each with its candidates (not findings). Embeddings
+    """Claim groups: the extracted claims that may state one fact (not findings). Embeddings
     add a synonym route when configured and ``use_embeddings`` is true."""
-    found = ClaimService(session).candidates(
+    found = ClaimService(session).clusters(
         embedder if use_embeddings else None, min_topic_score=min_topic_score,
         max_partners_per_claim=max_partners_per_claim, min_embedding_similarity=min_embedding_similarity)
     service = ClaimService(session)
-    groups = group_candidates(found, service.claims_by_ids({i for c in found for i in (c.claim_id, c.candidate_id)}))
+    groups = group_clusters(found, service.claims_by_ids({i for c in found for i in c.claim_ids}))
     return ClaimGroupListOut(items=groups, total=len(groups))
 
 

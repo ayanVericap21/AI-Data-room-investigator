@@ -30,7 +30,7 @@ def make_tags(about: str | None = None, basis: str | None = None, precision: str
     if complete:
         tags.append(f"{PREFIX}complete: list")
     if is_rule:
-        tags.append(f"{PREFIX}rule: yes")  # the extraction call says the claim states a rule (see rule_links)
+        tags.append(f"{PREFIX}rule: yes")  # the extraction call says the claim states a rule (see claim_grouping: every grouping call is shown the flagged claims)
     return tags
 
 
