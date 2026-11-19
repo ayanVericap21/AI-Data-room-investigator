@@ -1,7 +1,0 @@
-Effect of the same-sentence gate on the code's own candidate routes (the LLM grouping route cannot be replayed without a call), 1,407 real claims
-
-lexical: 1883 before, 779 after; 1104 dropped (1104 inside one document); added by the change: 0
-rare label words: 634 before, 634 after; 0 dropped (0 inside one document); added by the change: 0
-negation: 76 before, 76 after; 0 dropped (0 inside one document); added by the change: 0
-nearest neighbours: 663 before, 663 after; 0 dropped (0 inside one document); added by the change: 0
-all four routes: 3256 before, 2152 after

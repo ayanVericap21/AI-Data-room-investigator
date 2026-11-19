@@ -297,7 +297,7 @@ def sec_groups(R):
            f"  across documents : {R.candidates_cross}   inside one document: {len(R.candidates) - R.candidates_cross}",
            f"claim groups: {js.groups_total}; agreed (every claim states the same value, no LLM): {js.groups_agreed}; series (one value for each period, not compared): {js.groups_series}; document labels only (not compared): {js.groups_labels}; decided in code: {js.groups_basis} basis differences, {js.groups_superseded} superseded editions, {js.groups_currency} currency differences; judged by the LLM: {js.groups_judged} in {js.llm_calls} calls ({js.batches_failed} batches failed)",
            f"LLM verdicts: {dict(js.verdict_counts)}", f"findings saved {js.findings_saved}; rejected {js.findings_rejected}; claims left out of a finding because their quote did not show their value {js.claims_dropped}",
-           f"groups asked again {js.retries}; pairs judged alone because their group of three or more was called consistent or not comparable but holds different values {js.pair_rechecks}; not-comparable verdicts whose own reason names a difference (asked again) {js.reason_contradicts_verdict}; verdicts whose values did not match their claims (echoed values) {js.misaligned}; verdicts without echoed values {js.echo_missing}; "
+           f"groups asked again {js.retries}; not-comparable verdicts whose own reason names a difference (asked again) {js.reason_contradicts_verdict}; verdicts whose values did not match their claims (echoed values) {js.misaligned}; verdicts without echoed values {js.echo_missing}; "
            f"quotes supplied by code for verdicts that gave none {js.quotes_from_code}; model quotes replaced by the claim's own passage because they were not in its chunk {js.quotes_replaced}",
            *([f"two-step judging: the screen (smaller models {R.screen.models}) sent {js.escalated} groups it called findings to the bigger models {R.strong.models}: {js.strong_calls} calls ({js.strong_failed} failed), "
               f"{js.strong_confirmed} confirmed, {js.strong_overridden} found consistent or not comparable (nothing saved), {js.strong_kept_screen} kept the screen's verdict",
@@ -308,7 +308,7 @@ def sec_groups(R):
              + [f"[{n}] {e['outcome']}\n      screen : {e['screen']}\n      bigger : {e['bigger']}\n" + "".join(f"      claim  : {c}\n" for c in e["claims"]) + (f"      (+{e['more']} more claims)\n" if e["more"] else "")
                 for n, e in enumerate(js.strong_log, start=1)] + [""]
              if getattr(R, "strong", None) is not None and js.strong_log else []),
-           f"{js.clusters_split} sets of claims divided into clusters of at most {MAX_GROUP_CLAIMS} by how alike the claims are ({js.links_dropped} weak links between the clusters not kept as groups of two); consistent findings grouped {js.grouped}; findings merged because they state one difference in several documents: {js.merged}", *[f"  - {m}" for m in js.merge_log[:30]],
+           f"{js.clusters_split} sets of claims divided into clusters of at most {MAX_GROUP_CLAIMS} by how alike the claims are ({js.links_dropped} links in no cluster: between two clusters, or to a claim that cannot join one); consistent findings grouped {js.grouped}; findings merged because they state one difference in several documents: {js.merged}", *[f"  - {m}" for m in js.merge_log[:30]],
            "", "Verdicts whose values did not match their claims (first 20):"]
     out += [f"  - {e}" for e in js.echo_log[:20]] or ["  none"]
     out += ["", "Rejected findings (first 15):"]

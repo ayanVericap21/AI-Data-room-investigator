@@ -43,19 +43,19 @@ def test_claims_that_are_alike_to_nothing_stay_alone():
     assert sorted(len(p) for p in parts) == [1, 1, 1, 1]
 
 
-def test_a_large_cluster_of_the_model_is_divided_by_meaning_not_into_one_group_for_every_pair():
+def test_a_large_cluster_of_the_model_is_divided_by_meaning_into_clusters():
     members = claims([0, 1, 2, 3], 10)  # 40 claims, four topics, every claim a candidate of every other (780 links)
     edges = candidates_of(members)
     similarity = ClaimSimilarity(TopicEmbedder(), {c.id: c for c in members})
     tally = {"split": 0, "dropped": 0}
     groups = ClaimGroupJudge._form_groups(edges, similarity=similarity, tally=tally)
-    assert sorted(len(g.claim_ids) for g in groups) == [10, 10, 10, 10] and tally["split"] == 1 and tally["dropped"] == 780 - 4 * 45
+    assert sorted(len(g.claim_ids) for g in groups) == [10, 10, 10, 10] and tally["split"] == 1
     assert all(len({i.split("-")[0] for i in g.claim_ids}) == 1 for g in groups)  # each cluster is one topic
-    old = ClaimGroupJudge._form_groups(edges)  # without the embedder the set falls back to one group per link
-    assert len(old) == 780
+    linked = ClaimGroupJudge._form_groups(edges)  # without the embedder the set is cut along its links into clusters of at most 15
+    assert sorted(len(g.claim_ids) for g in linked) == [10, 15, 15]
 
 
-def test_the_strongest_links_between_the_clusters_stay_as_groups_of_two():
+def test_the_links_between_the_clusters_of_a_divided_set_are_dropped():
     members = claims([0, 1], 3) + claims([0], 1)[:0]
     edges = candidates_of(members)
     near = SimpleNamespace(id="t0-9", subject="topic0", metric="m", claim_text="topic0 claim 9", value=9)

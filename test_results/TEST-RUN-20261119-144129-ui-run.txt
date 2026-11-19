@@ -1,0 +1,1753 @@
+TEST RUN  20261119-144129  ui-run
+==============================================================================
+
+HOW THIS RUN WAS ACHIEVED
+1. Reading: the documents selected for this run were uploaded to LlamaExtract (LlamaIndex Cloud, cost_effective tier), which returns claims with the page and text they came from; each claim is tied to a stored chunk and kept only if its value appears in that chunk text.
+2. Ledger: accepted claims are stored in the claims table; the claims are put in document order and sent to the LLM in batches of up to 100,000 characters, which groups the ones that state the same attribute of the same subject (no code matching, no fixed number of documents or claims assumed).
+3. Judging: a group whose claims all state the same value counts as corroboration; every other group goes to the LLM, several groups to a call, in batches of up to 100,000 characters. The model gives one verdict per group: consistent when all its claims agree, a contradiction when any one differs.
+4. Findings: a discrepancy is saved only if its quotes are exact substrings of their chunks (checked in code); per-document verdicts were skipped by request.
+5. Model: gemini-3.5-flash-lite, temperature 0, up to 5 attempts per call honouring the provider's retry delay; no step, tool-call or finding limits.
+
+==============================================================================
+AT A GLANCE
+==============================================================================
+Run started   : 2026-11-19 14:41:29 (local)   finished: 14:42:55   wall time: 84.6s
+Config        : ui-run
+Database      : data_room (documents were already processed; reused)
+Code version  : git efd4686 + uncommitted changes   python 3.14.5
+Documents     : 6; fully read 6, incomplete 0
+Chunks        : 22 total; sent to the LLM 22 (headings are skipped by the extractor: 0)
+Claims        : 183 recorded, 0 rejected (value not found in cited chunk or unknown chunk id), 13 skipped as repeats of the same claim in the same document, 0 skipped as a page number or page count, 6 skipped because the value was only the label of its own row, 0 skipped as a year inside a name or a disclaimer sentence, 0 values shortened by the extractor with an ellipsis restored from the source text
+Extraction    : up to any number of chunks per call (and 8,000 characters); running vocabulary off; coverage check off
+Extractor     : LlamaExtract (cost_effective tier) instead of the LLM: 0 documents uploaded to LlamaIndex Cloud, 0 credits used, 0 documents failed (the batch and coverage settings above do not apply); 6 documents came from the extraction cache (96 credits not spent)
+Claim groups  : 47 groups from 171 candidates; 3 agreed (every claim states the same value, not sent to the LLM); 41 judged; verdicts {'contextual_difference': 8, 'contradiction': 17, 'consistent': 4, 'not_comparable': 12}
+Findings      : 25 saved with verified quotes; 0 rejected (quotes missing or not exact)
+LLM calls     : 12 provider attempts (0 failed, 0 retries incl. invalid-output retries), 99.0s total, avg 8250ms
+Failed by status: none
+API keys      : key 1: 3 calls answered, 1 attempts failed; key 2: 5 calls answered, 0 attempts failed; key 3: 4 calls answered, 0 attempts failed
+Tokens        : prompt 80,361  completion 13,895  thinking 0  cached 0  total 94,256   (cost not computed: no price per token configured)
+Context/call  : prompt tokens min 781  avg 6,697  max 16,693
+
+==============================================================================
+NEW OR CHANGED FILES AND CLAIM RESET
+==============================================================================
+claims deleted at the start of this run: 183 (all claims in this run are newly extracted)
+scan: discovered 6, new 0, updated 0, unchanged 6, missing 0
+      duplicates skipped (same content): none
+
+no new or changed files had to be processed
+
+==============================================================================
+CONTRADICTIONS ONLY (classification = contradiction)
+==============================================================================
+18 contradiction(s). Each lists its evidence (document, location, exact quote); the full detail is in the findings report below (search for the finding id).
+Locations: 'page N' is the PDF page number (the first page of the file is 1), which can differ from a page number printed on the page itself.
+
+- [fnd_76f408c2129e4783] severity high, confidence 0.9: Conflicting placed-in-service dates
+    Claim [4] in DOC-04 states the building was placed in service on May 20, 2025. Claims [5] and [6] in DOC-06 state it was placed in service on April 2, 2025. Claim [7] in DOC-05 notes that DHR issues the certificate after the building is placed in service. The April and May dates directly contradict each other without an explanatory revision note in the text. Stated in: DOC-04_Cost_Certification_Draft.pdf, May 20, 2025 (page 1); DOC-06_Investor_Summary_Memo.pdf, April 2, 2025 (page 2, section Operations); DOC-06_Investor_Summary_Memo.pdf, placed in service (page 2, section Operations); DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf, placed in service (page 2, section Article 2. Purchase).
+    evidence: DOC-04_Cost_Certification_Draft.pdf | page 1 | chunk chk_3ee084600a614c59 | "The building was placed in service on May 20, 2025, being the date the completed rehabilitation was ready and available for its intended use."
+    evidence: DOC-06_Investor_Summary_Memo.pdf | page 2, heading Operations | chunk chk_c0b9b15d6be24315 | "April 2, 2025 | Temporary certificate of occupancy for floors 1 and 2. Building placed in service; residents moving in."
+    evidence: DOC-06_Investor_Summary_Memo.pdf | page 2, heading Operations | chunk chk_c0b9b15d6be24315 | "April 2, 2025 | Temporary certificate of occupancy for floors 1 and 2. Building placed in service; residents moving in."
+    evidence: DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf | page 2, heading Article 2. Purchase | chunk chk_5687d9d1f491445b | "3.2 Seller acknowledges that DHR issues the Certificate only after the rehabilitation is complete, the building is placed in service and Seller has filed its final application."
+- [fnd_0e1525b2dddc4ead] severity high, confidence 0.8: Conflict between placed-in-service date and final certificate of occupancy
+    Claim [8] in DOC-04 states the building was placed in service on May 20, 2025. Claims [9] and [10] in DOC-06 state the final certificate of occupancy for the whole building was issued on May 20, 2025. While the dates agree, the attributes are mismatched between the placed-in-service date and the final certificate of occupancy date. Stated in: DOC-04_Cost_Certification_Draft.pdf, ready and available for its intended use (page 1); DOC-06_Investor_Summary_Memo.pdf, May 20, 2025 (page 2, section Operations); DOC-06_Investor_Summary_Memo.pdf, the whole building (page 2, section Operations).
+    evidence: DOC-04_Cost_Certification_Draft.pdf | page 1 | chunk chk_3ee084600a614c59 | "The building was placed in service on May 20, 2025, being the date the completed rehabilitation was ready and available for its intended use."
+    evidence: DOC-06_Investor_Summary_Memo.pdf | page 2, heading Operations | chunk chk_c0b9b15d6be24315 | "May 20, 2025 | Final certificate of occupancy for the whole building."
+    evidence: DOC-06_Investor_Summary_Memo.pdf | page 2, heading Operations | chunk chk_c0b9b15d6be24315 | "May 20, 2025 | Final certificate of occupancy for the whole building."
+- [fnd_cfde97b1132d4daf] severity medium, confidence 0.9: Discrepancy in Virginia credit proceeds
+    Claim [11] in DOC-03 states Virginia credit proceeds are 3,124.0 ($ in thousands), which equals $3,124,000. Claim [12] in DOC-02 states Virginia historic tax credit proceeds are $2,982,000. The gap between these figures is $142,000 (about 4.5%), and no explanatory reconciliation is provided. Stated in: DOC-03_Financial_Model_Summary.pdf, 3,124.0 ($ in thousands) (page 2, section 1. Project and operating assumptions); DOC-02_Development_Budget_Sources_and_Uses.pdf, $2,982,000 (page 2, section Uses).
+    evidence: DOC-03_Financial_Model_Summary.pdf | page 2, heading 1. Project and operating assumptions | chunk chk_26cbcbeca6e24c76 | "2.9 | Virginia credit proceeds | 3,124.0 ($ in thousands)"
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 2, heading Uses | chunk chk_bb32e089f75a4949 | "22 | Virginia historic tax credit proceeds | $2,982,000"
+- [fnd_8432ec2758a24da9] severity high, confidence 0.9: Discrepancy in Federal tax credit and equity values
+    Claim [13] in DOC-03 states federal investor equity is 2,646.0 ($ in thousands), Claim [14] in DOC-02 lists federal historic tax credit equity as $2,556,000, and Claim [15] in DOC-03 states the federal historic tax credit is $2,940,000. These figures are inconsistent across documents. Stated in: DOC-03_Financial_Model_Summary.pdf, 2,646.0 ($ in thousands) (page 2, section 1. Project and operating assumptions); DOC-02_Development_Budget_Sources_and_Uses.pdf, $2,556,000 (page 2, section Uses); DOC-03_Financial_Model_Summary.pdf, $2,940,000 (page 2, section 1. Project and operating assumptions).
+    evidence: DOC-03_Financial_Model_Summary.pdf | page 2, heading 1. Project and operating assumptions | chunk chk_26cbcbeca6e24c76 | "2.5 | Federal investor equity | 2,646.0 ($ in thousands)"
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 2, heading Uses | chunk chk_bb32e089f75a4949 | "21 | Federal historic tax credit equity | $2,556,000"
+    evidence: DOC-03_Financial_Model_Summary.pdf | page 2, heading 1. Project and operating assumptions | chunk chk_26cbcbeca6e24c76 | "2.3 | Federal historic tax credit | $2,940,000"
+- [fnd_beb774a808884776] severity high, confidence 0.9: Different tax credit rates compared
+    Claim [29] states the federal rehabilitation credit rate is 20%, while Claim [30] states the Virginia historic tax credit rate is 25%. These are distinct attributes concerning different tax jurisdictions, but grouped together improperly; however, since they represent different credit percentages, they do not agree. Stated in: DOC-04_Cost_Certification_Draft.pdf, 20% (page 2, section 3. Substantial rehabilitation test); DOC-03_Financial_Model_Summary.pdf, 25% (page 2, section 1. Project and operating assumptions).
+    evidence: DOC-04_Cost_Certification_Draft.pdf | page 2, heading 3. Substantial rehabilitation test | chunk chk_63cf65f758694124 | "Federal rehabilitation credit (20%) | $2,840,000"
+    evidence: DOC-03_Financial_Model_Summary.pdf | page 2, heading 1. Project and operating assumptions | chunk chk_26cbcbeca6e24c76 | "2.6 | Virginia historic tax credit rate | 25%"
+- [fnd_dd6467f8f70b4d9d] severity high, confidence 0.9: Conflict in operating and lease-up reserves qualified status
+    Claims [54] and [55] list operating and lease-up reserves as $380,000. Claim [56] lists the qualified amount as $0. This is a contradiction in classification between total budget amount and qualified rehabilitation expenditure inclusion. Stated in: DOC-04_Cost_Certification_Draft.pdf, $380,000 (page 2, section 3. Substantial rehabilitation test); DOC-02_Development_Budget_Sources_and_Uses.pdf, $380,000 (page 1); DOC-02_Development_Budget_Sources_and_Uses.pdf, $0 (page 1).
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 1 | chunk chk_589b02aa38784932 | "18 | Operating and lease-up reserves | $380,000 | $0"
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 1 | chunk chk_589b02aa38784932 | "18 | Operating and lease-up reserves | $380,000 | $0"
+    evidence: DOC-04_Cost_Certification_Draft.pdf | page 2, heading 3. Substantial rehabilitation test | chunk chk_4c0f8f5cc1fc40f1 | "Operating and lease-up reserves | $380,000"
+- [fnd_901b913f062b44ef] severity critical, confidence 0.9: Mismatched legal and approval requirements
+    Claim [72] specifies NPS shop drawing approval requirements, while Claim [73] specifies contract amendment requirements. These are distinct contractual and regulatory clauses. Stated in: DOC-01_Part2_Description_of_Rehabilitation.pdf, must be approved by NPS before fabrication (page 2, section Item 2. Roof); DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf, only in a writing signed by both parties (page 2, section Article 2. Purchase).
+    evidence: DOC-01_Part2_Description_of_Rehabilitation.pdf | page 2, heading Item 2. Roof | chunk chk_60479ef1a6d84632 | "Shop drawings must be approved by NPS before fabrication."
+    evidence: DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf | page 2, heading Article 2. Purchase | chunk chk_5687d9d1f491445b | "4.1 This Agreement is the entire agreement of the parties and may be amended only in a writing signed by both parties."
+- [fnd_cc773f633f6b4991] severity critical, confidence 0.9: Mismatched window profile requirement and repair budget
+    Claim [82] specifies that replacement window sash must match the original profile, while Claim [83] states the window repair and replacement budget is $1,260,000. These compare architectural requirements to budgetary costs. Stated in: DOC-01_Part2_Description_of_Rehabilitation.pdf, must match the original profile (page 2, section Item 2. Roof); DOC-02_Development_Budget_Sources_and_Uses.pdf, $1,260,000 (page 1).
+    evidence: DOC-01_Part2_Description_of_Rehabilitation.pdf | page 2, heading Item 2. Roof | chunk chk_60479ef1a6d84632 | "Condition 1: Replacement window sash must be wood and must match the original profile."
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 1 | chunk chk_4df6e5023bc4488d | "5 | Window repair and replacement | $1,260,000 | $1,260,000"
+- [fnd_e0c029fe4e384f23] severity low, confidence 0.9: Mismatched attributes for construction year and stories
+    Claims [37] and [38] state the warehouse construction year is 1908. Claim [39] states the building is four stories. These describe different attributes (year built vs number of stories). Stated in: DOC-06_Investor_Summary_Memo.pdf, 1908 (page 1); DOC-01_Part2_Description_of_Rehabilitation.pdf, 1908 (page 1); DOC-01_Part2_Description_of_Rehabilitation.pdf, four-story (page 1).
+    evidence: DOC-01_Part2_Description_of_Rehabilitation.pdf | page 1 | chunk chk_7450e05dccf64123 | "The project rehabilitates the four-story 1908 Calloway Tobacco Warehouse into 48 apartments and one ground-floor commercial suite."
+    evidence: DOC-01_Part2_Description_of_Rehabilitation.pdf | page 1 | chunk chk_7450e05dccf64123 | "The project rehabilitates the four-story 1908 Calloway Tobacco Warehouse into 48 apartments and one ground-floor commercial suite."
+    evidence: DOC-06_Investor_Summary_Memo.pdf | page 1 | chunk chk_376a931872094da6 | "Calloway Tobacco Warehouse Apartments converts a 1908 tobacco warehouse in Lynchburg into 50 apartments and one ground-floor commercial suite."
+- [fnd_2688b890eae84f3d] severity high, confidence 0.9: Discrepancy in non-qualified developer fee description and amount
+    Claim [84] describes the developer fee non-qualified portion as being for acquisition and permanent financing services, while Claim [85] gives the specific non-qualified amount as $150,000. These are descriptive text versus financial amount attributes. Stated in: DOC-02_Development_Budget_Sources_and_Uses.pdf, a non-qualified portion for acquisition and permanent financing services (page 2, section Uses); DOC-04_Cost_Certification_Draft.pdf, $150,000 (page 2, section 3. Substantial rehabilitation test).
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 2, heading Uses | chunk chk_91246892c1f04474 | "The developer fee includes a non-qualified portion for acquisition and permanent financing services."
+    evidence: DOC-04_Cost_Certification_Draft.pdf | page 2, heading 3. Substantial rehabilitation test | chunk chk_4c0f8f5cc1fc40f1 | "Developer fee (non-qualified portion) | $150,000"
+- [fnd_0c4d2f6549cb448f] severity medium, confidence 0.9: Conflict in planned apartment count
+    Claims [40] and [41] state the project has 48 apartments. Claim [42] states the project has 50 apartments. Claim [43] is set aside as it refers to location rather than apartment count. Stated in: DOC-04_Cost_Certification_Draft.pdf, 48 (page 1); DOC-01_Part2_Description_of_Rehabilitation.pdf, 48 (page 1); DOC-06_Investor_Summary_Memo.pdf, 50 (page 1).
+    evidence: DOC-04_Cost_Certification_Draft.pdf | page 1 | chunk chk_3ee084600a614c59 | "We have examined the accompanying schedule of qualified rehabilitation expenditures of Calloway Warehouse Owner LLC for the rehabilitation of the Calloway Tobacco Warehouse into 48 apartments and one commercial suite."
+    evidence: DOC-01_Part2_Description_of_Rehabilitation.pdf | page 1 | chunk chk_7450e05dccf64123 | "The project rehabilitates the four-story 1908 Calloway Tobacco Warehouse into 48 apartments and one ground-floor commercial suite."
+    evidence: DOC-06_Investor_Summary_Memo.pdf | page 1 | chunk chk_376a931872094da6 | "Calloway Tobacco Warehouse Apartments converts a 1908 tobacco warehouse in Lynchburg into 50 apartments and one ground-floor commercial suite."
+- [fnd_2c15823868194580] severity high, confidence 0.9: Conflict in acquisition cost qualified status
+    Claims [61] and [62] state the acquisition, land and building cost is $1,100,000. Claim [63] lists the qualified estimate as $0. This reflects a difference between total cost and qualified rehabilitation expenditures. Stated in: DOC-02_Development_Budget_Sources_and_Uses.pdf, $1,100,000 (page 1); DOC-04_Cost_Certification_Draft.pdf, $1,100,000 (page 2, section 3. Substantial rehabilitation test); DOC-02_Development_Budget_Sources_and_Uses.pdf, $0 (page 1).
+    evidence: DOC-04_Cost_Certification_Draft.pdf | page 2, heading 3. Substantial rehabilitation test | chunk chk_4c0f8f5cc1fc40f1 | "Acquisition, land and building | $1,100,000"
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 1 | chunk chk_4df6e5023bc4488d | "1 | Acquisition, land and building | $1,100,000 | $0"
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 1 | chunk chk_4df6e5023bc4488d | "1 | Acquisition, land and building | $1,100,000 | $0"
+- [fnd_14740a3df17e49ca] severity high, confidence 0.9: Mismatched deposit percentage and closing timeline
+    Claim [76] states the deposit is 10% of the expected purchase price, while Claim [77] states closing shall occur within 30 days after delivery of the certificate. These describe different contractual terms (deposit vs closing timeline). All of these are stated in DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf, in different places: 10% (page 1); within 30 days (page 2, section Article 2. Purchase).
+    evidence: DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf | page 1 | chunk chk_ae052e02d2934c38 | "2.2 Deposit. Buyer shall pay a deposit of 10% of the expected purchase price at signing, to be credited at Closing."
+    evidence: DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf | page 2, heading Article 2. Purchase | chunk chk_5687d9d1f491445b | "3.1 Closing shall occur within 30 days after Seller delivers the Certificate to Buyer."
+- [fnd_d89c499fa16648e3] severity high, confidence 0.9: Discrepancy in developer fee amounts and deferred portions
+    Claim [47] states the total developer fee is $1,200,000, while Claim [48] and [49] state the qualified developer fee is $1,050,000. Claim [50] lists a deferred developer fee of $500,000. These figures show inconsistencies between total, qualified, and deferred developer fee structures. Stated in: DOC-02_Development_Budget_Sources_and_Uses.pdf, $1,200,000 (page 1); DOC-04_Cost_Certification_Draft.pdf, $1,050,000 (page 2, section 3. Substantial rehabilitation test); DOC-02_Development_Budget_Sources_and_Uses.pdf, $1,050,000 (page 1); DOC-02_Development_Budget_Sources_and_Uses.pdf, $500,000 (page 2, section Uses).
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 1 | chunk chk_4df6e5023bc4488d | "14 | Developer fee | $1,200,000 | $1,050,000"
+    evidence: DOC-04_Cost_Certification_Draft.pdf | page 2, heading 3. Substantial rehabilitation test | chunk chk_63cf65f758694124 | "Developer fee (qualified portion) | $1,050,000"
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 1 | chunk chk_4df6e5023bc4488d | "14 | Developer fee | $1,200,000 | $1,050,000"
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 2, heading Uses | chunk chk_bb32e089f75a4949 | "24 | Deferred developer fee | $500,000"
+- [fnd_bf06e45a458d416e] severity high, confidence 0.9: Mismatched masonry cost and replacement material description
+    Claim [78] gives the masonry restoration amount as $1,180,000, while Claim [79] states that deteriorated brick will be replaced with salvaged brick. These represent financial budget lines versus architectural specifications. Stated in: DOC-02_Development_Budget_Sources_and_Uses.pdf, $1,180,000 (page 1); DOC-01_Part2_Description_of_Rehabilitation.pdf, salvaged brick from the building (page 1).
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 1 | chunk chk_4df6e5023bc4488d | "3 | Masonry restoration | $1,180,000 | $1,180,000"
+    evidence: DOC-01_Part2_Description_of_Rehabilitation.pdf | page 1 | chunk chk_7450e05dccf64123 | "Deteriorated brick will be replaced with salvaged brick from the building."
+- [fnd_1bcf1aebbb0c4f5f] severity medium, confidence 0.7: Cross-document check: Total uses equals sum of hard cost subtotal and other items
+    Total uses equals sum of hard cost subtotal and other items. Across DOC-02_Development_Budget_Sources_and_Uses.pdf: $11,730,000 + $450,000 + $780,000 + $1,200,000 + $440,000 + $360,000 + $120,000 + $380,000 + $1,100,000 = 16,560,000 once each claim's unit is applied, which should equal the $16,460,000 that DOC-02_Development_Budget_Sources_and_Uses.pdf states for it (a difference of 0.6% of the stated figure). The relation was proposed from the documents' own wording (Total uses must equal the sum of all individual development cost items.) and the arithmetic was done in code.
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 1 | chunk chk_4df6e5023bc4488d | "11 | Hard cost subtotal | $11,730,000 | $11,730,000"
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 1 | chunk chk_4df6e5023bc4488d | "12 | Hard cost contingency | $450,000 | $450,000"
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 1 | chunk chk_4df6e5023bc4488d | "13 | Architecture and engineering | $780,000 | $780,000"
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 1 | chunk chk_4df6e5023bc4488d | "14 | Developer fee | $1,200,000 | $1,050,000"
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 1 | chunk chk_4df6e5023bc4488d | "15 | Construction interest and fees | $440,000 | $440,000"
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 1 | chunk chk_589b02aa38784932 | "16 | Legal and accounting | $360,000 | $300,000"
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 1 | chunk chk_589b02aa38784932 | "17 | Permanent loan fees | $120,000 | $0"
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 1 | chunk chk_589b02aa38784932 | "18 | Operating and lease-up reserves | $380,000 | $0"
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 1 | chunk chk_4df6e5023bc4488d | "land and building | $1,100,000 | $0"
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 1 | chunk chk_589b02aa38784932 | "19 | Total uses | $16,460,000 | $14,650,000"
+- [fnd_fbdee45c24154f43] severity high, confidence 0.9: Discrepancy in legal and accounting total versus qualified amounts
+    Claim [51] and Claim [53] list total legal and accounting costs as $360,000, with a qualified portion of $300,000. Claim [52] lists the qualified portion as $300,000. The total versus qualified components differ. Stated in: DOC-02_Development_Budget_Sources_and_Uses.pdf, $300,000 (page 1); DOC-04_Cost_Certification_Draft.pdf, $300,000 (page 2, section 3. Substantial rehabilitation test); DOC-02_Development_Budget_Sources_and_Uses.pdf, $360,000 (page 1).
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 1 | chunk chk_589b02aa38784932 | "16 | Legal and accounting | $360,000 | $300,000"
+    evidence: DOC-04_Cost_Certification_Draft.pdf | page 2, heading 3. Substantial rehabilitation test | chunk chk_63cf65f758694124 | "Legal and accounting (qualified portion) | $300,000"
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 1 | chunk chk_589b02aa38784932 | "16 | Legal and accounting | $360,000 | $300,000"
+- [fnd_2561598e70824de6] severity high, confidence 0.9: Mismatched attributes for window sightlines and expenditure test
+    Claim [69] describes window sightlines, Claim [70] describes the rehabilitation expenditure test status, and Claim [71] describes qualified amount developer estimates. These are disparate project aspects grouped together. Stated in: DOC-06_Investor_Summary_Memo.pdf, match the sightlines of the originals (page 2, section Operations); DOC-04_Cost_Certification_Draft.pdf, exceed that amount (page 1); DOC-02_Development_Budget_Sources_and_Uses.pdf, developer estimates (page 2, section Uses).
+    evidence: DOC-06_Investor_Summary_Memo.pdf | page 2, heading Operations | chunk chk_c0b9b15d6be24315 | "The new units match the sightlines of the originals."
+    evidence: DOC-04_Cost_Certification_Draft.pdf | page 1 | chunk chk_3ee084600a614c59 | "Qualified rehabilitation expenditures during the measuring period ending May 31, 2025 exceed that amount, so the test is met."
+    evidence: DOC-02_Development_Budget_Sources_and_Uses.pdf | page 2, heading Uses | chunk chk_91246892c1f04474 | "Qualified amounts are developer estimates."
+
+==============================================================================
+FINAL REPORT OF DISCREPANCIES (with evidence: document, chunk, location, quote)
+==============================================================================
+Fields follow the Finding schema: title, description, classification, severity, confidence, evidence_status, verification_status, materiality_reasoning, business_impact, unresolved_questions; evidence rows follow the Evidence schema.
+Findings: 27   by classification: {'contextual_difference': 8, 'contradiction': 18, 'missing_information': 1}   by severity: {'low': 8, 'high': 13, 'medium': 4, 'critical': 2}
+
+--- FINDING 1 of 27  [fnd_a3ccbe65dce54892] ------------------------------
+title                 : Roof replacement completion date vs estimated budget
+classification        : contextual_difference
+severity              : low
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim [2] in DOC-02 lists the estimated roof replacement budget as $720,000, while claims [1] and [3] in DOC-06 state that the roof replacement was complete in September 2024. These differ in basis (estimated cost versus actual completion date). Stated in: DOC-06_Investor_Summary_Memo.pdf, September 2024 (page 2, section Operations); DOC-02_Development_Budget_Sources_and_Uses.pdf, $720,000 (page 1); DOC-06_Investor_Summary_Memo.pdf, complete (page 2, section Operations).
+materiality_reasoning : The difference between cost estimates and completion dates is contextual and expected during project progression.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : DOC-06_Investor_Summary_Memo.pdf
+      chunk    : chk_c0b9b15d6be24315   (chunk_index 1)
+      location : page 2, heading Operations
+      quote    : "September 2024 | Roof replacement complete."
+      relevance: Roof replacement complete.
+      assessment: DOC-06_Investor_Summary_Memo.pdf states: Roof replacement complete. | subject=Roof replacement; metric=completion date; value=September 2024; extraction notes=basis: actual
+  [2] role=contextual
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_4df6e5023bc4488d   (chunk_index 0)
+      location : page 1
+      quote    : "4 | Roof replacement | $720,000 | $720,000"
+      relevance: 4 | Roof replacement | $720,000 | $720,000
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: 4 | Roof replacement | $720,000 | $720,000 | subject=Roof replacement; metric=Amount; value=$720,000; extraction notes=basis: estimated
+  [3] role=contextual
+      document : DOC-06_Investor_Summary_Memo.pdf
+      chunk    : chk_c0b9b15d6be24315   (chunk_index 1)
+      location : page 2, heading Operations
+      quote    : "September 2024 | Roof replacement complete."
+      relevance: Roof replacement complete.
+      assessment: DOC-06_Investor_Summary_Memo.pdf states: Roof replacement complete. | subject=Roof replacement; metric=completion status; value=complete; period=September 2024; extraction notes=basis: actual
+
+--- FINDING 2 of 27  [fnd_76f408c2129e4783] ------------------------------
+title                 : Conflicting placed-in-service dates
+classification        : contradiction
+severity              : high
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim [4] in DOC-04 states the building was placed in service on May 20, 2025. Claims [5] and [6] in DOC-06 state it was placed in service on April 2, 2025. Claim [7] in DOC-05 notes that DHR issues the certificate after the building is placed in service. The April and May dates directly contradict each other without an explanatory revision note in the text. Stated in: DOC-04_Cost_Certification_Draft.pdf, May 20, 2025 (page 1); DOC-06_Investor_Summary_Memo.pdf, April 2, 2025 (page 2, section Operations); DOC-06_Investor_Summary_Memo.pdf, placed in service (page 2, section Operations); DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf, placed in service (page 2, section Article 2. Purchase).
+materiality_reasoning : The placed-in-service date determines the tax credit compliance period and timing.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : DOC-04_Cost_Certification_Draft.pdf
+      chunk    : chk_3ee084600a614c59   (chunk_index 0)
+      location : page 1
+      quote    : "The building was placed in service on May 20, 2025, being the date the completed rehabilitation was ready and available for its intended use."
+      relevance: The building was placed in service on May 20, 2025, being the date the completed rehabilitation was ready and available for its intended use.
+      assessment: DOC-04_Cost_Certification_Draft.pdf states: The building was placed in service on May 20, 2025, being the date the completed rehabilitation was ready and available for its intended use. | subject=the building; metric=date placed in service; value=May 20, 2025; extraction notes=basis: actual
+  [2] role=contradicting
+      document : DOC-06_Investor_Summary_Memo.pdf
+      chunk    : chk_c0b9b15d6be24315   (chunk_index 1)
+      location : page 2, heading Operations
+      quote    : "April 2, 2025 | Temporary certificate of occupancy for floors 1 and 2. Building placed in service; residents moving in."
+      relevance: Building placed in service; residents moving in.
+      assessment: DOC-06_Investor_Summary_Memo.pdf states: Building placed in service; residents moving in. | subject=Building; metric=placed in service date; value=April 2, 2025; extraction notes=basis: actual
+  [3] role=contradicting
+      document : DOC-06_Investor_Summary_Memo.pdf
+      chunk    : chk_c0b9b15d6be24315   (chunk_index 1)
+      location : page 2, heading Operations
+      quote    : "April 2, 2025 | Temporary certificate of occupancy for floors 1 and 2. Building placed in service; residents moving in."
+      relevance: Building placed in service; residents moving in.
+      assessment: DOC-06_Investor_Summary_Memo.pdf states: Building placed in service; residents moving in. | subject=Building; metric=service status; value=placed in service; period=April 2, 2025; extraction notes=basis: actual
+  [4] role=contradicting
+      document : DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf
+      chunk    : chk_5687d9d1f491445b   (chunk_index 2)
+      location : page 2, heading Article 2. Purchase
+      quote    : "3.2 Seller acknowledges that DHR issues the Certificate only after the rehabilitation is complete, the building is placed in service and Seller has filed its final application."
+      relevance: 3.2 Seller acknowledges that DHR issues the Certificate only after the rehabilitation is complete, the building is placed in service and Seller has filed its final application.
+      assessment: DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf states: 3.2 Seller acknowledges that DHR issues the Certificate only after the rehabilitation is complete, the building is placed in service and Seller has filed its final application. | subject=building; metric=service status; value=placed in service; conditions=before DHR issues the Certificate
+
+--- FINDING 3 of 27  [fnd_0e1525b2dddc4ead] ------------------------------
+title                 : Conflict between placed-in-service date and final certificate of occupancy
+classification        : contradiction
+severity              : high
+confidence            : 0.8
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim [8] in DOC-04 states the building was placed in service on May 20, 2025. Claims [9] and [10] in DOC-06 state the final certificate of occupancy for the whole building was issued on May 20, 2025. While the dates agree, the attributes are mismatched between the placed-in-service date and the final certificate of occupancy date. Stated in: DOC-04_Cost_Certification_Draft.pdf, ready and available for its intended use (page 1); DOC-06_Investor_Summary_Memo.pdf, May 20, 2025 (page 2, section Operations); DOC-06_Investor_Summary_Memo.pdf, the whole building (page 2, section Operations).
+materiality_reasoning : Conflicting milestone definitions affect project closeout records.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : DOC-04_Cost_Certification_Draft.pdf
+      chunk    : chk_3ee084600a614c59   (chunk_index 0)
+      location : page 1
+      quote    : "The building was placed in service on May 20, 2025, being the date the completed rehabilitation was ready and available for its intended use."
+      relevance: The building was placed in service on May 20, 2025, being the date the completed rehabilitation was ready and available for its intended use.
+      assessment: DOC-04_Cost_Certification_Draft.pdf states: The building was placed in service on May 20, 2025, being the date the completed rehabilitation was ready and available for its intended use. | subject=the completed rehabilitation; metric=availability for intended use; value=ready and available for its intended use; extraction notes=basis: actual
+  [2] role=contradicting
+      document : DOC-06_Investor_Summary_Memo.pdf
+      chunk    : chk_c0b9b15d6be24315   (chunk_index 1)
+      location : page 2, heading Operations
+      quote    : "May 20, 2025 | Final certificate of occupancy for the whole building."
+      relevance: Final certificate of occupancy for the whole building.
+      assessment: DOC-06_Investor_Summary_Memo.pdf states: Final certificate of occupancy for the whole building. | subject=Final certificate of occupancy; metric=date; value=May 20, 2025
+  [3] role=contradicting
+      document : DOC-06_Investor_Summary_Memo.pdf
+      chunk    : chk_c0b9b15d6be24315   (chunk_index 1)
+      location : page 2, heading Operations
+      quote    : "May 20, 2025 | Final certificate of occupancy for the whole building."
+      relevance: Final certificate of occupancy for the whole building.
+      assessment: DOC-06_Investor_Summary_Memo.pdf states: Final certificate of occupancy for the whole building. | subject=Final certificate of occupancy; metric=scope; value=the whole building
+
+--- FINDING 4 of 27  [fnd_cfde97b1132d4daf] ------------------------------
+title                 : Discrepancy in Virginia credit proceeds
+classification        : contradiction
+severity              : medium
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim [11] in DOC-03 states Virginia credit proceeds are 3,124.0 ($ in thousands), which equals $3,124,000. Claim [12] in DOC-02 states Virginia historic tax credit proceeds are $2,982,000. The gap between these figures is $142,000 (about 4.5%), and no explanatory reconciliation is provided. Stated in: DOC-03_Financial_Model_Summary.pdf, 3,124.0 ($ in thousands) (page 2, section 1. Project and operating assumptions); DOC-02_Development_Budget_Sources_and_Uses.pdf, $2,982,000 (page 2, section Uses).
+materiality_reasoning : A divergence in tax credit proceeds impacts project funding sources.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : DOC-03_Financial_Model_Summary.pdf
+      chunk    : chk_26cbcbeca6e24c76   (chunk_index 2)
+      location : page 2, heading 1. Project and operating assumptions
+      quote    : "2.9 | Virginia credit proceeds | 3,124.0 ($ in thousands)"
+      relevance: | 2.9 | Virginia credit proceeds                | 3,124.0 ($ in thousands) |
+      assessment: DOC-03_Financial_Model_Summary.pdf states: | 2.9 | Virginia credit proceeds                | 3,124.0 ($ in thousands) | | subject=Virginia credit proceeds; metric=Value; value=3,124.0 ($ in thousands); unit=$ in thousands
+  [2] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_bb32e089f75a4949   (chunk_index 3)
+      location : page 2, heading Uses
+      quote    : "22 | Virginia historic tax credit proceeds | $2,982,000"
+      relevance: 22 | Virginia historic tax credit proceeds | $2,982,000
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: 22 | Virginia historic tax credit proceeds | $2,982,000 | subject=Virginia historic tax credit proceeds; metric=Amount; value=$2,982,000
+
+--- FINDING 5 of 27  [fnd_8432ec2758a24da9] ------------------------------
+title                 : Discrepancy in Federal tax credit and equity values
+classification        : contradiction
+severity              : high
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim [13] in DOC-03 states federal investor equity is 2,646.0 ($ in thousands), Claim [14] in DOC-02 lists federal historic tax credit equity as $2,556,000, and Claim [15] in DOC-03 states the federal historic tax credit is $2,940,000. These figures are inconsistent across documents. Stated in: DOC-03_Financial_Model_Summary.pdf, 2,646.0 ($ in thousands) (page 2, section 1. Project and operating assumptions); DOC-02_Development_Budget_Sources_and_Uses.pdf, $2,556,000 (page 2, section Uses); DOC-03_Financial_Model_Summary.pdf, $2,940,000 (page 2, section 1. Project and operating assumptions).
+materiality_reasoning : Inconsistencies in federal tax credit equity and total credit amounts affect financial modeling accuracy.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : DOC-03_Financial_Model_Summary.pdf
+      chunk    : chk_26cbcbeca6e24c76   (chunk_index 2)
+      location : page 2, heading 1. Project and operating assumptions
+      quote    : "2.5 | Federal investor equity | 2,646.0 ($ in thousands)"
+      relevance: | 2.5 | Federal investor equity                 | 2,646.0 ($ in thousands) |
+      assessment: DOC-03_Financial_Model_Summary.pdf states: | 2.5 | Federal investor equity                 | 2,646.0 ($ in thousands) | | subject=Federal investor equity; metric=Value; value=2,646.0 ($ in thousands); unit=$ in thousands
+  [2] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_bb32e089f75a4949   (chunk_index 3)
+      location : page 2, heading Uses
+      quote    : "21 | Federal historic tax credit equity | $2,556,000"
+      relevance: 21 | Federal historic tax credit equity | $2,556,000
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: 21 | Federal historic tax credit equity | $2,556,000 | subject=Federal historic tax credit equity; metric=Amount; value=$2,556,000
+  [3] role=contradicting
+      document : DOC-03_Financial_Model_Summary.pdf
+      chunk    : chk_26cbcbeca6e24c76   (chunk_index 2)
+      location : page 2, heading 1. Project and operating assumptions
+      quote    : "2.3 | Federal historic tax credit | $2,940,000"
+      relevance: | 2.3 | Federal historic tax credit             | $2,940,000               |
+      assessment: DOC-03_Financial_Model_Summary.pdf states: | 2.3 | Federal historic tax credit             | $2,940,000               | | subject=Federal historic tax credit; metric=Value; value=$2,940,000
+
+--- FINDING 6 of 27  [fnd_34b1966497da4174] ------------------------------
+title                 : Federal rehabilitation credit precision and amount
+classification        : contextual_difference
+severity              : low
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim [19] and Claim [20] state the federal rehabilitation credit is precisely $2,840,000 based on projected qualified rehabilitation expenditures. Claim [21] states it generates approximately $2.8M using approximate phrasing. Stated in: DOC-04_Cost_Certification_Draft.pdf, $2,840,000 (page 2, section 3. Substantial rehabilitation test); DOC-02_Development_Budget_Sources_and_Uses.pdf, $2,840,000 (page 2, section Uses); DOC-06_Investor_Summary_Memo.pdf, approximately $2.8M (page 1).
+materiality_reasoning : The minor difference is due to rounding and approximate reporting in the summary memo.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : DOC-04_Cost_Certification_Draft.pdf
+      chunk    : chk_63cf65f758694124   (chunk_index 1)
+      location : page 2, heading 3. Substantial rehabilitation test
+      quote    : "Federal rehabilitation credit (20%) | $2,840,000"
+      relevance: Federal rehabilitation credit (20%) $2,840,000
+      assessment: DOC-04_Cost_Certification_Draft.pdf states: Federal rehabilitation credit (20%) $2,840,000 | subject=Federal rehabilitation credit (20%); metric=Amount; value=$2,840,000; unit=USD
+  [2] role=contextual
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_91246892c1f04474   (chunk_index 4)
+      location : page 2, heading Uses
+      quote    : "federal credits of $2,840,000 at $0.90 per credit, and Virginia credits of $3,550,000 at $0.84 per credit under the signed purchase agreement."
+      relevance: Federal equity and Virginia proceeds are sized on projected qualified rehabilitation expenditures of $14,200,000, which exclude the hard cost contingency: federal credits of $2,840,000 at $0.90 per credit, and Virginia credits of $3,550,000 at $0.84 per credit under the signed purchase agreement.
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: Federal equity and Virginia proceeds are sized on projected qualified rehabilitation expenditures of $14,200,000, which exclude the hard cost contingency: federal credits of $2,840,000 at $0.90 per credit, and Virginia credits of $3,550,000 at $0.84 per credit under the signed purchase agreement. | subject=Federal credits; metric=amount; value=$2,840,000; extraction notes=basis: forecast
+  [3] role=contextual
+      document : DOC-06_Investor_Summary_Memo.pdf
+      chunk    : chk_376a931872094da6   (chunk_index 0)
+      location : page 1
+      quote    : "Qualified rehabilitation expenditures of about $14.2 million generate approximately $2.8M in federal credits."
+      relevance: Qualified rehabilitation expenditures of about $14.2 million generate approximately $2.8M in federal credits.
+      assessment: DOC-06_Investor_Summary_Memo.pdf states: Qualified rehabilitation expenditures of about $14.2 million generate approximately $2.8M in federal credits. | subject=Federal credits; metric=amount generated; value=approximately $2.8M; extraction notes=precision: approximate
+
+--- FINDING 7 of 27  [fnd_d6349c30072a4f7b] ------------------------------
+title                 : Virginia credit price per dollar
+classification        : contextual_difference
+severity              : medium
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claims [22], [23], [24], and [25] state the Virginia credit purchase price is $0.84 per credit under the signed agreement. Claim [26] in DOC-03 lists the Virginia credit price per credit dollar as 0.88. The difference between 0.84 and 0.88 represents a financial model assumption update versus the executed purchase agreement. Stated in: DOC-02_Development_Budget_Sources_and_Uses.pdf, $0.84 (page 2, section Uses); DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf, $0.84 per $1.00 (page 1); DOC-06_Investor_Summary_Memo.pdf, $0.84 per credit (page 1); DOC-06_Investor_Summary_Memo.pdf, signed (page 1); DOC-03_Financial_Model_Summary.pdf, 0.88 (page 2, section 1. Project and operating assumptions).
+materiality_reasoning : Mismatches between financial model pricing and executed agreement pricing affect capital projections.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_91246892c1f04474   (chunk_index 4)
+      location : page 2, heading Uses
+      quote    : "federal credits of $2,840,000 at $0.90 per credit, and Virginia credits of $3,550,000 at $0.84 per credit under the signed purchase agreement."
+      relevance: Federal equity and Virginia proceeds are sized on projected qualified rehabilitation expenditures of $14,200,000, which exclude the hard cost contingency: federal credits of $2,840,000 at $0.90 per credit, and Virginia credits of $3,550,000 at $0.84 per credit under the signed purchase agreement.
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: Federal equity and Virginia proceeds are sized on projected qualified rehabilitation expenditures of $14,200,000, which exclude the hard cost contingency: federal credits of $2,840,000 at $0.90 per credit, and Virginia credits of $3,550,000 at $0.84 per credit under the signed purchase agreement. | subject=Virginia credits; metric=credit rate; value=$0.84; unit=per credit; extraction notes=basis: forecast
+  [2] role=contextual
+      document : DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf
+      chunk    : chk_ae052e02d2934c38   (chunk_index 0)
+      location : page 1
+      quote    : "2.1 Price. Buyer shall pay $0.84 per $1.00 of credit for all Credits transferred at Closing."
+      relevance: 2.1 Price. Buyer shall pay $0.84 per $1.00 of credit for all Credits transferred at Closing.
+      assessment: DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf states: 2.1 Price. Buyer shall pay $0.84 per $1.00 of credit for all Credits transferred at Closing. | subject=Buyer; metric=price per $1.00 of credit; value=$0.84 per $1.00; conditions=for all Credits transferred at Closing; extraction notes=basis: contracted, rule: yes
+  [3] role=contextual
+      document : DOC-06_Investor_Summary_Memo.pdf
+      chunk    : chk_376a931872094da6   (chunk_index 0)
+      location : page 1
+      quote    : "Virginia credits are being sold at $0.84 per credit under the signed purchase agreement."
+      relevance: Virginia credits are being sold at $0.84 per credit under the signed purchase agreement.
+      assessment: DOC-06_Investor_Summary_Memo.pdf states: Virginia credits are being sold at $0.84 per credit under the signed purchase agreement. | subject=Virginia credits; metric=sale price per credit; value=$0.84 per credit; unit=per credit; conditions=under the signed purchase agreement; extraction notes=basis: actual
+  [4] role=contextual
+      document : DOC-06_Investor_Summary_Memo.pdf
+      chunk    : chk_376a931872094da6   (chunk_index 0)
+      location : page 1
+      quote    : "Virginia credits are being sold at $0.84 per credit under the signed purchase agreement."
+      relevance: Virginia credits are being sold at $0.84 per credit under the signed purchase agreement.
+      assessment: DOC-06_Investor_Summary_Memo.pdf states: Virginia credits are being sold at $0.84 per credit under the signed purchase agreement. | subject=Virginia credits; metric=purchase agreement status; value=signed
+  [5] role=contextual
+      document : DOC-03_Financial_Model_Summary.pdf
+      chunk    : chk_26cbcbeca6e24c76   (chunk_index 2)
+      location : page 2, heading 1. Project and operating assumptions
+      quote    : "2.8 | Virginia credit price per credit dollar | 0.88"
+      relevance: | 2.8 | Virginia credit price per credit dollar | 0.88                     |
+      assessment: DOC-03_Financial_Model_Summary.pdf states: | 2.8 | Virginia credit price per credit dollar | 0.88                     | | subject=Virginia credit price per credit dollar; metric=Value; value=0.88
+
+--- FINDING 8 of 27  [fnd_beb774a808884776] ------------------------------
+title                 : Different tax credit rates compared
+classification        : contradiction
+severity              : high
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim [29] states the federal rehabilitation credit rate is 20%, while Claim [30] states the Virginia historic tax credit rate is 25%. These are distinct attributes concerning different tax jurisdictions, but grouped together improperly; however, since they represent different credit percentages, they do not agree. Stated in: DOC-04_Cost_Certification_Draft.pdf, 20% (page 2, section 3. Substantial rehabilitation test); DOC-03_Financial_Model_Summary.pdf, 25% (page 2, section 1. Project and operating assumptions).
+materiality_reasoning : Different credit percentages apply to different tax authorities.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : DOC-04_Cost_Certification_Draft.pdf
+      chunk    : chk_63cf65f758694124   (chunk_index 1)
+      location : page 2, heading 3. Substantial rehabilitation test
+      quote    : "Federal rehabilitation credit (20%) | $2,840,000"
+      relevance: Federal rehabilitation credit (20%) $2,840,000
+      assessment: DOC-04_Cost_Certification_Draft.pdf states: Federal rehabilitation credit (20%) $2,840,000 | subject=Federal rehabilitation credit (20%); metric=credit rate; value=20%; unit=%
+  [2] role=contradicting
+      document : DOC-03_Financial_Model_Summary.pdf
+      chunk    : chk_26cbcbeca6e24c76   (chunk_index 2)
+      location : page 2, heading 1. Project and operating assumptions
+      quote    : "2.6 | Virginia historic tax credit rate | 25%"
+      relevance: | 2.6 | Virginia historic tax credit rate       | 25%                      |
+      assessment: DOC-03_Financial_Model_Summary.pdf states: | 2.6 | Virginia historic tax credit rate       | 25%                      | | subject=Virginia historic tax credit rate; metric=Value; value=25%
+
+--- FINDING 9 of 27  [fnd_520b6e0c501c4179] ------------------------------
+title                 : Permanent loan amount versus loan fees and timing
+classification        : contextual_difference
+severity              : low
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claims [31] and [32] state the permanent loan amount is $7,400,000. Claim [33] lists permanent loan fees as $120,000, and Claim [34] specifies the permanent loan conversion timing as Q4 2025. These describe different line items (loan amount versus fees and conversion date). Stated in: DOC-02_Development_Budget_Sources_and_Uses.pdf, $7,400,000 (page 2, section Uses); DOC-03_Financial_Model_Summary.pdf, 7,400 ($ in thousands) (page 1); DOC-02_Development_Budget_Sources_and_Uses.pdf, $0 (page 1); DOC-03_Financial_Model_Summary.pdf, Q4 2025 (page 2, section 1. Project and operating assumptions).
+materiality_reasoning : Distinguishing loan proceeds from loan fees and conversion timing is standard budgeting practice.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_bb32e089f75a4949   (chunk_index 3)
+      location : page 2, heading Uses
+      quote    : "20 | Permanent first mortgage | $7,400,000"
+      relevance: 20 | Permanent first mortgage | $7,400,000
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: 20 | Permanent first mortgage | $7,400,000 | subject=Permanent first mortgage; metric=Amount; value=$7,400,000
+  [2] role=contextual
+      document : DOC-03_Financial_Model_Summary.pdf
+      chunk    : chk_56d41d6fce4b4d1b   (chunk_index 0)
+      location : page 1
+      quote    : "1.4 | Permanent loan | 7,400 ($ in thousands)"
+      relevance: | 1.4 | Permanent loan                  | 7,400 ($ in thousands)  |
+      assessment: DOC-03_Financial_Model_Summary.pdf states: | 1.4 | Permanent loan                  | 7,400 ($ in thousands)  | | subject=Permanent loan; metric=Value; value=7,400 ($ in thousands); unit=$ in thousands
+  [3] role=contextual
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_589b02aa38784932   (chunk_index 1)
+      location : page 1
+      quote    : "17 | Permanent loan fees | $120,000 | $0"
+      relevance: 17 | Permanent loan fees | $120,000 | $0
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: 17 | Permanent loan fees | $120,000 | $0 | subject=Permanent loan fees; metric=Qualified (estimate); value=$0; extraction notes=basis: estimated
+  [4] role=contextual
+      document : DOC-03_Financial_Model_Summary.pdf
+      chunk    : chk_0bec5a06abb5430b   (chunk_index 3)
+      location : page 2, heading 1. Project and operating assumptions
+      quote    : "3.3 | Permanent loan conversion | Q4 2025"
+      relevance: | 3.3 | Permanent loan conversion         | Q4 2025 |
+      assessment: DOC-03_Financial_Model_Summary.pdf states: | 3.3 | Permanent loan conversion         | Q4 2025 | | subject=Permanent loan conversion; metric=Timing; value=Q4 2025
+
+--- FINDING 10 of 27  [fnd_e0c029fe4e384f23] ------------------------------
+title                 : Mismatched attributes for construction year and stories
+classification        : contradiction
+severity              : low
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claims [37] and [38] state the warehouse construction year is 1908. Claim [39] states the building is four stories. These describe different attributes (year built vs number of stories). Stated in: DOC-06_Investor_Summary_Memo.pdf, 1908 (page 1); DOC-01_Part2_Description_of_Rehabilitation.pdf, 1908 (page 1); DOC-01_Part2_Description_of_Rehabilitation.pdf, four-story (page 1).
+materiality_reasoning : Distinct building characteristics should not be compared as conflicting values.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : DOC-01_Part2_Description_of_Rehabilitation.pdf
+      chunk    : chk_7450e05dccf64123   (chunk_index 0)
+      location : page 1
+      quote    : "The project rehabilitates the four-story 1908 Calloway Tobacco Warehouse into 48 apartments and one ground-floor commercial suite."
+      relevance: The project rehabilitates the four-story 1908 Calloway Tobacco Warehouse into 48 apartments and one ground-floor commercial suite.
+      assessment: DOC-01_Part2_Description_of_Rehabilitation.pdf states: The project rehabilitates the four-story 1908 Calloway Tobacco Warehouse into 48 apartments and one ground-floor commercial suite. | subject=Calloway Tobacco Warehouse; metric=construction year; value=1908
+  [2] role=contradicting
+      document : DOC-01_Part2_Description_of_Rehabilitation.pdf
+      chunk    : chk_7450e05dccf64123   (chunk_index 0)
+      location : page 1
+      quote    : "The project rehabilitates the four-story 1908 Calloway Tobacco Warehouse into 48 apartments and one ground-floor commercial suite."
+      relevance: The project rehabilitates the four-story 1908 Calloway Tobacco Warehouse into 48 apartments and one ground-floor commercial suite.
+      assessment: DOC-01_Part2_Description_of_Rehabilitation.pdf states: The project rehabilitates the four-story 1908 Calloway Tobacco Warehouse into 48 apartments and one ground-floor commercial suite. | subject=Calloway Tobacco Warehouse; metric=building stories; value=four-story; unit=stories
+  [3] role=contradicting
+      document : DOC-06_Investor_Summary_Memo.pdf
+      chunk    : chk_376a931872094da6   (chunk_index 0)
+      location : page 1
+      quote    : "Calloway Tobacco Warehouse Apartments converts a 1908 tobacco warehouse in Lynchburg into 50 apartments and one ground-floor commercial suite."
+      relevance: Calloway Tobacco Warehouse Apartments converts a 1908 tobacco warehouse in Lynchburg into 50 apartments and one ground-floor commercial suite.
+      assessment: DOC-06_Investor_Summary_Memo.pdf states: Calloway Tobacco Warehouse Apartments converts a 1908 tobacco warehouse in Lynchburg into 50 apartments and one ground-floor commercial suite. | subject=Calloway Tobacco Warehouse Apartments; metric=warehouse construction year; value=1908
+
+--- FINDING 11 of 27  [fnd_0c4d2f6549cb448f] ------------------------------
+title                 : Conflict in planned apartment count
+classification        : contradiction
+severity              : medium
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claims [40] and [41] state the project has 48 apartments. Claim [42] states the project has 50 apartments. Claim [43] is set aside as it refers to location rather than apartment count. Stated in: DOC-04_Cost_Certification_Draft.pdf, 48 (page 1); DOC-01_Part2_Description_of_Rehabilitation.pdf, 48 (page 1); DOC-06_Investor_Summary_Memo.pdf, 50 (page 1).
+materiality_reasoning : A discrepancy in the total apartment count affects revenue and project scope definitions.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : DOC-04_Cost_Certification_Draft.pdf
+      chunk    : chk_3ee084600a614c59   (chunk_index 0)
+      location : page 1
+      quote    : "We have examined the accompanying schedule of qualified rehabilitation expenditures of Calloway Warehouse Owner LLC for the rehabilitation of the Calloway Tobacco Warehouse into 48 apartments and one commercial suite."
+      relevance: We have examined the accompanying schedule of qualified rehabilitation expenditures of Calloway Warehouse Owner LLC for the rehabilitation of the Calloway Tobacco Warehouse into 48 apartments and one commercial suite.
+      assessment: DOC-04_Cost_Certification_Draft.pdf states: We have examined the accompanying schedule of qualified rehabilitation expenditures of Calloway Warehouse Owner LLC for the rehabilitation of the Calloway Tobacco Warehouse into 48 apartments and one commercial suite. | subject=Calloway Warehouse Owner LLC; metric=apartments; value=48; unit=apartments
+  [2] role=contradicting
+      document : DOC-01_Part2_Description_of_Rehabilitation.pdf
+      chunk    : chk_7450e05dccf64123   (chunk_index 0)
+      location : page 1
+      quote    : "The project rehabilitates the four-story 1908 Calloway Tobacco Warehouse into 48 apartments and one ground-floor commercial suite."
+      relevance: The project rehabilitates the four-story 1908 Calloway Tobacco Warehouse into 48 apartments and one ground-floor commercial suite.
+      assessment: DOC-01_Part2_Description_of_Rehabilitation.pdf states: The project rehabilitates the four-story 1908 Calloway Tobacco Warehouse into 48 apartments and one ground-floor commercial suite. | subject=Calloway Tobacco Warehouse rehabilitation; metric=apartments planned; value=48; unit=apartments; extraction notes=basis: planned
+  [3] role=contradicting
+      document : DOC-06_Investor_Summary_Memo.pdf
+      chunk    : chk_376a931872094da6   (chunk_index 0)
+      location : page 1
+      quote    : "Calloway Tobacco Warehouse Apartments converts a 1908 tobacco warehouse in Lynchburg into 50 apartments and one ground-floor commercial suite."
+      relevance: Calloway Tobacco Warehouse Apartments converts a 1908 tobacco warehouse in Lynchburg into 50 apartments and one ground-floor commercial suite.
+      assessment: DOC-06_Investor_Summary_Memo.pdf states: Calloway Tobacco Warehouse Apartments converts a 1908 tobacco warehouse in Lynchburg into 50 apartments and one ground-floor commercial suite. | subject=Calloway Tobacco Warehouse Apartments; metric=apartments; value=50; unit=apartments
+
+--- FINDING 12 of 27  [fnd_d89c499fa16648e3] ------------------------------
+title                 : Discrepancy in developer fee amounts and deferred portions
+classification        : contradiction
+severity              : high
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim [47] states the total developer fee is $1,200,000, while Claim [48] and [49] state the qualified developer fee is $1,050,000. Claim [50] lists a deferred developer fee of $500,000. These figures show inconsistencies between total, qualified, and deferred developer fee structures. Stated in: DOC-02_Development_Budget_Sources_and_Uses.pdf, $1,200,000 (page 1); DOC-04_Cost_Certification_Draft.pdf, $1,050,000 (page 2, section 3. Substantial rehabilitation test); DOC-02_Development_Budget_Sources_and_Uses.pdf, $1,050,000 (page 1); DOC-02_Development_Budget_Sources_and_Uses.pdf, $500,000 (page 2, section Uses).
+materiality_reasoning : Discrepancies in developer fee components impact project cost certification and developer compensation.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_4df6e5023bc4488d   (chunk_index 0)
+      location : page 1
+      quote    : "14 | Developer fee | $1,200,000 | $1,050,000"
+      relevance: 14 | Developer fee | $1,200,000 | $1,050,000
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: 14 | Developer fee | $1,200,000 | $1,050,000 | subject=Developer fee; metric=Amount; value=$1,200,000
+  [2] role=contradicting
+      document : DOC-04_Cost_Certification_Draft.pdf
+      chunk    : chk_63cf65f758694124   (chunk_index 1)
+      location : page 2, heading 3. Substantial rehabilitation test
+      quote    : "Developer fee (qualified portion) | $1,050,000"
+      relevance: Developer fee (qualified portion) $1,050,000
+      assessment: DOC-04_Cost_Certification_Draft.pdf states: Developer fee (qualified portion) $1,050,000 | subject=Developer fee (qualified portion); metric=Amount; value=$1,050,000; unit=USD
+  [3] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_4df6e5023bc4488d   (chunk_index 0)
+      location : page 1
+      quote    : "14 | Developer fee | $1,200,000 | $1,050,000"
+      relevance: 14 | Developer fee | $1,200,000 | $1,050,000
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: 14 | Developer fee | $1,200,000 | $1,050,000 | subject=Developer fee; metric=Qualified (estimate); value=$1,050,000; extraction notes=basis: estimated
+  [4] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_bb32e089f75a4949   (chunk_index 3)
+      location : page 2, heading Uses
+      quote    : "24 | Deferred developer fee | $500,000"
+      relevance: 24 | Deferred developer fee | $500,000
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: 24 | Deferred developer fee | $500,000 | subject=Deferred developer fee; metric=Amount; value=$500,000
+
+--- FINDING 13 of 27  [fnd_fbdee45c24154f43] ------------------------------
+title                 : Discrepancy in legal and accounting total versus qualified amounts
+classification        : contradiction
+severity              : high
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim [51] and Claim [53] list total legal and accounting costs as $360,000, with a qualified portion of $300,000. Claim [52] lists the qualified portion as $300,000. The total versus qualified components differ. Stated in: DOC-02_Development_Budget_Sources_and_Uses.pdf, $300,000 (page 1); DOC-04_Cost_Certification_Draft.pdf, $300,000 (page 2, section 3. Substantial rehabilitation test); DOC-02_Development_Budget_Sources_and_Uses.pdf, $360,000 (page 1).
+materiality_reasoning : Distinguishing total and qualified legal and accounting fees is necessary for tax credit calculations.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_589b02aa38784932   (chunk_index 1)
+      location : page 1
+      quote    : "16 | Legal and accounting | $360,000 | $300,000"
+      relevance: 16 | Legal and accounting | $360,000 | $300,000
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: 16 | Legal and accounting | $360,000 | $300,000 | subject=Legal and accounting; metric=Qualified (estimate); value=$300,000; extraction notes=basis: estimated
+  [2] role=contradicting
+      document : DOC-04_Cost_Certification_Draft.pdf
+      chunk    : chk_63cf65f758694124   (chunk_index 1)
+      location : page 2, heading 3. Substantial rehabilitation test
+      quote    : "Legal and accounting (qualified portion) | $300,000"
+      relevance: Legal and accounting (qualified portion) $300,000
+      assessment: DOC-04_Cost_Certification_Draft.pdf states: Legal and accounting (qualified portion) $300,000 | subject=Legal and accounting (qualified portion); metric=Amount; value=$300,000; unit=USD
+  [3] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_589b02aa38784932   (chunk_index 1)
+      location : page 1
+      quote    : "16 | Legal and accounting | $360,000 | $300,000"
+      relevance: 16 | Legal and accounting | $360,000 | $300,000
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: 16 | Legal and accounting | $360,000 | $300,000 | subject=Legal and accounting; metric=Amount; value=$360,000
+
+--- FINDING 14 of 27  [fnd_dd6467f8f70b4d9d] ------------------------------
+title                 : Conflict in operating and lease-up reserves qualified status
+classification        : contradiction
+severity              : high
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claims [54] and [55] list operating and lease-up reserves as $380,000. Claim [56] lists the qualified amount as $0. This is a contradiction in classification between total budget amount and qualified rehabilitation expenditure inclusion. Stated in: DOC-04_Cost_Certification_Draft.pdf, $380,000 (page 2, section 3. Substantial rehabilitation test); DOC-02_Development_Budget_Sources_and_Uses.pdf, $380,000 (page 1); DOC-02_Development_Budget_Sources_and_Uses.pdf, $0 (page 1).
+materiality_reasoning : Misclassification of reserves affects qualified rehabilitation expenditures.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_589b02aa38784932   (chunk_index 1)
+      location : page 1
+      quote    : "18 | Operating and lease-up reserves | $380,000 | $0"
+      relevance: 18 | Operating and lease-up reserves | $380,000 | $0
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: 18 | Operating and lease-up reserves | $380,000 | $0 | subject=Operating and lease-up reserves; metric=Amount; value=$380,000
+  [2] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_589b02aa38784932   (chunk_index 1)
+      location : page 1
+      quote    : "18 | Operating and lease-up reserves | $380,000 | $0"
+      relevance: 18 | Operating and lease-up reserves | $380,000 | $0
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: 18 | Operating and lease-up reserves | $380,000 | $0 | subject=Operating and lease-up reserves; metric=Qualified (estimate); value=$0; extraction notes=basis: estimated
+  [3] role=contradicting
+      document : DOC-04_Cost_Certification_Draft.pdf
+      chunk    : chk_4c0f8f5cc1fc40f1   (chunk_index 2)
+      location : page 2, heading 3. Substantial rehabilitation test
+      quote    : "Operating and lease-up reserves | $380,000"
+      relevance: Operating and lease-up reserves $380,000
+      assessment: DOC-04_Cost_Certification_Draft.pdf states: Operating and lease-up reserves $380,000 | subject=Operating and lease-up reserves; metric=Amount; value=$380,000; unit=USD
+
+--- FINDING 15 of 27  [fnd_9a60a319bb244490] ------------------------------
+title                 : Hard cost contingency budget versus actual draw status
+classification        : contextual_difference
+severity              : low
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim [57] states the budgeted hard cost contingency is $450,000. Claims [58], [59], and [60] note that this budgeted contingency was not drawn and is excluded from costs incurred. These represent different bases (budgeted vs actual drawn status). Stated in: DOC-02_Development_Budget_Sources_and_Uses.pdf, $450,000 (page 1); DOC-04_Cost_Certification_Draft.pdf, $450,000 (page 2, section 3. Substantial rehabilitation test); DOC-04_Cost_Certification_Draft.pdf, is not included (page 2, section 3. Substantial rehabilitation test); DOC-04_Cost_Certification_Draft.pdf, not drawn (page 2, section 3. Substantial rehabilitation test).
+materiality_reasoning : The contingency was budgeted but correctly excluded from final incurred costs.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_4df6e5023bc4488d   (chunk_index 0)
+      location : page 1
+      quote    : "12 | Hard cost contingency | $450,000 | $450,000"
+      relevance: 12 | Hard cost contingency | $450,000 | $450,000
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: 12 | Hard cost contingency | $450,000 | $450,000 | subject=Hard cost contingency; metric=Amount; value=$450,000; extraction notes=basis: estimated
+  [2] role=contextual
+      document : DOC-04_Cost_Certification_Draft.pdf
+      chunk    : chk_10997367407b4162   (chunk_index 3)
+      location : page 2, heading 3. Substantial rehabilitation test
+      quote    : "The budgeted hard cost contingency of $450,000 was not drawn and is not included in costs incurred."
+      relevance: The budgeted hard cost contingency of $450,000 was not drawn and is not included in costs incurred.
+      assessment: DOC-04_Cost_Certification_Draft.pdf states: The budgeted hard cost contingency of $450,000 was not drawn and is not included in costs incurred. | subject=hard cost contingency; metric=budgeted amount; value=$450,000; unit=USD; conditions=budgeted; extraction notes=basis: planned
+  [3] role=contextual
+      document : DOC-04_Cost_Certification_Draft.pdf
+      chunk    : chk_10997367407b4162   (chunk_index 3)
+      location : page 2, heading 3. Substantial rehabilitation test
+      quote    : "The budgeted hard cost contingency of $450,000 was not drawn and is not included in costs incurred."
+      relevance: The budgeted hard cost contingency of $450,000 was not drawn and is not included in costs incurred.
+      assessment: DOC-04_Cost_Certification_Draft.pdf states: The budgeted hard cost contingency of $450,000 was not drawn and is not included in costs incurred. | subject=hard cost contingency; metric=inclusion in costs incurred; value=is not included; extraction notes=basis: actual
+  [4] role=contextual
+      document : DOC-04_Cost_Certification_Draft.pdf
+      chunk    : chk_10997367407b4162   (chunk_index 3)
+      location : page 2, heading 3. Substantial rehabilitation test
+      quote    : "The budgeted hard cost contingency of $450,000 was not drawn and is not included in costs incurred."
+      relevance: The budgeted hard cost contingency of $450,000 was not drawn and is not included in costs incurred.
+      assessment: DOC-04_Cost_Certification_Draft.pdf states: The budgeted hard cost contingency of $450,000 was not drawn and is not included in costs incurred. | subject=hard cost contingency; metric=drawn status; value=not drawn; extraction notes=basis: actual
+
+--- FINDING 16 of 27  [fnd_2c15823868194580] ------------------------------
+title                 : Conflict in acquisition cost qualified status
+classification        : contradiction
+severity              : high
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claims [61] and [62] state the acquisition, land and building cost is $1,100,000. Claim [63] lists the qualified estimate as $0. This reflects a difference between total cost and qualified rehabilitation expenditures. Stated in: DOC-02_Development_Budget_Sources_and_Uses.pdf, $1,100,000 (page 1); DOC-04_Cost_Certification_Draft.pdf, $1,100,000 (page 2, section 3. Substantial rehabilitation test); DOC-02_Development_Budget_Sources_and_Uses.pdf, $0 (page 1).
+materiality_reasoning : Acquisition costs are excluded from qualified rehabilitation expenditures.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : DOC-04_Cost_Certification_Draft.pdf
+      chunk    : chk_4c0f8f5cc1fc40f1   (chunk_index 2)
+      location : page 2, heading 3. Substantial rehabilitation test
+      quote    : "Acquisition, land and building | $1,100,000"
+      relevance: Acquisition, land and building $1,100,000
+      assessment: DOC-04_Cost_Certification_Draft.pdf states: Acquisition, land and building $1,100,000 | subject=Acquisition, land and building; metric=Amount; value=$1,100,000; unit=USD
+  [2] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_4df6e5023bc4488d   (chunk_index 0)
+      location : page 1
+      quote    : "1 | Acquisition, land and building | $1,100,000 | $0"
+      relevance: 1 | Acquisition, land and building | $1,100,000 | $0
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: 1 | Acquisition, land and building | $1,100,000 | $0 | subject=Acquisition, land and building; metric=Qualified (estimate); value=$0; extraction notes=basis: estimated
+  [3] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_4df6e5023bc4488d   (chunk_index 0)
+      location : page 1
+      quote    : "1 | Acquisition, land and building | $1,100,000 | $0"
+      relevance: 1 | Acquisition, land and building | $1,100,000 | $0
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: 1 | Acquisition, land and building | $1,100,000 | $0 | subject=Acquisition, land and building; metric=Amount; value=$1,100,000
+
+--- FINDING 17 of 27  [fnd_8058e373367f4431] ------------------------------
+title                 : Total qualified rehabilitation expenditures amount and period
+classification        : contextual_difference
+severity              : low
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claims [64], [65], [67] state total qualified rehabilitation expenditures are $14,200,000 (or about $14.2 million). Claim [66] notes that final expenditures will be set by cost certification, and Claim [68] states the measuring period ends May 31, 2025. These reflect projected amounts versus final cost certification bases. Stated in: DOC-04_Cost_Certification_Draft.pdf, $14,200,000 (page 2, section 3. Substantial rehabilitation test); DOC-06_Investor_Summary_Memo.pdf, about $14.2 million (page 1); DOC-02_Development_Budget_Sources_and_Uses.pdf, will be set by the cost certification (page 2, section Uses); DOC-03_Financial_Model_Summary.pdf, 14,200 ($ in thousands) (page 2, section 1. Project and operating assumptions); DOC-04_Cost_Certification_Draft.pdf, May 31, 2025 (page 1).
+materiality_reasoning : Projected qualified rehabilitation expenditures are updated upon cost certification.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_91246892c1f04474   (chunk_index 4)
+      location : page 2, heading Uses
+      quote    : "Final qualified rehabilitation expenditures will be set by the cost certification."
+      relevance: Final qualified rehabilitation expenditures will be set by the cost certification.
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: Final qualified rehabilitation expenditures will be set by the cost certification. | subject=Final qualified rehabilitation expenditures; metric=determination; value=will be set by the cost certification; extraction notes=basis: planned, rule: yes
+  [2] role=contextual
+      document : DOC-03_Financial_Model_Summary.pdf
+      chunk    : chk_26cbcbeca6e24c76   (chunk_index 2)
+      location : page 2, heading 1. Project and operating assumptions
+      quote    : "2.1 | Qualified rehabilitation expenses | 14,200 ($ in thousands)"
+      relevance: | 2.1 | Qualified rehabilitation expenses       | 14,200 ($ in thousands)  |
+      assessment: DOC-03_Financial_Model_Summary.pdf states: | 2.1 | Qualified rehabilitation expenses       | 14,200 ($ in thousands)  | | subject=Qualified rehabilitation expenses; metric=Value; value=14,200 ($ in thousands); unit=$ in thousands
+  [3] role=contextual
+      document : DOC-04_Cost_Certification_Draft.pdf
+      chunk    : chk_3ee084600a614c59   (chunk_index 0)
+      location : page 1
+      quote    : "Qualified rehabilitation expenditures during the measuring period ending May 31, 2025 exceed that amount, so the test is met."
+      relevance: Qualified rehabilitation expenditures during the measuring period ending May 31, 2025 exceed that amount, so the test is met.
+      assessment: DOC-04_Cost_Certification_Draft.pdf states: Qualified rehabilitation expenditures during the measuring period ending May 31, 2025 exceed that amount, so the test is met. | subject=qualified rehabilitation expenditures; metric=measuring period end date; value=May 31, 2025; conditions=during the measuring period ending
+  [4] role=contextual
+      document : DOC-04_Cost_Certification_Draft.pdf
+      chunk    : chk_63cf65f758694124   (chunk_index 1)
+      location : page 2, heading 3. Substantial rehabilitation test
+      quote    : "Total qualified rehabilitation expenditures | $14,200,000"
+      relevance: Total qualified rehabilitation expenditures $14,200,000
+      assessment: DOC-04_Cost_Certification_Draft.pdf states: Total qualified rehabilitation expenditures $14,200,000 | subject=Total qualified rehabilitation expenditures; metric=Amount; value=$14,200,000; unit=USD
+  [5] role=contextual
+      document : DOC-06_Investor_Summary_Memo.pdf
+      chunk    : chk_376a931872094da6   (chunk_index 0)
+      location : page 1
+      quote    : "Qualified rehabilitation expenditures of about $14.2 million generate approximately $2.8M in federal credits."
+      relevance: Qualified rehabilitation expenditures of about $14.2 million generate approximately $2.8M in federal credits.
+      assessment: DOC-06_Investor_Summary_Memo.pdf states: Qualified rehabilitation expenditures of about $14.2 million generate approximately $2.8M in federal credits. | subject=Qualified rehabilitation expenditures; metric=amount; value=about $14.2 million; extraction notes=precision: approximate
+
+--- FINDING 18 of 27  [fnd_2561598e70824de6] ------------------------------
+title                 : Mismatched attributes for window sightlines and expenditure test
+classification        : contradiction
+severity              : high
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim [69] describes window sightlines, Claim [70] describes the rehabilitation expenditure test status, and Claim [71] describes qualified amount developer estimates. These are disparate project aspects grouped together. Stated in: DOC-06_Investor_Summary_Memo.pdf, match the sightlines of the originals (page 2, section Operations); DOC-04_Cost_Certification_Draft.pdf, exceed that amount (page 1); DOC-02_Development_Budget_Sources_and_Uses.pdf, developer estimates (page 2, section Uses).
+materiality_reasoning : Unrelated project aspects should not be compared as conflicting claims.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : DOC-06_Investor_Summary_Memo.pdf
+      chunk    : chk_c0b9b15d6be24315   (chunk_index 1)
+      location : page 2, heading Operations
+      quote    : "The new units match the sightlines of the originals."
+      relevance: The new units match the sightlines of the originals.
+      assessment: DOC-06_Investor_Summary_Memo.pdf states: The new units match the sightlines of the originals. | subject=The new units; metric=sightlines compared with originals; value=match the sightlines of the originals
+  [2] role=contradicting
+      document : DOC-04_Cost_Certification_Draft.pdf
+      chunk    : chk_3ee084600a614c59   (chunk_index 0)
+      location : page 1
+      quote    : "Qualified rehabilitation expenditures during the measuring period ending May 31, 2025 exceed that amount, so the test is met."
+      relevance: Qualified rehabilitation expenditures during the measuring period ending May 31, 2025 exceed that amount, so the test is met.
+      assessment: DOC-04_Cost_Certification_Draft.pdf states: Qualified rehabilitation expenditures during the measuring period ending May 31, 2025 exceed that amount, so the test is met. | subject=qualified rehabilitation expenditures; metric=amount compared with adjusted basis; value=exceed that amount; period=during the measuring period ending May 31, 2025; extraction notes=basis: actual
+  [3] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_91246892c1f04474   (chunk_index 4)
+      location : page 2, heading Uses
+      quote    : "Qualified amounts are developer estimates."
+      relevance: Qualified amounts are developer estimates.
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: Qualified amounts are developer estimates. | subject=Qualified amounts; metric=basis of amounts; value=developer estimates; extraction notes=basis: estimated
+
+--- FINDING 19 of 27  [fnd_901b913f062b44ef] ------------------------------
+title                 : Mismatched legal and approval requirements
+classification        : contradiction
+severity              : critical
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim [72] specifies NPS shop drawing approval requirements, while Claim [73] specifies contract amendment requirements. These are distinct contractual and regulatory clauses. Stated in: DOC-01_Part2_Description_of_Rehabilitation.pdf, must be approved by NPS before fabrication (page 2, section Item 2. Roof); DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf, only in a writing signed by both parties (page 2, section Article 2. Purchase).
+materiality_reasoning : Distinct procedural requirements are not comparable.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : DOC-01_Part2_Description_of_Rehabilitation.pdf
+      chunk    : chk_60479ef1a6d84632   (chunk_index 1)
+      location : page 2, heading Item 2. Roof
+      quote    : "Shop drawings must be approved by NPS before fabrication."
+      relevance: Shop drawings must be approved by NPS before fabrication.
+      assessment: DOC-01_Part2_Description_of_Rehabilitation.pdf states: Shop drawings must be approved by NPS before fabrication. | subject=Shop drawings; metric=approval requirement; value=must be approved by NPS before fabrication; period=before fabrication; conditions=Condition 1; extraction notes=rule: yes
+  [2] role=contradicting
+      document : DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf
+      chunk    : chk_5687d9d1f491445b   (chunk_index 2)
+      location : page 2, heading Article 2. Purchase
+      quote    : "4.1 This Agreement is the entire agreement of the parties and may be amended only in a writing signed by both parties."
+      relevance: 4.1 This Agreement is the entire agreement of the parties and may be amended only in a writing signed by both parties.
+      assessment: DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf states: 4.1 This Agreement is the entire agreement of the parties and may be amended only in a writing signed by both parties. | subject=Agreement; metric=amendment requirement; value=only in a writing signed by both parties; extraction notes=rule: yes
+
+--- FINDING 20 of 27  [fnd_b0a80c5c88ba4748] ------------------------------
+title                 : Adjusted building basis versus projected expenditures
+classification        : contextual_difference
+severity              : low
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim [74] states the adjusted basis of the building at the start of the measuring period was $900,000. Claim [75] states the projected qualified rehabilitation expenditures are $14,200,000. These represent different financial metrics (adjusted basis vs projected expenditures). Stated in: DOC-04_Cost_Certification_Draft.pdf, $900,000 (page 1); DOC-02_Development_Budget_Sources_and_Uses.pdf, projected qualified rehabilitation expenditures of $14,200,000 (page 2, section Uses).
+materiality_reasoning : Comparing adjusted basis to projected expenditures clarifies the substantial rehabilitation test.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : DOC-04_Cost_Certification_Draft.pdf
+      chunk    : chk_3ee084600a614c59   (chunk_index 0)
+      location : page 1
+      quote    : "The adjusted basis of the building at the start of the 24-month measuring period (June 1, 2023) was $900,000."
+      relevance: The adjusted basis of the building at the start of the 24-month measuring period (June 1, 2023) was $900,000.
+      assessment: DOC-04_Cost_Certification_Draft.pdf states: The adjusted basis of the building at the start of the 24-month measuring period (June 1, 2023) was $900,000. | subject=the building; metric=adjusted basis; value=$900,000; unit=USD; period=at the start of the 24-month measuring period (June 1, 2023); extraction notes=basis: actual
+  [2] role=contextual
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_91246892c1f04474   (chunk_index 4)
+      location : page 2, heading Uses
+      quote    : "Federal equity and Virginia proceeds are sized on projected qualified rehabilitation expenditures of $14,200,000, which exclude the hard cost contingency: federal credits of $2,840,000 at $0.90 per credit, and Virginia credits of $3,550,000 at $0.84 per credit under the signed purchase agreement."
+      relevance: Federal equity and Virginia proceeds are sized on projected qualified rehabilitation expenditures of $14,200,000, which exclude the hard cost contingency: federal credits of $2,840,000 at $0.90 per credit, and Virginia credits of $3,550,000 at $0.84 per credit under the signed purchase agreement.
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: Federal equity and Virginia proceeds are sized on projected qualified rehabilitation expenditures of $14,200,000, which exclude the hard cost contingency: federal credits of $2,840,000 at $0.90 per credit, and Virginia credits of $3,550,000 at $0.84 per credit under the signed purchase agreement. | subject=Federal equity and Virginia proceeds; metric=sizing basis; value=projected qualified rehabilitation expenditures of $14,200,000; extraction notes=basis: forecast
+
+--- FINDING 21 of 27  [fnd_14740a3df17e49ca] ------------------------------
+title                 : Mismatched deposit percentage and closing timeline
+classification        : contradiction
+severity              : high
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim [76] states the deposit is 10% of the expected purchase price, while Claim [77] states closing shall occur within 30 days after delivery of the certificate. These describe different contractual terms (deposit vs closing timeline). All of these are stated in DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf, in different places: 10% (page 1); within 30 days (page 2, section Article 2. Purchase).
+materiality_reasoning : Separate contract terms govern different stages of the purchase agreement.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf
+      chunk    : chk_ae052e02d2934c38   (chunk_index 0)
+      location : page 1
+      quote    : "2.2 Deposit. Buyer shall pay a deposit of 10% of the expected purchase price at signing, to be credited at Closing."
+      relevance: 2.2 Deposit. Buyer shall pay a deposit of 10% of the expected purchase price at signing, to be credited at Closing.
+      assessment: DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf states: 2.2 Deposit. Buyer shall pay a deposit of 10% of the expected purchase price at signing, to be credited at Closing. | subject=Buyer; metric=deposit percentage of expected purchase price; value=10%; conditions=at signing, to be credited at Closing; extraction notes=basis: contracted, rule: yes
+  [2] role=contradicting
+      document : DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf
+      chunk    : chk_5687d9d1f491445b   (chunk_index 2)
+      location : page 2, heading Article 2. Purchase
+      quote    : "3.1 Closing shall occur within 30 days after Seller delivers the Certificate to Buyer."
+      relevance: 3.1 Closing shall occur within 30 days after Seller delivers the Certificate to Buyer.
+      assessment: DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf states: 3.1 Closing shall occur within 30 days after Seller delivers the Certificate to Buyer. | subject=Closing; metric=time to occur after Seller delivers the Certificate to Buyer; value=within 30 days; unit=days; period=within 30 days after Seller delivers the Certificate to Buyer; extraction notes=basis: contracted, precision: approximate, anchor: Seller delivers the Certificate to Buyer, rule: yes
+
+--- FINDING 22 of 27  [fnd_bf06e45a458d416e] ------------------------------
+title                 : Mismatched masonry cost and replacement material description
+classification        : contradiction
+severity              : high
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim [78] gives the masonry restoration amount as $1,180,000, while Claim [79] states that deteriorated brick will be replaced with salvaged brick. These represent financial budget lines versus architectural specifications. Stated in: DOC-02_Development_Budget_Sources_and_Uses.pdf, $1,180,000 (page 1); DOC-01_Part2_Description_of_Rehabilitation.pdf, salvaged brick from the building (page 1).
+materiality_reasoning : Financial costs and physical construction descriptions are distinct attributes.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_4df6e5023bc4488d   (chunk_index 0)
+      location : page 1
+      quote    : "3 | Masonry restoration | $1,180,000 | $1,180,000"
+      relevance: 3 | Masonry restoration | $1,180,000 | $1,180,000
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: 3 | Masonry restoration | $1,180,000 | $1,180,000 | subject=Masonry restoration; metric=Amount; value=$1,180,000; extraction notes=basis: estimated
+  [2] role=contradicting
+      document : DOC-01_Part2_Description_of_Rehabilitation.pdf
+      chunk    : chk_7450e05dccf64123   (chunk_index 0)
+      location : page 1
+      quote    : "Deteriorated brick will be replaced with salvaged brick from the building."
+      relevance: Deteriorated brick will be replaced with salvaged brick from the building.
+      assessment: DOC-01_Part2_Description_of_Rehabilitation.pdf states: Deteriorated brick will be replaced with salvaged brick from the building. | subject=Deteriorated brick; metric=replacement material; value=salvaged brick from the building; extraction notes=basis: planned, rule: yes
+
+--- FINDING 23 of 27  [fnd_1777f62698354bd2] ------------------------------
+title                 : Owner entity representation and signatory
+classification        : contextual_difference
+severity              : low
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim [80] names Daniel Bramblett as Manager signing for Calloway Warehouse Owner, LLC on November 12, 2024. Claim [81] identifies Calloway Warehouse Owner LLC as the property owner. These represent consistent organizational roles. Stated in: DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf, Daniel Bramblett, Manager (page 2, section Article 2. Purchase); DOC-01_Part2_Description_of_Rehabilitation.pdf, Calloway Warehouse Owner LLC (page 1).
+materiality_reasoning : Signatory identification confirms legal authority for the owner entity.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contextual
+      document : DOC-01_Part2_Description_of_Rehabilitation.pdf
+      chunk    : chk_7450e05dccf64123   (chunk_index 0)
+      location : page 1
+      quote    : "Owner: Calloway Warehouse Owner LLC"
+      relevance: Owner: Calloway Warehouse Owner LLC
+      assessment: DOC-01_Part2_Description_of_Rehabilitation.pdf states: Owner: Calloway Warehouse Owner LLC | subject=Calloway Tobacco Warehouse; metric=owner; value=Calloway Warehouse Owner LLC
+  [2] role=contextual
+      document : DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf
+      chunk    : chk_accfd1efd985481a   (chunk_index 1)
+      location : page 2, heading Article 2. Purchase
+      quote    : "Calloway Warehouse Owner, LLC | Daniel Bramblett, Manager | November 12, 2024"
+      relevance: Calloway Warehouse Owner, LLC | Daniel Bramblett, Manager | November 12, 2024
+      assessment: DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf states: Calloway Warehouse Owner, LLC | Daniel Bramblett, Manager | November 12, 2024 | subject=Calloway Warehouse Owner, LLC; metric=signatory; value=Daniel Bramblett, Manager
+
+--- FINDING 24 of 27  [fnd_cc773f633f6b4991] ------------------------------
+title                 : Mismatched window profile requirement and repair budget
+classification        : contradiction
+severity              : critical
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim [82] specifies that replacement window sash must match the original profile, while Claim [83] states the window repair and replacement budget is $1,260,000. These compare architectural requirements to budgetary costs. Stated in: DOC-01_Part2_Description_of_Rehabilitation.pdf, must match the original profile (page 2, section Item 2. Roof); DOC-02_Development_Budget_Sources_and_Uses.pdf, $1,260,000 (page 1).
+materiality_reasoning : Architectural guidelines and budget figures measure different project aspects.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : DOC-01_Part2_Description_of_Rehabilitation.pdf
+      chunk    : chk_60479ef1a6d84632   (chunk_index 1)
+      location : page 2, heading Item 2. Roof
+      quote    : "Condition 1: Replacement window sash must be wood and must match the original profile."
+      relevance: Condition 1: Replacement window sash must be wood and must match the original profile.
+      assessment: DOC-01_Part2_Description_of_Rehabilitation.pdf states: Condition 1: Replacement window sash must be wood and must match the original profile. | subject=Replacement window sash; metric=required profile; value=must match the original profile; conditions=Condition 1; extraction notes=rule: yes
+  [2] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_4df6e5023bc4488d   (chunk_index 0)
+      location : page 1
+      quote    : "5 | Window repair and replacement | $1,260,000 | $1,260,000"
+      relevance: 5 | Window repair and replacement | $1,260,000 | $1,260,000
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: 5 | Window repair and replacement | $1,260,000 | $1,260,000 | subject=Window repair and replacement; metric=Amount; value=$1,260,000; extraction notes=basis: estimated
+
+--- FINDING 25 of 27  [fnd_2688b890eae84f3d] ------------------------------
+title                 : Discrepancy in non-qualified developer fee description and amount
+classification        : contradiction
+severity              : high
+confidence            : 0.9
+evidence_status       : adequate
+verification_status   : verified
+description           : Claim [84] describes the developer fee non-qualified portion as being for acquisition and permanent financing services, while Claim [85] gives the specific non-qualified amount as $150,000. These are descriptive text versus financial amount attributes. Stated in: DOC-02_Development_Budget_Sources_and_Uses.pdf, a non-qualified portion for acquisition and permanent financing services (page 2, section Uses); DOC-04_Cost_Certification_Draft.pdf, $150,000 (page 2, section 3. Substantial rehabilitation test).
+materiality_reasoning : Linking the description of non-qualified fees to their specific dollar amount is necessary for accurate cost certification.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_91246892c1f04474   (chunk_index 4)
+      location : page 2, heading Uses
+      quote    : "The developer fee includes a non-qualified portion for acquisition and permanent financing services."
+      relevance: The developer fee includes a non-qualified portion for acquisition and permanent financing services.
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states: The developer fee includes a non-qualified portion for acquisition and permanent financing services. | subject=Developer fee; metric=included portion; value=a non-qualified portion for acquisition and permanent financing services
+  [2] role=contradicting
+      document : DOC-04_Cost_Certification_Draft.pdf
+      chunk    : chk_4c0f8f5cc1fc40f1   (chunk_index 2)
+      location : page 2, heading 3. Substantial rehabilitation test
+      quote    : "Developer fee (non-qualified portion) | $150,000"
+      relevance: Developer fee (non-qualified portion) $150,000
+      assessment: DOC-04_Cost_Certification_Draft.pdf states: Developer fee (non-qualified portion) $150,000 | subject=Developer fee (non-qualified portion); metric=Amount; value=$150,000; unit=USD
+
+--- FINDING 26 of 27  [fnd_1bcf1aebbb0c4f5f] ------------------------------
+title                 : Cross-document check: Total uses equals sum of hard cost subtotal and other items
+classification        : contradiction
+severity              : medium
+confidence            : 0.7
+evidence_status       : adequate
+verification_status   : verified
+description           : Total uses equals sum of hard cost subtotal and other items. Across DOC-02_Development_Budget_Sources_and_Uses.pdf: $11,730,000 + $450,000 + $780,000 + $1,200,000 + $440,000 + $360,000 + $120,000 + $380,000 + $1,100,000 = 16,560,000 once each claim's unit is applied, which should equal the $16,460,000 that DOC-02_Development_Budget_Sources_and_Uses.pdf states for it (a difference of 0.6% of the stated figure). The relation was proposed from the documents' own wording (Total uses must equal the sum of all individual development cost items.) and the arithmetic was done in code.
+materiality_reasoning : Total uses must equal the sum of all individual development cost items.
+business_impact       : -
+unresolved_questions  : -
+evidence:
+  [1] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_4df6e5023bc4488d   (chunk_index 0)
+      location : page 1
+      quote    : "11 | Hard cost subtotal | $11,730,000 | $11,730,000"
+      relevance: 11 | Hard cost subtotal | $11,730,000 | $11,730,000
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states $11,730,000 (page 1)
+  [2] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_4df6e5023bc4488d   (chunk_index 0)
+      location : page 1
+      quote    : "12 | Hard cost contingency | $450,000 | $450,000"
+      relevance: 12 | Hard cost contingency | $450,000 | $450,000
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states $450,000 (page 1)
+  [3] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_4df6e5023bc4488d   (chunk_index 0)
+      location : page 1
+      quote    : "13 | Architecture and engineering | $780,000 | $780,000"
+      relevance: 13 | Architecture and engineering | $780,000 | $780,000
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states $780,000 (page 1)
+  [4] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_4df6e5023bc4488d   (chunk_index 0)
+      location : page 1
+      quote    : "14 | Developer fee | $1,200,000 | $1,050,000"
+      relevance: 14 | Developer fee | $1,200,000 | $1,050,000
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states $1,200,000 (page 1)
+  [5] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_4df6e5023bc4488d   (chunk_index 0)
+      location : page 1
+      quote    : "15 | Construction interest and fees | $440,000 | $440,000"
+      relevance: 15 | Construction interest and fees | $440,000 | $440,000
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states $440,000 (page 1)
+  [6] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_589b02aa38784932   (chunk_index 1)
+      location : page 1
+      quote    : "16 | Legal and accounting | $360,000 | $300,000"
+      relevance: 16 | Legal and accounting | $360,000 | $300,000
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states $360,000 (page 1)
+  [7] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_589b02aa38784932   (chunk_index 1)
+      location : page 1
+      quote    : "17 | Permanent loan fees | $120,000 | $0"
+      relevance: 17 | Permanent loan fees | $120,000 | $0
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states $120,000 (page 1)
+  [8] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_589b02aa38784932   (chunk_index 1)
+      location : page 1
+      quote    : "18 | Operating and lease-up reserves | $380,000 | $0"
+      relevance: 18 | Operating and lease-up reserves | $380,000 | $0
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states $380,000 (page 1)
+  [9] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_4df6e5023bc4488d   (chunk_index 0)
+      location : page 1
+      quote    : "land and building | $1,100,000 | $0"
+      relevance: 1 | Acquisition, land and building | $1,100,000 | $0
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states $1,100,000 (page 1)
+  [10] role=contradicting
+      document : DOC-02_Development_Budget_Sources_and_Uses.pdf
+      chunk    : chk_589b02aa38784932   (chunk_index 1)
+      location : page 1
+      quote    : "19 | Total uses | $16,460,000 | $14,650,000"
+      relevance: 19 | Total uses | $16,460,000 | $14,650,000
+      assessment: DOC-02_Development_Budget_Sources_and_Uses.pdf states $16,460,000 (page 1)
+
+--- FINDING 27 of 27  [fnd_8065457e99984ecd] ------------------------------
+title                 : Referenced item not in the data room: Shop drawings for replacement sash
+classification        : missing_information
+severity              : high
+confidence            : 0.7
+evidence_status       : unavailable
+verification_status   : verified
+description           : DOC-01_Part2_Description_of_Rehabilitation.pdf (page 2) refers to "Shop drawings for replacement sash", but no file, sheet, heading, caption or row label in the data room is named like it, and every document was read.
+materiality_reasoning : -
+business_impact       : -
+unresolved_questions  : ['Where is Shop drawings for replacement sash?']
+evidence:
+  [1] role=insufficient
+      document : DOC-01_Part2_Description_of_Rehabilitation.pdf
+      chunk    : chk_60479ef1a6d84632   (chunk_index 1)
+      location : page 2, heading Item 2. Roof
+      quote    : "Shop drawings for replacement sash will be submitted to NPS for approval before fabrication."
+      relevance: Refers to Shop drawings for replacement sash
+      assessment: The document points to this item; it is not in the data room.
+
+
+==============================================================================
+COVERAGE AND PER-DOCUMENT VERDICTS
+==============================================================================
+Coverage: 'read' = chunks the LLM was shown. A document counts as fully read only if every batch succeeded (all-or-nothing per document).
+
+  document                                        chunks  read  fully read  claims  LLM calls  tokens  extract s  verdict  reason
+  ----------------------------------------------  ------  ----  ----------  ------  ---------  ------  ---------  -------  ---------------------------------------------
+  DOC-01_Part2_Description_of_Rehabilitation.pdf  2       2     yes         30      0          0       0.1        skipped  verdicts skipped by request (--skip-verdicts)
+  DOC-02_Development_Budget_Sources_and_Uses.pdf  5       5     yes         43      0          0       0.2        skipped  verdicts skipped by request (--skip-verdicts)
+  DOC-03_Financial_Model_Summary.pdf              5       5     yes         24      0          0       0.2        skipped  verdicts skipped by request (--skip-verdicts)
+  DOC-04_Cost_Certification_Draft.pdf             4       4     yes         32      0          0       0.2        skipped  verdicts skipped by request (--skip-verdicts)
+  DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf  3       3     yes         19      0          0       0.1        skipped  verdicts skipped by request (--skip-verdicts)
+  DOC-06_Investor_Summary_Memo.pdf                3       3     yes         35      0          0       0.1        skipped  verdicts skipped by request (--skip-verdicts)
+
+==============================================================================
+DOCUMENT PROFILES AND CANDIDATE GATES
+==============================================================================
+Profiles were not made by describing calls in this run.
+
+Document cards (shown to the grouping and judging calls):
+- DOC-01_Part2_Description_of_Rehabilitation.pdf: Calloway Tobacco Warehouse, Historic Preservation Certification Application, Part 2: Description of Rehabilitation. Description of the rehabilitation of Calloway Tobacco Warehouse. Issued by National Park Service, U.S. Department of the Interior.
+    status: Approved by the National Park Service, March 14, 2023.; scope: Project summary and descriptions of masonry, roof, windows and interior rehabilitation, together with the National Park Service decision and its condition.
+- DOC-02_Development_Budget_Sources_and_Uses.pdf: Calloway Tobacco Warehouse Apartments, Development Budget: Sources and Uses. Development Budget: Sources and Uses Issued by Bramblett Development Group LLC.
+    date or version: Revised April 10, 2025.; scope: Covers the development budget’s uses, qualified estimates, sources, and notes.
+- DOC-03_Financial_Model_Summary.pdf: Calloway Tobacco Warehouse Apartments, Financial Model Summary. Summarizes project and operating assumptions, capital structure and credits, and timing of sources. Issued by Bramblett Development Group LLC.
+    date or version: July 31, 2025; scope: Covers project and operating assumptions, capital structure and credits, and timing of sources.
+- DOC-04_Cost_Certification_Draft.pdf: Calloway Warehouse Owner LLC, Cost Certification. Cost Certification for the rehabilitation of the Calloway Tobacco Warehouse. Issued by Hensley & Pryor CPAs.
+    date or version: August 22, 2025; status: Draft; scope: Covers the building's placed-in-service date, the substantial rehabilitation test, qualified rehabilitation expenditures, excluded costs, and the hard cost contingency.
+- DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf: Virginia Historic Rehabilitation Tax Credit Purchase Agreement, Purchase Agreement. Sets out the purchase of Virginia historic rehabilitation tax credits for the Calloway Tobacco Warehouse project.
+    date or version: November 12, 2024; status: Executed agreement.; scope: Covers the purchase, deposit, closing, outside date and general terms for the Credits.
+- DOC-06_Investor_Summary_Memo.pdf: Calloway Tobacco Warehouse Apartments, Investor Summary Memo. Summarizes the project, credits and financing, approvals, and operations. Issued by Bramblett Development Group LLC.
+    date or version: October 15, 2025; scope: Covers project details, credits and financing, approvals, operations, and developer update excerpts.
+
+ENTITY GATE: applied; 1 group(s), 0 related link(s); 1 call
+  group 1: Calloway Tobacco Warehouse rehabilitation and development project: DOC-01_Part2_Description_of_Rehabilitation.pdf; DOC-02_Development_Budget_Sources_and_Uses.pdf; DOC-03_Financial_Model_Summary.pdf; DOC-04_Cost_Certification_Draft.pdf; DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf; DOC-06_Investor_Summary_Memo.pdf
+
+candidates dropped by the entity gate: 0; dropped as list members (name or statement claims on one page of one document): 0
+
+PROFILE FROM THE EXTRACTION CALL (no extra call; 6 of 6 documents) against the describing calls' profile:
+  DOC-01_Part2_Description_of_Rehabilitation.pdf
+    main_entity   : extraction: Calloway Tobacco Warehouse
+    document_type : extraction: Historic Preservation Certification Application, Part 2: Description of Rehabilitation
+    purpose       : extraction: Description of the rehabilitation of Calloway Tobacco Warehouse. Issued by National Park Service, U.S. Department of the Interior.
+    date          : extraction: -
+    status        : extraction: Approved by the National Park Service, March 14, 2023.
+    scope         : extraction: Project summary and descriptions of masonry, roof, windows and interior rehabilitation, together with the National Park Service decision and its condition.
+  DOC-02_Development_Budget_Sources_and_Uses.pdf
+    main_entity   : extraction: Calloway Tobacco Warehouse Apartments
+    document_type : extraction: Development Budget: Sources and Uses
+    purpose       : extraction: Development Budget: Sources and Uses Issued by Bramblett Development Group LLC.
+    date          : extraction: Revised April 10, 2025.
+    status        : extraction: -
+    scope         : extraction: Covers the development budget’s uses, qualified estimates, sources, and notes.
+  DOC-03_Financial_Model_Summary.pdf
+    main_entity   : extraction: Calloway Tobacco Warehouse Apartments
+    document_type : extraction: Financial Model Summary
+    purpose       : extraction: Summarizes project and operating assumptions, capital structure and credits, and timing of sources. Issued by Bramblett Development Group LLC.
+    date          : extraction: July 31, 2025
+    status        : extraction: -
+    scope         : extraction: Covers project and operating assumptions, capital structure and credits, and timing of sources.
+  DOC-04_Cost_Certification_Draft.pdf
+    main_entity   : extraction: Calloway Warehouse Owner LLC
+    document_type : extraction: Cost Certification
+    purpose       : extraction: Cost Certification for the rehabilitation of the Calloway Tobacco Warehouse. Issued by Hensley & Pryor CPAs.
+    date          : extraction: August 22, 2025
+    status        : extraction: Draft
+    scope         : extraction: Covers the building's placed-in-service date, the substantial rehabilitation test, qualified rehabilitation expenditures, excluded costs, and the hard cost contingency.
+  DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf
+    main_entity   : extraction: Virginia Historic Rehabilitation Tax Credit Purchase Agreement
+    document_type : extraction: Purchase Agreement
+    purpose       : extraction: Sets out the purchase of Virginia historic rehabilitation tax credits for the Calloway Tobacco Warehouse project.
+    date          : extraction: November 12, 2024
+    status        : extraction: Executed agreement.
+    scope         : extraction: Covers the purchase, deposit, closing, outside date and general terms for the Credits.
+  DOC-06_Investor_Summary_Memo.pdf
+    main_entity   : extraction: Calloway Tobacco Warehouse Apartments
+    document_type : extraction: Investor Summary Memo
+    purpose       : extraction: Summarizes the project, credits and financing, approvals, and operations. Issued by Bramblett Development Group LLC.
+    date          : extraction: October 15, 2025
+    status        : extraction: -
+    scope         : extraction: Covers project details, credits and financing, approvals, operations, and developer update excerpts.
+
+==============================================================================
+CLAIM LEDGER
+==============================================================================
+claims recorded 183, rejected 0
+
+Per document (grouped = is in a claim group; corroborated = same value stated elsewhere; alone = nothing comparable found):
+  document                                        claims  grouped  corroborated  alone  groups judged  findings
+  ----------------------------------------------  ------  -------  ------------  -----  -------------  --------
+  DOC-01_Part2_Description_of_Rehabilitation.pdf  30      17       0             13     14             6
+  DOC-02_Development_Budget_Sources_and_Uses.pdf  43      32       3             11     27             17
+  DOC-03_Financial_Model_Summary.pdf              24      12       0             12     10             6
+  DOC-04_Cost_Certification_Draft.pdf             32      22       3             10     17             14
+  DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf  19      12       0             7      11             5
+  DOC-06_Investor_Summary_Memo.pdf                35      19       0             16     17             9
+
+Rejected claims by reason (first 15):
+  none
+
+==============================================================================
+CLAIM GROUPING AND JUDGING
+==============================================================================
+grouping mode: LLM grouping of sorted claims: 183 claims in 1 batch(es), 1 call(s) (0 failed; 0 failed batch(es) were asked again as two halves), 0 claims not sent (no other claim shares their subject or metric words); 32 groups covering 72 claims (largest 3; 66 distinct values in all), 150 candidates (57 added from nearest neighbours in other documents), 0 unknown refs ignored
+  note: claims in different batches are never grouped together (one batch: no such gap in this run)
+  candidates by claims that mention the same record id and state the same kind of value: 0; by subject and metric words that largely coincide: 8; by a rare word of their labels shared across documents: 48; claims that say there is none of something, linked to the claims that mention it: 2
+rule linking: 183 claims in 1 batch(es), 1 call(s) (0 failed); 24 claims were flagged as rules by the extraction (every call was shown all of them; the model only looked for their records); 11 rules with records under them, 21 rule-to-record links (0 added by code from dates), 0 unknown refs ignored
+  rule: Roof replacement
+  rule: Parapets retention
+  rule: Window repair and replacement
+  rule: Structural repairs
+  rule: Existing wood sash repair
+  rule: Original maple floors refinishing
+  rule: Virginia credit purchase price
+  rule: Credit deposit
+  rule: Closing outside date
+  rule: Certificate issuance timing
+  rule: Project fully funded
+candidates: 171
+  by relation hint : {'conflicting': 91, 'exact': 24, 'contextual': 18, 'partial': 38}
+  by match route   : {'llm': 35, 'lexical': 56, 'rule': 23, 'embedding': 57}
+  across documents : 150   inside one document: 21
+claim groups: 47; agreed (every claim states the same value, no LLM): 3; series (one value for each period, not compared): 0; document labels only (not compared): 3; decided in code: 0 basis differences, 0 superseded editions, 0 currency differences; judged by the LLM: 41 in 2 calls (0 batches failed)
+LLM verdicts: {'contextual_difference': 8, 'contradiction': 17, 'consistent': 4, 'not_comparable': 12}
+findings saved 25; rejected 0; claims left out of a finding because their quote did not show their value 0
+groups asked again 0; not-comparable verdicts whose own reason names a difference (asked again) 0; verdicts whose values did not match their claims (echoed values) 0; verdicts without echoed values 0; quotes supplied by code for verdicts that gave none 0; model quotes replaced by the claim's own passage because they were not in its chunk 0
+2 sets of claims divided into clusters of at most 15 by how alike the claims are (74 links in no cluster: between two clusters, or to a claim that cannot join one); consistent findings grouped 0; findings merged because they state one difference in several documents: 0
+
+Verdicts whose values did not match their claims (first 20):
+  none
+
+Rejected findings (first 15):
+  none
+
+==============================================================================
+EVERY CLAIM GROUP, ITS CLAIMS AND WHAT HAPPENED TO THEIR CANDIDATES
+==============================================================================
+47 claim groups; 170 candidates between their claims. What happened to the candidates: {'judge': 86, 'agreement': 3, 'family': 4, 'metadata': 3, 'in no cluster': 74}
+
+GROUP 1: completion date  (3 claims; judged together)
+  claim  document                                        where   subject           metric             value           candidates
+  -----  ----------------------------------------------  ------  ----------------  -----------------  --------------  ----------
+  1      DOC-06_Investor_Summary_Memo.pdf                page 2  Roof replacement  completion date    September 2024  2
+  2      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 1  Roof replacement  Amount             $720,000        1, 3
+  3      DOC-06_Investor_Summary_Memo.pdf                page 2  Roof replacement  completion status  complete        2
+  claim 1 with claim 2 [conflicting, found by llm]: judge: contextual_difference (low), saved: Roof replacement completion date vs estimated budget
+  claim 2 with claim 3 [conflicting, found by llm]: judge: contextual_difference (low), saved: Roof replacement completion date vs estimated budget
+
+GROUP 2: date placed in service  (4 claims; judged together)
+  claim  document                                        where   subject       metric                  value              candidates
+  -----  ----------------------------------------------  ------  ------------  ----------------------  -----------------  ----------
+  1      DOC-04_Cost_Certification_Draft.pdf             page 1  the building  date placed in service  May 20, 2025       2, 3
+  2      DOC-06_Investor_Summary_Memo.pdf                page 2  Building      placed in service date  April 2, 2025      1
+  3      DOC-06_Investor_Summary_Memo.pdf                page 2  Building      service status          placed in service  1, 4
+  4      DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf  page 2  building      service status          placed in service  3
+  claim 1 with claim 2 [conflicting, found by llm]: judge: contradiction (high), saved: Conflicting placed-in-service dates
+  claim 1 with claim 3 [conflicting, found by llm]: judge: contradiction (high), saved: Conflicting placed-in-service dates
+  claim 3 with claim 4 [exact, found by lexical]: judge: these two claims state the same value; the group's finding (contradiction) is about the claims that differ: Conflicting placed-in-service dates
+
+GROUP 3: availability for intended use  (3 claims; judged together)
+  claim  document                             where   subject                         metric                         value                                     candidates
+  -----  -----------------------------------  ------  ------------------------------  -----------------------------  ----------------------------------------  ----------
+  1      DOC-04_Cost_Certification_Draft.pdf  page 1  the completed rehabilitation    availability for intended use  ready and available for its intended use  2, 3
+  2      DOC-06_Investor_Summary_Memo.pdf     page 2  Final certificate of occupancy  date                           May 20, 2025                              1
+  3      DOC-06_Investor_Summary_Memo.pdf     page 2  Final certificate of occupancy  scope                          the whole building                        1
+  claim 1 with claim 2 [conflicting, found by llm]: judge: contradiction (high), saved: Conflict between placed-in-service date and final certificate of occupancy
+  claim 1 with claim 3 [conflicting, found by llm]: judge: contradiction (high), saved: Conflict between placed-in-service date and final certificate of occupancy
+
+GROUP 4: Value  (2 claims; judged together)
+  claim  document                                        where   subject                                metric  value                                    candidates
+  -----  ----------------------------------------------  ------  -------------------------------------  ------  ---------------------------------------  ----------
+  1      DOC-03_Financial_Model_Summary.pdf              page 2  Virginia credit proceeds               Value   3,124.0 ($ in thousands) $ in thousands  2
+  2      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 2  Virginia historic tax credit proceeds  Amount  $2,982,000                               1
+  claim 1 with claim 2 [conflicting, found by llm]: judge: contradiction (medium), saved: Discrepancy in Virginia credit proceeds
+
+GROUP 5: Value  (3 claims; judged together)
+  claim  document                                        where   subject                             metric  value                                    candidates
+  -----  ----------------------------------------------  ------  ----------------------------------  ------  ---------------------------------------  ----------
+  1      DOC-03_Financial_Model_Summary.pdf              page 2  Federal investor equity             Value   2,646.0 ($ in thousands) $ in thousands  2
+  2      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 2  Federal historic tax credit equity  Amount  $2,556,000                               1, 3
+  3      DOC-03_Financial_Model_Summary.pdf              page 2  Federal historic tax credit         Value   $2,940,000                               2
+  claim 1 with claim 2 [conflicting, found by llm]: judge: contradiction (high), saved: Discrepancy in Federal tax credit and equity values
+  claim 2 with claim 3 [conflicting, found by embedding]: judge: contradiction (high), saved: Discrepancy in Federal tax credit and equity values
+
+GROUP 6: amount  (3 claims; judged together)
+  claim  document                                        where   subject                             metric                      value                                  candidates
+  -----  ----------------------------------------------  ------  ----------------------------------  --------------------------  -------------------------------------  ----------
+  1      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 2  Virginia credits                    amount                      $3,550,000                             2, 3
+  2      DOC-03_Financial_Model_Summary.pdf              page 2  Virginia credits                    Value                       3,550 ($ in thousands) $ in thousands  1, 3
+  3      DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf  page 1  Calloway Tobacco Warehouse project  expected tax credits total  $3,550,000                             1, 2
+  claim 1 with claim 2 [exact, found by llm]: judge: consistent, counted, not saved (consistent findings are off)
+  claim 1 with claim 3 [exact, found by llm]: judge: consistent, counted, not saved (consistent findings are off)
+  claim 2 with claim 3 [exact, found by llm]: judge: consistent, counted, not saved (consistent findings are off)
+
+GROUP 7: Amount  (3 claims; judged together)
+  claim  document                                        where   subject                              metric            value                candidates
+  -----  ----------------------------------------------  ------  -----------------------------------  ----------------  -------------------  ----------
+  1      DOC-04_Cost_Certification_Draft.pdf             page 2  Federal rehabilitation credit (20%)  Amount            $2,840,000 USD       2, 3
+  2      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 2  Federal credits                      amount            $2,840,000           1, 3
+  3      DOC-06_Investor_Summary_Memo.pdf                page 1  Federal credits                      amount generated  approximately $2.8M  2, 1
+  claim 1 with claim 2 [exact, found by llm]: judge: these two claims state the same value; the group's finding (contextual_difference) is about the claims that differ: Federal rehabilitation credit precision and amount
+  claim 2 with claim 3 [conflicting, found by lexical]: judge: contextual_difference (low), saved: Federal rehabilitation credit precision and amount
+  claim 1 with claim 3 [conflicting, found by embedding]: judge: contextual_difference (low), saved: Federal rehabilitation credit precision and amount
+
+GROUP 8: credit rate  (5 claims; judged together)
+  claim  document                                        where   subject                                  metric                     value                        candidates
+  -----  ----------------------------------------------  ------  ---------------------------------------  -------------------------  ---------------------------  ----------
+  1      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 2  Virginia credits                         credit rate                $0.84 per credit             2, 3, 4
+  2      DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf  page 1  Buyer                                    price per $1.00 of credit  $0.84 per $1.00              1, 3
+  3      DOC-06_Investor_Summary_Memo.pdf                page 1  Virginia credits                         sale price per credit      $0.84 per credit per credit  1, 2, 5
+  4      DOC-06_Investor_Summary_Memo.pdf                page 1  Virginia credits                         purchase agreement status  signed                       1, 5
+  5      DOC-03_Financial_Model_Summary.pdf              page 2  Virginia credit price per credit dollar  Value                      0.88                         3, 4
+  claim 1 with claim 2 [contextual, found by llm]: judge: contextual_difference (medium), saved: Virginia credit price per dollar
+  claim 1 with claim 3 [exact, found by llm]: judge: these two claims state the same value; the group's finding (contextual_difference) is about the claims that differ: Virginia credit price per dollar
+  claim 2 with claim 3 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+  claim 1 with claim 4 [conflicting, found by embedding]: judge: contextual_difference (medium), saved: Virginia credit price per dollar
+  claim 5 with claim 3 [contextual, found by embedding]: judge: contextual_difference (medium), saved: Virginia credit price per dollar
+  claim 5 with claim 4 [conflicting, found by embedding]: judge: contextual_difference (medium), saved: Virginia credit price per dollar
+
+GROUP 9: Value  (2 claims; judged together)
+  claim  document                                        where   subject                                 metric       value             candidates
+  -----  ----------------------------------------------  ------  --------------------------------------  -----------  ----------------  ----------
+  1      DOC-03_Financial_Model_Summary.pdf              page 2  Federal equity price per credit dollar  Value        0.90              2
+  2      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 2  Federal credits                         credit rate  $0.90 per credit  1
+  claim 1 with claim 2 [exact, found by llm]: judge: consistent, counted, not saved (consistent findings are off)
+
+GROUP 10: credit rate  (2 claims; judged together)
+  claim  document                             where   subject                              metric       value  candidates
+  -----  -----------------------------------  ------  -----------------------------------  -----------  -----  ----------
+  1      DOC-04_Cost_Certification_Draft.pdf  page 2  Federal rehabilitation credit (20%)  credit rate  20% %  2
+  2      DOC-03_Financial_Model_Summary.pdf   page 2  Virginia historic tax credit rate    Value        25%    1
+  claim 1 with claim 2 [conflicting, found by llm]: judge: contradiction (high), saved: Different tax credit rates compared
+
+GROUP 11: Amount  (4 claims; judged together)
+  claim  document                                        where   subject                    metric                value                                  candidates
+  -----  ----------------------------------------------  ------  -------------------------  --------------------  -------------------------------------  ----------
+  1      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 2  Permanent first mortgage   Amount                $7,400,000                             2
+  2      DOC-03_Financial_Model_Summary.pdf              page 1  Permanent loan             Value                 7,400 ($ in thousands) $ in thousands  1, 3, 4
+  3      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 1  Permanent loan fees        Qualified (estimate)  $0                                     2
+  4      DOC-03_Financial_Model_Summary.pdf              page 2  Permanent loan conversion  Timing                Q4 2025                                2
+  claim 1 with claim 2 [exact, found by llm]: judge: these two claims state the same value; the group's finding (contextual_difference) is about the claims that differ: Permanent loan amount versus loan fees and timing
+  claim 2 with claim 3 [conflicting, found by lexical]: judge: contextual_difference (low), saved: Permanent loan amount versus loan fees and timing
+  claim 2 with claim 4 [conflicting, found by embedding]: judge: contextual_difference (low), saved: Permanent loan amount versus loan fees and timing
+
+GROUP 12: Value  (2 claims; judged together)
+  claim  document                                        where   subject                 metric  value                                   candidates
+  -----  ----------------------------------------------  ------  ----------------------  ------  --------------------------------------  ----------
+  1      DOC-03_Financial_Model_Summary.pdf              page 1  Total development cost  Value   16,460 ($ in thousands) $ in thousands  2
+  2      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 1  Total uses              Amount  $16,460,000                             1
+  claim 1 with claim 2 [exact, found by llm]: judge: consistent, counted, not saved (consistent findings are off)
+
+GROUP 13: warehouse construction year  (3 claims; judged together)
+  claim  document                                        where   subject                                metric                       value               candidates
+  -----  ----------------------------------------------  ------  -------------------------------------  ---------------------------  ------------------  ----------
+  1      DOC-06_Investor_Summary_Memo.pdf                page 1  Calloway Tobacco Warehouse Apartments  warehouse construction year  1908                2, 3
+  2      DOC-01_Part2_Description_of_Rehabilitation.pdf  page 1  Calloway Tobacco Warehouse             construction year            1908                1
+  3      DOC-01_Part2_Description_of_Rehabilitation.pdf  page 1  Calloway Tobacco Warehouse             building stories             four-story stories  1
+  claim 1 with claim 2 [exact, found by llm]: judge: these two claims state the same value; the group's finding (contradiction) is about the claims that differ: Mismatched attributes for construction year and stories
+  claim 1 with claim 3 [conflicting, found by embedding]: judge: contradiction (low), saved: Mismatched attributes for construction year and stories
+
+GROUP 14: apartments  (4 claims; judged together)
+  claim  document                                        where   subject                                    metric              value          candidates
+  -----  ----------------------------------------------  ------  -----------------------------------------  ------------------  -------------  ----------
+  1      DOC-04_Cost_Certification_Draft.pdf             page 1  Calloway Warehouse Owner LLC               apartments          48 apartments  2
+  2      DOC-01_Part2_Description_of_Rehabilitation.pdf  page 1  Calloway Tobacco Warehouse rehabilitation  apartments planned  48 apartments  1, 3, 4
+  3      DOC-06_Investor_Summary_Memo.pdf                page 1  Calloway Tobacco Warehouse Apartments      apartments          50 apartments  2
+  4      DOC-06_Investor_Summary_Memo.pdf                page 1  Calloway Tobacco Warehouse Apartments      location            Lynchburg      2
+  claim 1 with claim 2 [exact, found by llm]: judge: these two claims state the same value; the group's finding (contradiction) is about the claims that differ: Conflict in planned apartment count
+  claim 2 with claim 3 [conflicting, found by lexical]: judge: contradiction (medium), saved: Conflict in planned apartment count
+  claim 2 with claim 4 [conflicting, found by embedding]: judge: set aside, not about the same attribute as the other claims
+
+GROUP 15: ground-floor commercial suites planned  (3 claims; judged together)
+  claim  document                                        where   subject                                    metric                                  value                              candidates
+  -----  ----------------------------------------------  ------  -----------------------------------------  --------------------------------------  ---------------------------------  ----------
+  1      DOC-01_Part2_Description_of_Rehabilitation.pdf  page 1  Calloway Tobacco Warehouse rehabilitation  ground-floor commercial suites planned  one ground-floor commercial suite  2, 3
+  2      DOC-04_Cost_Certification_Draft.pdf             page 1  Calloway Warehouse Owner LLC               commercial suites                       one commercial suite               1, 3
+  3      DOC-06_Investor_Summary_Memo.pdf                page 1  Calloway Tobacco Warehouse Apartments      ground-floor commercial suites          one suite                          1, 2
+  claim 1 with claim 2 [partial, found by llm]: judge: consistent, counted, not saved (consistent findings are off)
+  claim 3 with claim 1 [partial, found by lexical]: judge: consistent, counted, not saved (consistent findings are off)
+  claim 3 with claim 2 [partial, found by lexical]: judge: consistent, counted, not saved (consistent findings are off)
+
+GROUP 16: Amount  (2 claims; all claims state the same value, not sent to the LLM)
+  claim  document                                        where   subject                       metric  value         candidates
+  -----  ----------------------------------------------  ------  ----------------------------  ------  ------------  ----------
+  1      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 1  Architecture and engineering  Amount  $780,000      2
+  2      DOC-04_Cost_Certification_Draft.pdf             page 2  Architecture and engineering  Amount  $780,000 USD  1
+  claim 1 with claim 2 [exact, found by llm]: agreement: counted, not saved (consistent findings are off)
+
+GROUP 17: Amount  (4 claims; judged together)
+  claim  document                                        where   subject                            metric                value           candidates
+  -----  ----------------------------------------------  ------  ---------------------------------  --------------------  --------------  ----------
+  1      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 1  Developer fee                      Amount                $1,200,000      2, 4
+  2      DOC-04_Cost_Certification_Draft.pdf             page 2  Developer fee (qualified portion)  Amount                $1,050,000 USD  1, 3, 4
+  3      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 1  Developer fee                      Qualified (estimate)  $1,050,000      2, 4
+  4      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 2  Deferred developer fee             Amount                $500,000        1, 2, 3
+  claim 1 with claim 2 [conflicting, found by llm]: judge: contradiction (high), saved: Discrepancy in developer fee amounts and deferred portions
+  claim 2 with claim 3 [exact, found by llm]: judge: these two claims state the same value; the group's finding (contradiction) is about the claims that differ: Discrepancy in developer fee amounts and deferred portions
+  claim 4 with claim 1 [conflicting, found by lexical]: judge: contradiction (high), saved: Discrepancy in developer fee amounts and deferred portions
+  claim 4 with claim 2 [conflicting, found by embedding]: judge: contradiction (high), saved: Discrepancy in developer fee amounts and deferred portions
+  claim 4 with claim 3 [conflicting, found by embedding]: judge: contradiction (high), saved: Discrepancy in developer fee amounts and deferred portions
+
+GROUP 18: Amount  (2 claims; all claims state the same value, not sent to the LLM)
+  claim  document                                        where   subject                         metric  value         candidates
+  -----  ----------------------------------------------  ------  ------------------------------  ------  ------------  ----------
+  1      DOC-04_Cost_Certification_Draft.pdf             page 2  Construction interest and fees  Amount  $440,000 USD  2
+  2      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 1  Construction interest and fees  Amount  $440,000      1
+  claim 1 with claim 2 [exact, found by llm]: agreement: counted, not saved (consistent findings are off)
+
+GROUP 19: Qualified (estimate)  (3 claims; judged together)
+  claim  document                                        where   subject                                   metric                value         candidates
+  -----  ----------------------------------------------  ------  ----------------------------------------  --------------------  ------------  ----------
+  1      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 1  Legal and accounting                      Qualified (estimate)  $300,000      2
+  2      DOC-04_Cost_Certification_Draft.pdf             page 2  Legal and accounting (qualified portion)  Amount                $300,000 USD  1, 3
+  3      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 1  Legal and accounting                      Amount                $360,000      2
+  claim 1 with claim 2 [exact, found by llm]: judge: these two claims state the same value; the group's finding (contradiction) is about the claims that differ: Discrepancy in legal and accounting total versus qualified amounts
+  claim 2 with claim 3 [conflicting, found by lexical]: judge: contradiction (high), saved: Discrepancy in legal and accounting total versus qualified amounts
+
+GROUP 20: Amount  (2 claims; all claims state the same value, not sent to the LLM)
+  claim  document                                        where   subject              metric  value         candidates
+  -----  ----------------------------------------------  ------  -------------------  ------  ------------  ----------
+  1      DOC-04_Cost_Certification_Draft.pdf             page 2  Permanent loan fees  Amount  $120,000 USD  2
+  2      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 1  Permanent loan fees  Amount  $120,000      1
+  claim 1 with claim 2 [exact, found by llm]: agreement: counted, not saved (consistent findings are off)
+
+GROUP 21: Amount  (3 claims; judged together)
+  claim  document                                        where   subject                          metric                value         candidates
+  -----  ----------------------------------------------  ------  -------------------------------  --------------------  ------------  ----------
+  1      DOC-04_Cost_Certification_Draft.pdf             page 2  Operating and lease-up reserves  Amount                $380,000 USD  2, 3
+  2      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 1  Operating and lease-up reserves  Amount                $380,000      1
+  3      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 1  Operating and lease-up reserves  Qualified (estimate)  $0            1
+  claim 1 with claim 2 [exact, found by llm]: judge: these two claims state the same value; the group's finding (contradiction) is about the claims that differ: Conflict in operating and lease-up reserves qualified status
+  claim 1 with claim 3 [conflicting, found by lexical]: judge: contradiction (high), saved: Conflict in operating and lease-up reserves qualified status
+
+GROUP 22: Amount  (4 claims; judged together)
+  claim  document                                        where   subject                metric                       value            candidates
+  -----  ----------------------------------------------  ------  ---------------------  ---------------------------  ---------------  ----------
+  1      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 1  Hard cost contingency  Amount                       $450,000         2, 3, 4
+  2      DOC-04_Cost_Certification_Draft.pdf             page 2  hard cost contingency  budgeted amount              $450,000 USD     1
+  3      DOC-04_Cost_Certification_Draft.pdf             page 2  hard cost contingency  inclusion in costs incurred  is not included  1
+  4      DOC-04_Cost_Certification_Draft.pdf             page 2  hard cost contingency  drawn status                 not drawn        1
+  claim 1 with claim 2 [exact, found by llm]: judge: these two claims state the same value; the group's finding (contextual_difference) is about the claims that differ: Hard cost contingency budget versus actual draw status
+  claim 3 with claim 1 [conflicting, found by embedding]: judge: contextual_difference (low), saved: Hard cost contingency budget versus actual draw status
+  claim 1 with claim 4 [conflicting, found by embedding]: judge: contextual_difference (low), saved: Hard cost contingency budget versus actual draw status
+
+GROUP 23: document date  (2 claims; judged together)
+  claim  document                            where   subject                  metric         value             candidates
+  -----  ----------------------------------  ------  -----------------------  -------------  ----------------  ----------
+  1      DOC-03_Financial_Model_Summary.pdf  page 1  Financial Model Summary  document date  July 31, 2025     2
+  2      DOC-06_Investor_Summary_Memo.pdf    page 1  Investor Summary Memo    document date  October 15, 2025  1
+  claim 1 with claim 2 [conflicting, found by llm]: metadata: every claim is about its own document (title, type, revision, its date), so none is a rival value of another
+
+GROUP 24: document date  (2 claims; judged together)
+  claim  document                                        where   subject                                                         metric         value              candidates
+  -----  ----------------------------------------------  ------  --------------------------------------------------------------  -------------  -----------------  ----------
+  1      DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf  page 2  Virginia Historic Rehabilitation Tax Credit Purchase Agreement  document date  November 12, 2024  2
+  2      DOC-04_Cost_Certification_Draft.pdf             page 1  Cost Certification (Draft)                                      document date  August 22, 2025    1
+  claim 1 with claim 2 [contextual, found by llm]: metadata: every claim is about its own document (title, type, revision, its date), so none is a rival value of another
+
+GROUP 25: Amount  (3 claims; judged together)
+  claim  document                                        where   subject                         metric                value           candidates
+  -----  ----------------------------------------------  ------  ------------------------------  --------------------  --------------  ----------
+  1      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 1  Acquisition, land and building  Amount                $1,100,000      2
+  2      DOC-04_Cost_Certification_Draft.pdf             page 2  Acquisition, land and building  Amount                $1,100,000 USD  1, 3
+  3      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 1  Acquisition, land and building  Qualified (estimate)  $0              2
+  claim 1 with claim 2 [exact, found by lexical]: judge: these two claims state the same value; the group's finding (contradiction) is about the claims that differ: Conflict in acquisition cost qualified status
+  claim 2 with claim 3 [conflicting, found by lexical]: judge: contradiction (high), saved: Conflict in acquisition cost qualified status
+
+GROUP 26: Amount  (5 claims; judged together)
+  claim  document                                        where   subject                                      metric                     value                                   candidates
+  -----  ----------------------------------------------  ------  -------------------------------------------  -------------------------  --------------------------------------  ----------
+  1      DOC-04_Cost_Certification_Draft.pdf             page 2  Total qualified rehabilitation expenditures  Amount                     $14,200,000 USD                         2, 3, 4, 5
+  2      DOC-06_Investor_Summary_Memo.pdf                page 1  Qualified rehabilitation expenditures        amount                     about $14.2 million                     1
+  3      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 2  Final qualified rehabilitation expenditures  determination              will be set by the cost certification   1, 4
+  4      DOC-03_Financial_Model_Summary.pdf              page 2  Qualified rehabilitation expenses            Value                      14,200 ($ in thousands) $ in thousands  3, 1
+  5      DOC-04_Cost_Certification_Draft.pdf             page 1  qualified rehabilitation expenditures        measuring period end date  May 31, 2025                            1
+  claim 1 with claim 2 [exact, found by lexical]: judge: these two claims state the same value; the group's finding (contextual_difference) is about the claims that differ: Total qualified rehabilitation expenditures amount and period
+  claim 1 with claim 3 [conflicting, found by embedding]: judge: contextual_difference (low), saved: Total qualified rehabilitation expenditures amount and period
+  claim 4 with claim 3 [conflicting, found by embedding]: judge: contextual_difference (low), saved: Total qualified rehabilitation expenditures amount and period
+  claim 4 with claim 1 [conflicting, found by embedding]: judge: contextual_difference (low), saved: Total qualified rehabilitation expenditures amount and period
+  claim 1 with claim 5 [contextual, found by embedding]: judge: contextual_difference (low), saved: Total qualified rehabilitation expenditures amount and period
+
+GROUP 27: sightlines compared with originals  (3 claims; judged together)
+  claim  document                                        where   subject                                metric                               value                                  candidates
+  -----  ----------------------------------------------  ------  -------------------------------------  -----------------------------------  -------------------------------------  ----------
+  1      DOC-06_Investor_Summary_Memo.pdf                page 2  The new units                          sightlines compared with originals   match the sightlines of the originals  2
+  2      DOC-04_Cost_Certification_Draft.pdf             page 1  qualified rehabilitation expenditures  amount compared with adjusted basis  exceed that amount                     1, 3
+  3      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 2  Qualified amounts                      basis of amounts                     developer estimates                    2
+  claim 1 with claim 2 [conflicting, found by lexical]: judge: contradiction (high), saved: Mismatched attributes for window sightlines and expenditure test
+  claim 3 with claim 2 [conflicting, found by lexical]: judge: contradiction (high), saved: Mismatched attributes for window sightlines and expenditure test
+
+GROUP 28: issuer  (2 claims; judged together)
+  claim  document                                        where   subject                                                                                metric           value                                                   candidates
+  -----  ----------------------------------------------  ------  -------------------------------------------------------------------------------------  ---------------  ------------------------------------------------------  ----------
+  1      DOC-06_Investor_Summary_Memo.pdf                page 1  Investor Summary Memo                                                                  issuer           Bramblett Development Group LLC                         2
+  2      DOC-01_Part2_Description_of_Rehabilitation.pdf  page 1  Historic Preservation Certification Application Part 2: Description of Rehabilitation  document issuer  National Park Service, U.S. Department of the Interior  1
+  claim 1 with claim 2 [conflicting, found by lexical]: metadata: every claim is about its own document (title, type, revision, its date), so none is a rival value of another
+
+GROUP 29: approval requirement  (2 claims; judged together)
+  claim  document                                        where   subject        metric                 value                                       candidates
+  -----  ----------------------------------------------  ------  -------------  ---------------------  ------------------------------------------  ----------
+  1      DOC-01_Part2_Description_of_Rehabilitation.pdf  page 2  Shop drawings  approval requirement   must be approved by NPS before fabrication  2
+  2      DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf  page 2  Agreement      amendment requirement  only in a writing signed by both parties    1
+  claim 1 with claim 2 [contextual, found by lexical]: judge: contradiction (critical), saved: Mismatched legal and approval requirements
+
+GROUP 30: adjusted basis  (2 claims; judged together)
+  claim  document                                        where   subject                               metric          value                                                           candidates
+  -----  ----------------------------------------------  ------  ------------------------------------  --------------  --------------------------------------------------------------  ----------
+  1      DOC-04_Cost_Certification_Draft.pdf             page 1  the building                          adjusted basis  $900,000 USD                                                    2
+  2      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 2  Federal equity and Virginia proceeds  sizing basis    projected qualified rehabilitation expenditures of $14,200,000  1
+  claim 1 with claim 2 [conflicting, found by lexical]: judge: contextual_difference (low), saved: Adjusted building basis versus projected expenditures
+
+GROUP 31: deposit percentage of expected purchase price  (2 claims; judged together)
+  claim  document                                        where   subject  metric                                                        value                candidates
+  -----  ----------------------------------------------  ------  -------  ------------------------------------------------------------  -------------------  ----------
+  1      DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf  page 1  Buyer    deposit percentage of expected purchase price                 10%                  2
+  2      DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf  page 2  Closing  time to occur after Seller delivers the Certificate to Buyer  within 30 days days  1
+  claim 1 with claim 2 [contextual, found by lexical]: judge: contradiction (high), saved: Mismatched deposit percentage and closing timeline
+
+GROUP 32: Amount  (2 claims; judged together)
+  claim  document                                        where   subject              metric                value                             candidates
+  -----  ----------------------------------------------  ------  -------------------  --------------------  --------------------------------  ----------
+  1      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 1  Masonry restoration  Amount                $1,180,000                        2
+  2      DOC-01_Part2_Description_of_Rehabilitation.pdf  page 1  Deteriorated brick   replacement material  salvaged brick from the building  1
+  claim 1 with claim 2 [conflicting, found by embedding]: judge: contradiction (high), saved: Mismatched masonry cost and replacement material description
+
+GROUP 33: signatory  (2 claims; judged together)
+  claim  document                                        where   subject                        metric     value                         candidates
+  -----  ----------------------------------------------  ------  -----------------------------  ---------  ----------------------------  ----------
+  1      DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf  page 2  Calloway Warehouse Owner, LLC  signatory  Daniel Bramblett, Manager     2
+  2      DOC-01_Part2_Description_of_Rehabilitation.pdf  page 1  Calloway Tobacco Warehouse     owner      Calloway Warehouse Owner LLC  1
+  claim 1 with claim 2 [conflicting, found by embedding]: judge: contextual_difference (low), saved: Owner entity representation and signatory
+
+GROUP 34: required profile  (2 claims; judged together)
+  claim  document                                        where   subject                        metric            value                            candidates
+  -----  ----------------------------------------------  ------  -----------------------------  ----------------  -------------------------------  ----------
+  1      DOC-01_Part2_Description_of_Rehabilitation.pdf  page 2  Replacement window sash        required profile  must match the original profile  2
+  2      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 1  Window repair and replacement  Amount            $1,260,000                       1
+  claim 1 with claim 2 [contextual, found by embedding]: judge: contradiction (critical), saved: Mismatched window profile requirement and repair budget
+
+GROUP 35: included portion  (2 claims; judged together)
+  claim  document                                        where   subject                                metric            value                                                                     candidates
+  -----  ----------------------------------------------  ------  -------------------------------------  ----------------  ------------------------------------------------------------------------  ----------
+  1      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 2  Developer fee                          included portion  a non-qualified portion for acquisition and permanent financing services  2
+  2      DOC-04_Cost_Certification_Draft.pdf             page 2  Developer fee (non-qualified portion)  Amount            $150,000 USD                                                              1
+  claim 1 with claim 2 [conflicting, found by embedding]: judge: contradiction (high), saved: Discrepancy in non-qualified developer fee description and amount
+
+GROUP 36: RULE The project: funding status  (2 claims; a rule (claim 1) and the records that may fall under it, judged together)
+  claim  document                                        where   subject         metric          value         candidates
+  -----  ----------------------------------------------  ------  --------------  --------------  ------------  ----------
+  1      DOC-06_Investor_Summary_Memo.pdf                page 1  The project     funding status  fully funded  2
+  2      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 2  Sponsor equity  Amount          $2,672,000    1
+  claim 1 with claim 2 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+
+GROUP 37: RULE The project: additional sponsor capital required  (3 claims; a rule (claim 1) and the records that may fall under it, judged together)
+  claim  document                                        where   subject         metric                               value         candidates
+  -----  ----------------------------------------------  ------  --------------  -----------------------------------  ------------  ----------
+  1      DOC-06_Investor_Summary_Memo.pdf                page 1  The project     additional sponsor capital required  no            2, 3
+  2      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 2  Sponsor equity  Amount                               $2,672,000    1
+  3      DOC-06_Investor_Summary_Memo.pdf                page 1  The project     funding status                       fully funded  1
+  claim 1 with claim 2 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+  claim 1 with claim 3 [partial, found by rule]: judge: not comparable. Claim 4 is a development budget use, not additional capital required, so it does not fall under the rule.
+
+GROUP 38: RULE Existing built-up roof: replacement roof  (4 claims; a rule (claim 1) and the records that may fall under it, judged together)
+  claim  document                                        where   subject                 metric             value                candidates
+  -----  ----------------------------------------------  ------  ----------------------  -----------------  -------------------  ----------
+  1      DOC-01_Part2_Description_of_Rehabilitation.pdf  page 1  Existing built-up roof  replacement roof   a new membrane roof  2, 3, 4
+  2      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 1  Roof replacement        Amount             $720,000             1
+  3      DOC-06_Investor_Summary_Memo.pdf                page 2  Roof replacement        completion date    September 2024       1
+  4      DOC-06_Investor_Summary_Memo.pdf                page 2  Roof replacement        completion status  complete             1
+  claim 1 with claim 2 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+  claim 1 with claim 3 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+  claim 1 with claim 4 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+
+GROUP 39: RULE The parapets: retention status  (2 claims; a rule (claim 1) and the records that may fall under it, judged together)
+  claim  document                                        where   subject       metric                      value             candidates
+  -----  ----------------------------------------------  ------  ------------  --------------------------  ----------------  ----------
+  1      DOC-01_Part2_Description_of_Rehabilitation.pdf  page 1  The parapets  retention status            will be retained  2
+  2      DOC-01_Part2_Description_of_Rehabilitation.pdf  page 1  The roof      visibility from the street  not visible       1
+  claim 1 with claim 2 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+
+GROUP 40: RULE Sash that is beyond repair: replacement material  (2 claims; a rule (claim 1) and the records that may fall under it, judged together)
+  claim  document                                        where   subject                     metric                 value       candidates
+  -----  ----------------------------------------------  ------  --------------------------  ---------------------  ----------  ----------
+  1      DOC-01_Part2_Description_of_Rehabilitation.pdf  page 2  Sash that is beyond repair  replacement material   wood        2
+  2      DOC-01_Part2_Description_of_Rehabilitation.pdf  page 2  Calloway Tobacco Warehouse  original wood windows  96 windows  1
+  claim 1 with claim 2 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+
+GROUP 41: RULE Heavy timber columns and beams: exposure  (2 claims; a rule (claim 1) and the records that may fall under it, judged together)
+  claim  document                                        where   subject                         metric    value                candidates
+  -----  ----------------------------------------------  ------  ------------------------------  --------  -------------------  ----------
+  1      DOC-01_Part2_Description_of_Rehabilitation.pdf  page 2  Heavy timber columns and beams  exposure  will remain exposed  2
+  2      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 1  Structural repairs              Amount    $890,000             1
+  claim 1 with claim 2 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+
+GROUP 42: RULE Existing wood sash: repair status  (2 claims; a rule (claim 1) and the records that may fall under it, judged together)
+  claim  document                                        where   subject                     metric                 value             candidates
+  -----  ----------------------------------------------  ------  --------------------------  ---------------------  ----------------  ----------
+  1      DOC-01_Part2_Description_of_Rehabilitation.pdf  page 2  Existing wood sash          repair status          will be repaired  2
+  2      DOC-01_Part2_Description_of_Rehabilitation.pdf  page 2  Calloway Tobacco Warehouse  original wood windows  96 windows        1
+  claim 1 with claim 2 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+
+GROUP 43: RULE Original maple floors: retention and refinishing  (2 claims; a rule (claim 1) and the records that may fall under it, judged together)
+  claim  document                                        where   subject                metric                     value                            candidates
+  -----  ----------------------------------------------  ------  ---------------------  -------------------------  -------------------------------  ----------
+  1      DOC-01_Part2_Description_of_Rehabilitation.pdf  page 2  Original maple floors  retention and refinishing  will be retained and refinished  2
+  2      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 1  Interior finishes      Amount                     $2,240,000                       1
+  claim 1 with claim 2 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+
+GROUP 44: RULE Buyer: price per $1.00 of credit  (5 claims; a rule (claim 1) and the records that may fall under it, judged together)
+  claim  document                                        where   subject                                metric                     value                        candidates
+  -----  ----------------------------------------------  ------  -------------------------------------  -------------------------  ---------------------------  ----------
+  1      DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf  page 1  Buyer                                  price per $1.00 of credit  $0.84 per $1.00              2, 3, 4, 5
+  2      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 2  Virginia historic tax credit proceeds  Amount                     $2,982,000                   1
+  3      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 2  Virginia credits                       credit rate                $0.84 per credit             1
+  4      DOC-06_Investor_Summary_Memo.pdf                page 1  Virginia credits                       purchase agreement status  signed                       1
+  5      DOC-06_Investor_Summary_Memo.pdf                page 1  Virginia credits                       sale price per credit      $0.84 per credit per credit  1
+  claim 1 with claim 2 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+  claim 1 with claim 3 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+  claim 1 with claim 4 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+  claim 1 with claim 5 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+
+GROUP 45: RULE Buyer: deposit percentage of expected purchase price  (2 claims; a rule (claim 1) and the records that may fall under it, judged together)
+  claim  document                                        where   subject                                metric                                         value       candidates
+  -----  ----------------------------------------------  ------  -------------------------------------  ---------------------------------------------  ----------  ----------
+  1      DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf  page 1  Buyer                                  deposit percentage of expected purchase price  10%         2
+  2      DOC-02_Development_Budget_Sources_and_Uses.pdf  page 2  Virginia historic tax credit proceeds  Amount                                         $2,982,000  1
+  claim 1 with claim 2 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+
+GROUP 46: RULE Closing: outside date  (2 claims; a rule (claim 1) and the records that may fall under it, judged together)
+  claim  document                                        where   subject                                                         metric         value              candidates
+  -----  ----------------------------------------------  ------  --------------------------------------------------------------  -------------  -----------------  ----------
+  1      DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf  page 2  Closing                                                         outside date   March 31, 2026     2
+  2      DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf  page 2  Virginia Historic Rehabilitation Tax Credit Purchase Agreement  document date  November 12, 2024  1
+  claim 1 with claim 2 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+
+GROUP 47: RULE Certificate: issuance timing  (7 claims; a rule (claim 1) and the records that may fall under it, judged together)
+  claim  document                                        where   subject         metric                           value                                                                                                                    candidates
+  -----  ----------------------------------------------  ------  --------------  -------------------------------  -----------------------------------------------------------------------------------------------------------------------  ----------------
+  1      DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf  page 2  Certificate     issuance timing                  only after the rehabilitation is complete, the building is placed in service and Seller has filed its final application  2, 3, 4, 5, 6, 7
+  2      DOC-04_Cost_Certification_Draft.pdf             page 1  the building    date placed in service           May 20, 2025                                                                                                             1
+  3      DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf  page 2  rehabilitation  completion status                complete                                                                                                                 1
+  4      DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf  page 2  Seller          final application filing status  has filed its final application                                                                                          1
+  5      DOC-05_VA_Credit_Purchase_Agreement_Signed.pdf  page 2  building        service status                   placed in service                                                                                                        1
+  6      DOC-06_Investor_Summary_Memo.pdf                page 2  Building        service status                   placed in service                                                                                                        1
+  7      DOC-06_Investor_Summary_Memo.pdf                page 2  Building        placed in service date           April 2, 2025                                                                                                            1
+  claim 1 with claim 2 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+  claim 1 with claim 3 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+  claim 1 with claim 4 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+  claim 1 with claim 5 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+  claim 1 with claim 6 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+  claim 1 with claim 7 [partial, found by rule]: judge: set aside, not about the same attribute as the other claims
+
+==============================================================================
+CHECKS INSIDE EACH DOCUMENT (arithmetic, part of whole, relative dates)
+==============================================================================
+claims read: 183; LLM calls: 6 (0 failed); relations proposed by the model: 4; checked in code (every value a plain number): 4; held: 4; broken: 0
+relations found by sentence patterns in code (part of a whole, average and total, a stated change): 0; relative dates checked: 0; their event dated nowhere: 0; findings saved: 0; rejected: 0
+
+==============================================================================
+RELATIONS ACROSS DOCUMENTS (arithmetic and the order of dates; the model proposes, code checks)
+==============================================================================
+figures and dates read: 116; LLM calls: 1 (0 failed); relations proposed by the model: 1; checked in code: 1; held: 0; broken: 1
+not checkable (a ref that is not a claim, a claim twice, a value that is not a plain number or a date): 0; broken but already in a finding of this run: 0; findings saved: 1; rejected: 0
+  - Total uses equals sum of hard cost subtotal and other items (medium): Total uses equals sum of hard cost subtotal and other items. Across DOC-02_Development_Budget_Sources_and_Uses.pdf: $11,730,000 + $450,000 + $780,000 + $1,200,000 + $440,000 + $360,000 + $120,000 + $3
+
+==============================================================================
+REFERENCED ITEMS NOT IN THE DATA ROOM (single-claim missing information)
+==============================================================================
+references returned with the claims: 4; found in the data room: 3; saved as missing information: 1; rejected by the quote check: 0; repeats skipped: 0
+  missing: Shop drawings for replacement sash
+
+==============================================================================
+IDENTIFIER RECONCILIATION ACROSS DOCUMENTS
+==============================================================================
+identifier kinds with a list in one document and mentions in another: 0; identifiers outside a list's range: 0; saved: 0; rejected by the quote check: 0
+
+==============================================================================
+LLM CALLS: tokens, context size, latency, failures
+==============================================================================
+Per phase:
+  phase                        attempts  failed  prompt tok  completion tok  thinking tok  avg ctx tok  max ctx tok  avg ms  p95 ms  total s
+  ---------------------------  --------  ------  ----------  --------------  ------------  -----------  -----------  ------  ------  -------
+  entity gate                  1         0       781         50              0             781          781          2367    2367    2.4
+  group claims (LLM)           1         0       14,662      1,438           0             14,662       14,662       10724   10724   10.7
+  link rules to records (LLM)  1         0       14,852      554             0             14,852       14,852       7292    7292    7.3
+  judge claim groups           2         0       24,548      11,115          0             12,274       16,693       15497   26762   31.0
+  checks inside each document  6         0       16,055      504             0             2,676        4,069        7417    11916   44.5
+  cross-document relations     1         0       9,463       234             0             9,463        9,463        3119    3119    3.1
+
+Every provider attempt (context = what was sent; tokens as counted by the API):
+  #   phase                        at s  result  ctx chars  ctx tokens  cached  completion  thinking  total tok  latency ms  resp chars  error
+  --  ---------------------------  ----  ------  ---------  ----------  ------  ----------  --------  ---------  ----------  ----------  -----
+  1   entity gate                  2.1   ok      3,449      781         0       50          0         831        2367        154
+  2   group claims (LLM)           4.5   ok      50,426     14,662      0       1438        0         16,100     10724       4,116
+  3   link rules to records (LLM)  25.5  ok      51,274     14,852      0       554         0         15,406     7292        1,460
+  4   judge claim groups           34.5  ok      29,704     7,855       0       754         0         8,609      4232        2,680
+  5   judge claim groups           34.5  ok      59,354     16,693      0       10361       0         27,054     26762       36,562
+  6   checks inside each document  66.4  ok      6,987      2,072       0       9           0         2,081      7006        18
+  7   checks inside each document  66.4  ok      10,101     2,573       0       9           0         2,582      7427        18
+  8   checks inside each document  66.4  ok      12,512     4,069       0       135         0         4,204      8035        325
+  9   checks inside each document  73.9  ok      9,390      2,609       0       5           0         2,614      2546        14
+  10  checks inside each document  66.5  ok      9,467      2,772       0       337         0         3,109      11916       871
+  11  checks inside each document  73.5  ok      7,394      1,960       0       9           0         1,969      7574        18
+  12  cross-document relations     81.2  ok      30,169     9,463       0       234         0         9,697      3119        625
+
+==============================================================================
+EMBEDDING CALLS
+==============================================================================
+calls 14, failed 0, texts 222 (claim topic texts embedded locally for matching)
+
+  #   texts  chars  latency ms  result  error
+  --  -----  -----  ----------  ------  -----
+  1   64     7,423  3711        ok
+  2   64     8,891  1786        ok
+  3   55     7,027  821         ok
+  4   3      192    39          ok
+  5   3      335    60          ok
+  6   3      387    55          ok
+  7   3      630    102         ok
+  8   3      583    98          ok
+  9   3      235    43          ok
+  10  3      325    44          ok
+  11  3      279    46          ok
+  12  8      1,098  111         ok
+  13  4      626    118         ok
+  14  3      335    59          ok
+
+==============================================================================
+FAILURES
+==============================================================================
+LLM attempt failures:
+  none
+Documents not fully read:
+  none
+Group-judging problems:
+  none
+
+==============================================================================
+TIMING
+==============================================================================
+  stage                                                                        duration  share of wall time
+  ---------------------------------------------------------------------------  --------  ------------------
+  0. scan files, process new or changed ones                                   0.1s      0%
+  1. read every chunk, extract claims                                          1.0s      1%
+  1b. describe the documents (profiles)                                        0.0s      0%
+  1c. entity gate (which documents are about the same subject)                 2.4s      3%
+  2. match claims (LLM grouping of sorted claims)                              28.4s     34%
+  3. judge claim groups, verify quotes, save findings                          33.5s     40%
+  3a. checks inside each document (arithmetic, part of whole, relative dates)  14.7s     17%
+  3d. relations across documents (arithmetic and the order of dates)           3.5s      4%
+  3b. referenced items absent from the data room                               0.1s      0%
+  3c. identifier reconciliation across documents                               0.0s      0%
+  4. per-document verdicts                                                     0.0s      0%
+
+==============================================================================
+KNOWN LIMITS OF THIS RUN
+==============================================================================
+- Reading is all-or-nothing per document: if one batch fails after all retries, that document's claims are discarded and it counts as not read.
+- The code routes cap the partners of one claim: 12 by word overlap, 6 by a shared rare label word, 8 for a negation; a rule keeps at most 14 records and a group at most 15 claims, so some comparable claims are never judged.
+- The claim-extraction prompt lists business categories (capacity, supply, pricing, ...) and is not yet domain-agnostic.
+- Claims inside one document are also grouped and judged; matching quality depends on how the model labels subject/metric/unit/period.
+- Exact agreements are trusted as corroboration without an LLM check.

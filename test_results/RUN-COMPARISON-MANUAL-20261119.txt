@@ -1,0 +1,8 @@
+RUN 11: TEST-RUN-20261119-144504-ui-run.txt (14:45, 16 documents, clusters only, rule flag). Scored by hand against HTC01 (39 cases).
+claims 1121; 189 groups from 1686 candidates (847 links in no cluster); 167 judged in 5 calls; 19 findings saved by the judge, 1 rejected; 42 in the report; 304.5 s; 0 failed attempts.
+YES (5): 001, 004, 005, 014, 025
+part (5): 006 (total sources 32.85M vs 31.15M; memo not linked), 007, 009, 010, 035
+lost versus run 10: 015, 016, 018; gained: 004, 014
+consistent cases flagged: 0 of 8 by the earlier rule (020 got a medium contextual finding restating $4.9M vs $4,920,000; counted as flagged it would be 7 of 8)
+Accuracy: strict (5 + 8) / 39 = 33%; half credit (5 + 8 + 2.5) / 39 = 40%
+High or critical false alarms outside the key: 3 (developer fee qualified 640,000 vs deferred 600,000; legal and accounting 450,000 vs 310,000; occupancy all floors vs floors 1 to 3).

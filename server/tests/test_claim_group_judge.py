@@ -145,16 +145,19 @@ def test_several_groups_share_a_call_and_their_claims_are_numbered_through_the_c
 
 
 def shared_chunk_groups(session, big=1000):
-    """Two groups that share one claim: a with b (a strong pair) and a with c (a weak pair, so a group of its own). a's chunk is ``big`` characters long."""
-    texts = [("A", 500, "x" * big), ("B", 450, "y" * 50), ("C", 400, "z" * 50)]
-    claims = []
-    for n, (letter, value, filler) in enumerate(texts):
-        doc, chunks = add_doc(session, f"share{n}.pdf", "pdf", [dict(content=f"UNIQUE-CHUNK-{letter} capacity {value} t {filler}", page_number=1)])
-        claims.append(Claim(document_id=doc.id, chunk_id=chunks[0].id, subject="warehouse", metric="storage capacity", value=str(value) + ("%" if letter == "C" else ""), claim_text=f"stores {value} t"))  # C is a percentage: it cannot join the cluster of A and B (an absolute figure), so its candidate is a group of its own
+    """Two clusters whose claims come from one chunk: a1 with b, and a2 with c. a1 and a2 are claims of the same chunk, which is ``big`` characters long."""
+    doc, chunks = add_doc(session, "share0.pdf", "pdf", [dict(content=f"UNIQUE-CHUNK-A capacity 500 t capacity 520 t {'x' * big}", page_number=1)])
+    a1 = Claim(document_id=doc.id, chunk_id=chunks[0].id, subject="warehouse", metric="storage capacity", value="500", claim_text="stores 500 t")
+    a2 = Claim(document_id=doc.id, chunk_id=chunks[0].id, subject="warehouse", metric="storage capacity", value="520", claim_text="stores 520 t")
+    others = []
+    for n, (letter, value) in enumerate([("B", 450), ("C", 400)], start=1):
+        d, ch = add_doc(session, f"share{n}.pdf", "pdf", [dict(content=f"UNIQUE-CHUNK-{letter} capacity {value} t {'y' * 50}", page_number=1)])
+        others.append(Claim(document_id=d.id, chunk_id=ch[0].id, subject="warehouse", metric="storage capacity", value=str(value), claim_text=f"stores {value} t"))
+    claims = [a1, a2, *others]
     session.add_all(claims)
     session.commit()
-    a, b, c = claims
-    return claims, [candidate(a, b, how="llm"), candidate(a, c, how="embedding")]
+    b, c = others
+    return claims, [candidate(a1, b, how="llm"), candidate(a2, c, how="llm")]
 
 
 class Reader(LLMClient):
@@ -177,7 +180,7 @@ class Reader(LLMClient):
                 letter = {"500": "A", "450": "B", "400": "C"}
                 verdicts.append(dict(group=number, same_attribute=True, attribute_reasoning="capacity", set_aside=[], classification="contradiction", severity="high", confidence=0.9,
                                      title=f"group {number} differs", description="the capacities differ",
-                                     evidence=[dict(claim=int(n), value=v, quote=f"UNIQUE-CHUNK-{letter[v]} capacity {v} t") for n, v in found]))
+                                     evidence=[dict(claim=int(n), value=v, quote=(f"UNIQUE-CHUNK-{letter[v]} capacity {v} t" if v in letter else f"capacity {v} t")) for n, v in found]))
         return RawResponse(text=json.dumps({"verdicts": verdicts}))
 
 
@@ -613,27 +616,28 @@ def test_a_candidate_found_by_nearest_neighbours_joins_the_cluster_it_links_to_w
     assert len(groups[0].edges) == 4
 
 
-def test_a_neighbour_that_cannot_join_the_cluster_is_compared_with_the_claim_it_links_to_as_a_pair(session, room):
+def test_a_neighbour_that_cannot_join_the_cluster_is_left_out_of_it(session, room):
     a, b, c, d = warehouse_claims(session, [500, 450, 400, 350])
     never = lambda x, y, how: y != c.id and x != c.id  # c cannot state the attribute of the cluster
     groups = ClaimGroupJudge._form_groups([candidate(a, b, how="llm"), candidate(a, c, how="embedding"), candidate(a, d, how="embedding")], never)
-    assert [g.claim_ids for g in groups] == [[a.id, b.id, d.id], [a.id, c.id]]
+    assert [g.claim_ids for g in groups] == [[a.id, b.id, d.id]]  # c is in no group: only clusters are judged
 
 
-def test_the_models_clusters_stay_whole_and_a_candidate_between_two_clusters_is_a_pair_not_a_merge(session, room):
+def test_the_models_clusters_stay_whole_and_a_candidate_between_two_clusters_is_dropped_not_a_merge(session, room):
     a, b, c, d, e = warehouse_claims(session, [500, 450, 400, 350, 300])
     groups = ClaimGroupJudge._form_groups(candidates_of([a, b, c]) + candidates_of([d, e]) + [candidate(c, d, how="lexical")])
-    assert [g.claim_ids for g in groups] == [[a.id, b.id, c.id], [d.id, e.id], [c.id, d.id]]
+    assert [g.claim_ids for g in groups] == [[a.id, b.id, c.id], [d.id, e.id]]
 
 
-def test_claims_linked_by_words_alone_form_one_group_up_to_the_cap_and_a_larger_set_is_split_by_attribute_not_into_pairs(session, room):
+def test_claims_linked_by_words_alone_form_one_group_up_to_the_cap_and_a_larger_set_is_divided_into_clusters(session, room):
     claims = warehouse_claims(session, [100 + i for i in range(6)])
     chain = [candidate(x, y, how="lexical") for x, y in zip(claims, claims[1:])]
     assert [len(g.claim_ids) for g in ClaimGroupJudge._form_groups(chain)] == [6]  # a chain of six is one group
-    groups = ClaimGroupJudge._form_groups(chain, cap=4)  # too large for one fact: the links that can state one attribute still keep claims together
-    assert [len(g.claim_ids) for g in groups] == [2, 2, 2, 2, 2] and all(len(g.claim_ids) == 2 for g in groups)  # without an attribute test the chain falls back to pairs
-    kept = ClaimGroupJudge._split_large([c.id for c in claims], chain, lambda x, y, how: x in {claims[0].id, claims[1].id, claims[2].id} and y in {claims[0].id, claims[1].id, claims[2].id}, 4)
-    assert sorted(len(g.claim_ids) for g in kept) == [2, 2, 2, 3]  # three claims of one attribute stay one group; the three links that leave them are pairs
+    groups = ClaimGroupJudge._form_groups(chain, cap=4)  # too large for one fact: divided along its links into clusters of at most four
+    assert groups and all(2 <= len(g.claim_ids) <= 4 for g in groups) and sum(len(g.claim_ids) for g in groups) >= 4
+    first_three = {claims[0].id, claims[1].id, claims[2].id}
+    kept = ClaimGroupJudge._divide([c.id for c in claims], chain, lambda x, y, how: x in first_three and y in first_three, 4)
+    assert sorted(len(g.claim_ids) for g in kept) == [3]  # three claims of one attribute stay one cluster; the links that leave them are dropped
 
 
 def test_a_central_estimate_inside_its_interval_agrees_and_other_values_do_not():

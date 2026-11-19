@@ -135,7 +135,7 @@ def test_one_difference_stated_against_two_documents_is_one_finding(session, roo
     order = claim_in(session, "po.pdf", "The contract value on the order is GBP 2,500 thousand.", "GBP 2,500 thousand", subject="contract", metric="contract value")
     final = claim_in(session, "close.pdf", "Final contract value is GBP 2.65 million excluding VAT.", "GBP 2.65 million", subject="Final contract", metric="final contract value")
     stats = judge(session, room, MockLLMClient([])).run([candidate(contract, final, how="embedding"), candidate(order, final, how="embedding")])
-    assert stats.groups_total == 2 and stats.merged == 1 and len(session.scalars(select(Finding)).all()) == 1 and len(session.scalars(select(Evidence)).all()) == 3
+    assert stats.groups_total == 1 and len(session.scalars(select(Finding)).all()) == 1 and len(session.scalars(select(Evidence)).all()) == 3  # the three claims are one cluster
 
 
 # ---- inside one document, by patterns ------------------------------------------------------------------------------------------------

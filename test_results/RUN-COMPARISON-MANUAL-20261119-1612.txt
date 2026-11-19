@@ -1,0 +1,12 @@
+RUN 12: TEST-RUN-20261119-161213-ui-run.txt (16:12, 16 documents, clusters only, rule flag). Scored by hand against HTC01 (39 cases).
+claims 1121; 171 groups from 2051 candidates (1061 links in no cluster); 145 judged in 5 calls; 12 findings saved by the judge; 35 in the report; 406.2 s; 0 failed calls (4 attempts failed and moved to another key).
+Rule linking: 23 rules, 26 links, 2 unknown refs (run 11: 396 unknown refs).
+
+YES (3): 001 (finding 16), 014 (finding 13), 015 (finding 12)
+part (4): 004 (finding 17 flags 5,227.5 vs 6.15M but leaves out the credit price and the signed agreement), 006 (finding 15 sums $32.85M against $31.15M, includes the $1.7M memo loan, memo claim not linked), 009 (Part 3 approval sits in a low "NPS approval status" finding), 010 (shop drawings sent to SHPO shown as a low contextual finding, no missing-evidence call)
+lost versus run 11: 005, 025 (hits then); 007, 035 (partials then)
+safe (consistent) cases flagged: 0 of 8 by the earlier rule (021 caveat: finding 4 is a low contextual finding built on the 8/22/2023 claims; it states no difference between the dates)
+Accuracy: strict (3 + 8) / 39 = 28%; half credit (3 + 8 + 2) / 39 = 33%
+High or critical false alarms outside the key: 3 (finding 7 critical, mixed budget lines; finding 15, memo loan summed; finding 17, Virginia proceeds formula without the credit price)
+
+Pasted second opinion says 44% (17 of 39). Its rubric credits contextual cases (005, 013, 022, 023, 031) as correct when missed: 4 + 8 + 5 = 17. Under that rubric the 14:45 run is 5 + 8 + 5 = 18 = 46%, which matches its table. Under this file's rubric (a contextual case must be found) 14:45 is 33% strict and this run is 28%.

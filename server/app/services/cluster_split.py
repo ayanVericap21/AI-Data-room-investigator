@@ -1,9 +1,8 @@
 """Splitting a set of claims that is too large to be one fact into smaller clusters by how alike the claims are.
 
-A cluster the grouping model made (or a set of claims the code chained together) can hold dozens of claims. The judge reads about fifteen at a time, and a
-set larger than that used to fall apart into one group for every pair of its claims (an 80-claim set made 3,160 groups). Here it is divided by meaning
-instead: claims are joined, the most alike first, into clusters that never exceed the cap, and a cluster stops growing when the claims that remain are not
-alike enough. The similarity is the cosine of the claims' embeddings (subject, metric and sentence), the same vectors the matching already uses.
+A cluster the grouping model made (or a set of claims the code chained together) can hold dozens of claims. The judge reads about fifteen at a time. A larger set
+is divided by meaning into clusters: claims are joined, the most alike first, into clusters that never exceed the cap, and a cluster stops growing when the claims
+that remain are not alike enough. Only clusters come out of it; the links between the clusters are dropped, never turned into groups of two. The similarity is the cosine of the claims' embeddings (subject, metric and sentence), the same vectors the matching already uses.
 """
 from __future__ import annotations
 
@@ -13,8 +12,6 @@ import numpy as np
 
 SPLIT_FLOOR = 0.5  # two clusters are joined only while their claims are this alike on average
 COHERENCE_FLOOR = 0.4  # a cluster of the grouping model whose claims are less alike than this on average is divided even when it is small
-CROSS_PER_CLAIM = 2  # of the links between the clusters of a divided set, each claim keeps its strongest this many as groups of two
-CROSS_FLOOR = 0.6  # and only when the two claims are at least this alike
 MAX_AVERAGE_LINKAGE = 1200  # above this many claims joining by the average of all pairs is too slow, and the strongest single link is used
 
 
@@ -98,10 +95,6 @@ class ClaimSimilarity:
     def matrix(self, ids: list[str]) -> np.ndarray:
         self._load(ids)
         return np.stack([self._vectors[i] for i in ids])
-
-    def between(self, a: str, b: str) -> float:
-        self._load([a, b])
-        return float(self._vectors[a] @ self._vectors[b])
 
     def coherence(self, ids: list[str]) -> float:
         """The average similarity of every pair of the claims."""

@@ -30,7 +30,7 @@ from app.schemas.claim import Candidate
 from app.tools.submit import find_source_span
 from app.services.blocking import GENERIC, KINDS
 from app.services.claim_tags import EARLIER_BASES, LATER_BASES, tags_of
-from app.services.cluster_split import COHERENCE_FLOOR, CROSS_FLOOR, CROSS_PER_CLAIM, ClaimSimilarity
+from app.services.cluster_split import COHERENCE_FLOOR, ClaimSimilarity
 from app.services.candidate_matching import TABLE_TYPES, normalize_period, normalize_unit, subjects_overlap, tokens
 from app.services.doc_profiles import render_cards
 from app.services.identifiers import entity_labels
@@ -52,7 +52,6 @@ ROLE = {Classification.contradiction: "contradicting", Classification.contextual
         Classification.missing_information: "insufficient", Classification.consistent: "supporting",
         Classification.insufficient_evidence: "insufficient"}
 MAX_RETRY_ROUNDS = 8  # rounds of asking again for groups with no verdict: enough to halve a call down to one group and ask again
-MAX_PAIR_RECHECKS = 12  # pairs judged again for one group
 MAX_EVIDENCE = 16  # claims quoted in one finding: the report stays readable
 MAX_GROUP_CLAIMS = 15  # a set of claims joined by candidates that is larger than this is not one fact (a cluster of the grouping model, or claims linked by words): it is divided by meaning (cluster_split)
 MIN_QUOTE = 8  # the shortest quote a finding accepts (submit_finding)
@@ -215,7 +214,7 @@ class JudgeStats:
     groups_total: int = 0
     groups_agreed: int = 0  # every claim states the same value: corroboration, not sent to the LLM
     clusters_split: int = 0  # sets of claims divided into smaller clusters by how alike the claims are (too large, or a grouping cluster of claims that are not alike)
-    links_dropped: int = 0  # links between the clusters of such a set that were not kept as groups of two (each claim keeps its strongest few)
+    links_dropped: int = 0  # links that are in no cluster: they lie between two clusters, or join a claim that cannot be added to one
     groups_basis: int = 0  # two claims that differ in basis (planned and actual, original and final): a contextual difference decided in code
     currency_reclassified: int = 0  # contradictions between amounts in different currencies, saved as insufficient evidence
     base_missing: int = 0  # a percentage set against an absolute figure with no stated base: saved as missing information
@@ -246,7 +245,6 @@ class JudgeStats:
     records: dict[tuple[str, str], CandidateRecord] = field(default_factory=dict)  # one per candidate, in grouping order
     groups: list = field(default_factory=list)  # every group judged or agreed, for the run report
     misaligned: int = 0  # verdicts whose echoed values did not match their claims (the group is asked again, alone)
-    pair_rechecks: int = 0  # pairs judged again: a group of three or more that was called consistent or not comparable holds claims whose values differ
     escalated: int = 0  # groups the screening model called findings, decided by the bigger model (two-step judging)
     strong_calls: int = 0
     strong_failed: int = 0  # bigger-model calls that failed (the screen's verdict was kept for their groups)
@@ -379,7 +377,6 @@ class ClaimGroupJudge:
         self.strong_llm = strong_llm  # two-step judging: this model decides the groups the screen calls findings
         self.embedder = embedder  # divides a set of claims that is too large (or whose claims are not alike) by meaning; without it such a set falls back to groups of two
         self._escalate: list[tuple[Group, dict[int, str], list[GroupVerdict]]] = []
-        self._pair_fallback: list[Group] = []  # groups of three or more called consistent or not comparable: their differing values are checked as pairs
         self.workers = max(1, workers)  # model calls that run at the same time (1 = one after another)
         self.registry = registry
         self.max_chars = max_chars_per_call
@@ -418,9 +415,15 @@ class ClaimGroupJudge:
         tally = {"split": 0, "dropped": 0}
         groups = [h for g in self._form_groups([c for c in candidates if c.claim_id in claims and c.candidate_id in claims], attachable, similarity=similarity, tally=tally)
                   for h in self._split_families(g, stats)]
-        stats.clusters_split, stats.links_dropped = tally["split"], tally["dropped"]
+        stats.clusters_split = tally["split"]
         stats.groups_total = len(groups)
         stats.groups = groups
+        in_a_group = {(e.claim_id, e.candidate_id) for g in groups for e in g.edges}
+        for c in candidates:
+            record = stats.records.get((c.claim_id, c.candidate_id))
+            if record is not None and (c.claim_id, c.candidate_id) not in in_a_group and not record.outcome:
+                record.outcome = "in no cluster: the link lies between two clusters, or joins a claim that cannot be added to one"
+                stats.links_dropped += 1
         to_judge: list[Group] = []
         for g in groups:
             stats.grouped_claims.update(g.claim_ids)
@@ -446,8 +449,6 @@ class ClaimGroupJudge:
         unresolved = self._judge_round(to_judge, stats)
         if unresolved and not self.should_stop():
             self._retry(unresolved, stats, call_failed=stats.batches_failed > 0)
-        if self._pair_fallback and not self.should_stop():
-            self._recheck_pairs(stats)
         if self._escalate:
             self._strong_pass(stats)
         self._group_consistent(stats, claims, names)
@@ -464,8 +465,7 @@ class ClaimGroupJudge:
 
     def _judge_round(self, groups: list[Group], stats: JudgeStats) -> list[Group]:
         """Ask for a verdict for every group, in batches, and act on the verdicts. Returns the groups with no usable verdict (asked again by ``_retry``).
-        A verdict that is a finding is held for the bigger model when two-step judging is on; a group of three or more that was called consistent or not
-        comparable is remembered: its differing values are checked as pairs (``_recheck_pairs``)."""
+        A verdict that is a finding is held for the bigger model when two-step judging is on."""
         unresolved: list[Group] = []
         batches = list(self._batches(groups))
         answered = groups_answered = 0
@@ -493,47 +493,12 @@ class ClaimGroupJudge:
                 # a group that holds two separate issues has a verdict for each; if any of them cannot be used, the group is asked again
                 if not verdicts or not all([self._handle(v, g, numbering[number - 1], stats, retrying=False) for v in verdicts]):
                     unresolved.append(g)
-                elif g.kind == "fact" and len(g.claim_ids) >= 3 and not self._is_candidate(verdicts):
-                    self._pair_fallback.append(g)
             judged = groups_answered - len(unresolved)  # groups with a usable verdict so far; failed ones are asked again afterwards
             self.on_progress(f"Judged batch {answered} of {len(batches)}: {judged} of {len(groups)} groups",
                              {"batch": answered, "batches": len(batches), "judged": judged, "total": len(groups)})
         if answered < len(batches):
             stats.errors.append("stop requested")
         return unresolved
-
-    def _differing_pairs(self, g: Group) -> list[Group]:
-        """The pairs of a group whose claims state different values and may state one attribute, one pair for each two sets of equal values. A group
-        of several claims gets one verdict, and a model that sees most of them agree (or one that is about something else) can pass over the one that
-        differs; the pair that differs is judged alone."""
-        claims = {i: self._claims[i] for i in g.claim_ids}
-        find = _components([(a.id, b.id) for a, b in combinations(claims.values(), 2)
-                            if compare_values(a.value, a.unit, b.value, b.unit, a.claim_category, b.claim_category, normalize_unit) == "equal"])
-        out: list[Group] = []
-        seen: set[frozenset[str]] = set()
-        for e in g.edges:
-            a, b = claims.get(e.claim_id), claims.get(e.candidate_id)
-            if a is None or b is None or find(a.id) == find(b.id):
-                continue
-            key = frozenset((find(a.id), find(b.id)))
-            if key in seen or not self._attributes_related(a, b) or not self._same_family(a, b, e.matched_by, False):
-                continue
-            seen.add(key)
-            out.append(Group([e.claim_id, e.candidate_id], [e]))
-            if len(out) >= MAX_PAIR_RECHECKS:
-                break
-        return out
-
-    def _recheck_pairs(self, stats: JudgeStats) -> None:
-        groups, self._pair_fallback = self._pair_fallback, []
-        pairs = [pair for g in groups for pair in self._differing_pairs(g)]
-        stats.pair_rechecks = len(pairs)
-        stats.groups_judged += len(pairs)
-        if not pairs:
-            return
-        unresolved = self._judge_round(pairs, stats)
-        if unresolved and not self.should_stop():
-            self._retry(unresolved, stats, call_failed=stats.batches_failed > 0)
 
     @staticmethod
     def _is_candidate(verdicts: list[GroupVerdict]) -> bool:
@@ -632,8 +597,6 @@ class ClaimGroupJudge:
                         continue
                     for verdict in by_group[number]:
                         self._handle(verdict, g, numbering[number - 1], stats, retrying=True)
-                    if g.kind == "fact" and len(g.claim_ids) >= 3 and not self._is_candidate(by_group[number]):
-                        self._pair_fallback.append(g)
                 if left_out:
                     half = len(left_out) // 2
                     next_queue += [left_out[:half], left_out[half:]] if half else [left_out]
@@ -649,20 +612,21 @@ class ClaimGroupJudge:
     @staticmethod
     def _form_groups(candidates: list[Candidate], attachable: Callable[[str, str, str], bool] | None = None, cap: int = MAX_GROUP_CLAIMS,
                      similarity: ClaimSimilarity | None = None, tally: dict | None = None) -> list[Group]:
-        """The groups to judge, each of as many claims as state one attribute. The grouping model's own clusters stay whole (up to ``cap`` claims). A candidate
-        the code found (shared words, a rare label word, nearest neighbours, a record id) attaches a claim to the cluster of the claim it links to when
-        ``attachable(a, b, how)`` says the two can state one attribute. Claims linked to each other and to no cluster are one group (a set larger than ``cap``
-        is split by attribute). A candidate that cannot join a cluster, or lies between two clusters, is a group of its own two claims, so no comparison is lost.
-        Without ``attachable`` every link is allowed. With ``similarity`` a set larger than ``cap``, and a cluster of the grouping model whose claims are not alike,
-        is divided into clusters by meaning (each at most ``cap`` claims) and keeps only the strongest few links between them as groups of two; without it the
-        links of such a set become a group of two each."""
+        """The groups to judge: clusters of claims that state one attribute, never more than ``cap`` claims. The grouping model's clusters stay whole. A link the code
+        found (shared words, a rare label word, nearest neighbours, a record id) attaches a claim to the cluster of the claim it links to when
+        ``attachable(a, b, how)`` says the two can state one attribute. Claims linked only to each other form a cluster of their own. A set larger than ``cap``, and a
+        cluster whose claims are not alike, is divided into clusters by meaning (``similarity``) or, without it, by how its claims are linked. A link that lies
+        between two clusters, or joins a claim that cannot be added to a cluster, is in no group: only clusters are judged. Without ``attachable`` every link is allowed."""
         ok = attachable or (lambda a, b, how: True)
         rules = [c for c in candidates if c.matched_by == "rule"]
         model = [c for c in candidates if c.matched_by == "llm"]
-        strong = [c for c in candidates if c.matched_by not in ("embedding", "identifier", "rule", "llm")]
-        weak = [c for c in candidates if c.matched_by in ("embedding", "identifier")]
+        code = [c for c in candidates if c.matched_by not in ("rule", "llm")]
         groups: list[Group] = []
-        # 1. the grouping model's clusters: the claims it put together are one group
+
+        def scattered(ids: list[str]) -> bool:
+            return similarity is not None and 3 <= len(ids) <= cap and similarity.coherence(ids) < COHERENCE_FLOOR
+
+        # 1. the grouping model's clusters: the claims it put together are one cluster
         find = _components([(c.claim_id, c.candidate_id) for c in model])
         clusters: dict[str, Group] = {}
         for c in model:
@@ -673,20 +637,14 @@ class ClaimGroupJudge:
             g.edges.append(c)
         cluster_of: dict[str, str] = {}
         for root, g in list(clusters.items()):
-            scattered = similarity is not None and 3 <= len(g.claim_ids) <= cap and similarity.coherence(g.claim_ids) < COHERENCE_FLOOR
-            if len(g.claim_ids) > cap:  # not one fact: split by attribute like any large set
+            if len(g.claim_ids) > cap or scattered(g.claim_ids):  # not one fact: divided into clusters by meaning
                 del clusters[root]
-                groups += ClaimGroupJudge._split_large(g.claim_ids, g.edges, ok, cap, similarity, tally)
-            elif scattered:  # the model put claims together that are not alike: they are divided by meaning
-                del clusters[root]
-                parts, used = ClaimGroupJudge._by_meaning(g.claim_ids, g.edges, cap, similarity, tally)
-                groups += parts + ClaimGroupJudge._pairs(ClaimGroupJudge._strongest([c for c in g.edges if id(c) not in used], similarity, tally))
+                groups += ClaimGroupJudge._divide(g.claim_ids, g.edges, ok, cap, similarity, tally)
             else:
                 for claim_id in g.claim_ids:
                     cluster_of[claim_id] = root
         # 2. what the code found: attach a claim to the cluster of the claim it links to
-        pairs: list[Candidate] = []
-        pending = strong + weak
+        pending = list(code)
         changed = True
         while changed:  # a claim that has just joined a cluster can attach others
             changed = False
@@ -697,7 +655,7 @@ class ClaimGroupJudge:
                 if ca and ca == cb:
                     clusters[ca].edges.append(c)  # both are in one cluster already: it is compared there
                 elif ca and cb:
-                    pairs.append(c)  # between two clusters: they are not one fact, the two claims are compared
+                    continue  # between two clusters: they are not one fact
                 elif ca or cb:
                     root, new = (ca, b) if ca else (cb, a)
                     if len(clusters[root].claim_ids) < cap and ok(a, b, c.matched_by):
@@ -705,108 +663,86 @@ class ClaimGroupJudge:
                         clusters[root].edges.append(c)
                         cluster_of[new] = root
                         changed = True
-                    else:
-                        pairs.append(c)
                 else:
                     rest.append(c)
             pending = rest
         groups += list(clusters.values())
-        # 3. claims linked only to each other: one group of the connected set, a larger set split by attribute
-        linked = [c for c in pending if c.matched_by not in ("embedding", "identifier")]
-        find = _components([(c.claim_id, c.candidate_id) for c in linked])
+        # 3. claims linked only to each other: each connected set is a cluster of its own (divided when it is too large or its claims are not alike)
+        find = _components([(c.claim_id, c.candidate_id) for c in pending])
         sets: dict[str, Group] = {}
-        for c in linked:
+        for c in pending:
             g = sets.setdefault(find(c.claim_id), Group([], []))
             for claim_id in (c.claim_id, c.candidate_id):
                 if claim_id not in g.claim_ids:
                     g.claim_ids.append(claim_id)
             g.edges.append(c)
-        whole: dict[str, Group] = {}
-        for root, g in sets.items():
-            if len(g.claim_ids) > cap:
-                groups += ClaimGroupJudge._split_large(g.claim_ids, g.edges, ok, cap, similarity, tally)
+        for g in sets.values():
+            if len(g.claim_ids) > cap or scattered(g.claim_ids):
+                groups += ClaimGroupJudge._divide(g.claim_ids, g.edges, ok, cap, similarity, tally)
             else:
+                g.kind = "record" if all(c.matched_by == "identifier" for c in g.edges) else "fact"
                 groups.append(g)
-                whole[root] = g
-        for c in pending:
-            if c.matched_by in ("embedding", "identifier"):
-                root = find(c.claim_id) if c.claim_id in {i for g in whole.values() for i in g.claim_ids} else None
-                if root in whole and find(c.candidate_id) == root:
-                    whole[root].edges.append(c)  # both are in one group already: it is compared there
-                else:
-                    pairs.append(c)
         by_rule: dict[str, list[Candidate]] = {}
-        for c in rules:  # a rule and its records are a group of their own: two rules sharing a record are two groups, not one
+        for c in rules:  # a rule and its records are a cluster of their own: two rules sharing a record are two clusters, not one
             by_rule.setdefault(c.claim_id, []).append(c)
         for rule_id, links in by_rule.items():
             groups.append(Group([rule_id] + [c.candidate_id for c in links if c.candidate_id != rule_id], links, kind="rule"))
-        groups += [Group([c.claim_id, c.candidate_id], [c], kind="record" if c.matched_by == "identifier" else "fact") for c in pairs]
         return groups
 
     @staticmethod
-    def _pairs(edges: list[Candidate]) -> list[Group]:
-        return [Group([c.claim_id, c.candidate_id], [c], kind="record" if c.matched_by == "identifier" else "fact") for c in edges]
+    def _pack(claim_ids: list[str], edges: list[Candidate], cap: int) -> list[list[str]]:
+        """Without a similarity measure: ``claim_ids`` cut into clusters of at most ``cap`` claims that follow the links, each grown from the claim with the most
+        links by taking its linked claims first."""
+        from collections import deque
+        ids = set(claim_ids)
+        linked: dict[str, set[str]] = defaultdict(set)
+        for c in edges:
+            if c.claim_id in ids and c.candidate_id in ids:
+                linked[c.claim_id].add(c.candidate_id)
+                linked[c.candidate_id].add(c.claim_id)
+        free = set(claim_ids)
+        out: list[list[str]] = []
+        while free:
+            seed = max(sorted(free), key=lambda i: len(linked[i] & free))
+            cluster, queue = [seed], deque([seed])
+            free.discard(seed)
+            while queue and len(cluster) < cap:
+                for nb in sorted(linked[queue.popleft()] & free):
+                    if len(cluster) < cap:
+                        free.discard(nb)
+                        cluster.append(nb)
+                        queue.append(nb)
+            out.append(cluster)
+        return out
 
     @staticmethod
-    def _by_meaning(claim_ids: list[str], edges: list[Candidate], cap: int, similarity: ClaimSimilarity, tally: dict | None) -> tuple[list[Group], set[int]]:
-        """``claim_ids`` divided into clusters of at most ``cap`` claims by how alike they are; (the groups of two or more claims that hold at least one link,
-        the links they hold)."""
+    def _divide(claim_ids: list[str], edges: list[Candidate], ok: Callable[[str, str, str], bool], cap: int,
+                similarity: ClaimSimilarity | None = None, tally: dict | None = None) -> list[Group]:
+        """A set of claims that is too large to be one fact, or whose claims are not alike, divided into clusters of at most ``cap`` claims: the claims joined by
+        links that can state one attribute stay together; a joined set that is still too large or not alike is divided by meaning (``similarity``) or, without it,
+        by how its claims are linked. A cluster keeps the links between its claims; the links between the clusters are dropped."""
         if tally is not None:
             tally["split"] += 1
-        groups: list[Group] = []
-        used: set[int] = set()
-        for part in similarity.split(claim_ids, cap):
-            if len(part) < 2:
-                continue
-            keep = set(part)
-            held = [c for c in edges if c.claim_id in keep and c.candidate_id in keep]
-            if held:
-                groups.append(Group(part, held))
-                used.update(id(c) for c in held)
-        return groups, used
-
-    @staticmethod
-    def _strongest(edges: list[Candidate], similarity: ClaimSimilarity, tally: dict | None = None) -> list[Candidate]:
-        """The links between the clusters of a divided set that stay as groups of two: each claim keeps its strongest ``CROSS_PER_CLAIM`` links, and only when
-        the two claims are at least ``CROSS_FLOOR`` alike. A link through a shared record id is always kept (there are few of them)."""
-        score = {id(c): similarity.between(c.claim_id, c.candidate_id) for c in edges}
-        by_claim: dict[str, list[Candidate]] = defaultdict(list)
-        for c in edges:
-            by_claim[c.claim_id].append(c)
-            by_claim[c.candidate_id].append(c)
-        keep = {id(c) for c in edges if c.matched_by == "identifier"}
-        for links in by_claim.values():
-            keep.update(id(c) for c in sorted(links, key=lambda c: -score[id(c)])[:CROSS_PER_CLAIM] if score[id(c)] >= CROSS_FLOOR)
-        if tally is not None:
-            tally["dropped"] += len(edges) - len(keep)
-        return [c for c in edges if id(c) in keep]
-
-    @staticmethod
-    def _split_large(claim_ids: list[str], edges: list[Candidate], ok: Callable[[str, str, str], bool], cap: int,
-                     similarity: ClaimSimilarity | None = None, tally: dict | None = None) -> list[Group]:
-        """A set of claims too large to be one fact, split by attribute: the claims joined by links that can state one attribute stay together (a group of
-        up to ``cap``). A joined set that is still larger than ``cap`` is divided by meaning, and of the links that remain between the clusters each claim keeps
-        its strongest few as groups of two (with ``similarity``); without it every other link is a group of its own two claims, so each comparison is still made."""
         find = _components([(c.claim_id, c.candidate_id) for c in edges if ok(c.claim_id, c.candidate_id, c.matched_by)])
         sets: dict[str, list[str]] = defaultdict(list)
         for claim_id in claim_ids:
             sets[find(claim_id)].append(claim_id)
         out: list[Group] = []
-        inside: set[int] = set()
         for ids in sets.values():
-            if 2 <= len(ids) <= cap:
-                keep = set(ids)
+            if len(ids) < 2:
+                continue
+            if len(ids) <= cap and not (similarity is not None and len(ids) >= 3 and similarity.coherence(ids) < COHERENCE_FLOOR):
+                parts = [ids]
+            else:
+                parts = similarity.split(ids, cap) if similarity is not None else ClaimGroupJudge._pack(ids, edges, cap)
+            for part in parts:
+                if len(part) < 2:
+                    continue
+                keep = set(part)
                 held = [c for c in edges if c.claim_id in keep and c.candidate_id in keep]
-                out.append(Group(ids, held))
-                inside.update(id(c) for c in held)
-            elif len(ids) > cap and similarity is not None:
-                parts, used = ClaimGroupJudge._by_meaning(ids, edges, cap, similarity, tally)
-                out += parts
-                inside.update(used)
-        rest = [c for c in edges if id(c) not in inside]
-        if similarity is not None:
-            rest = ClaimGroupJudge._strongest(rest, similarity, tally)
-        return out + ClaimGroupJudge._pairs(rest)
+                if held:
+                    out.append(Group(part, held, kind="record" if all(c.matched_by == "identifier" for c in held) else "fact"))
+        return out
 
     def _shared_record(self, g: Group) -> str:
         """The record every claim of the group names (RC-04), as the first claim writes it; empty when they share none."""

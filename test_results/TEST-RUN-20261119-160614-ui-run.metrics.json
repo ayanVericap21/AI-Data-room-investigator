@@ -1,0 +1,198 @@
+{
+  "investigation_id": "inv_0f3f1a5505514167",
+  "config_name": "ui-run",
+  "state": "completed",
+  "started_at": "2026-11-19T16:06:14",
+  "finished_at": "2026-11-19T16:11:27",
+  "wall_s": 312.1,
+  "results_file": "C:\\Users\\Ayan Khan\\Desktop\\ai-dataroom-investigator\\AI-Data-room-investigator\\test_results\\TEST-RUN-20261119-160614-ui-run.txt",
+  "settings": {
+    "extractor": "llamaextract",
+    "grouping": "llm",
+    "vocabulary": "off",
+    "coverage_check": "off",
+    "batch_chunks": null,
+    "batch_chars": 8000,
+    "llm_model": "gemini-3.5-flash-lite",
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2"
+  },
+  "counts": {
+    "documents": 16,
+    "documents_fully_read": 16,
+    "chunks": 204,
+    "claims_recorded": 1121,
+    "claims_rejected": 99,
+    "candidates": 1888,
+    "claim_groups": 174,
+    "groups_agreed": 12,
+    "groups_judged": 152,
+    "extractor_credits": 0.0,
+    "verdicts": {
+      "not_comparable": 108,
+      "contradiction": 4,
+      "contextual_difference": 12,
+      "consistent": 28
+    },
+    "findings_saved": 37,
+    "findings_rejected": 1,
+    "embedding_calls": 111,
+    "embedding_texts": 1610,
+    "coverage_calls": 0,
+    "coverage_claims_added": 0
+  },
+  "llm": {
+    "attempts": 32,
+    "failed": 3,
+    "retries": 3,
+    "total_s": 274.3,
+    "avg_ms": 8689,
+    "p95_ms": 21575,
+    "max_ms": 22980,
+    "prompt_tokens": 530982,
+    "completion_tokens": 32365,
+    "thinking_tokens": 0,
+    "cached_tokens": 0,
+    "total_tokens": 563347,
+    "credits": 0.0,
+    "min_context_tokens": 1600,
+    "avg_context_tokens": 18310,
+    "max_context_tokens": 83626
+  },
+  "phases": [
+    {
+      "phase": "entity gate",
+      "attempts": 1,
+      "failed": 0,
+      "prompt_tokens": 1664,
+      "completion_tokens": 99,
+      "thinking_tokens": 0,
+      "avg_context_tokens": 1664,
+      "max_context_tokens": 1664,
+      "avg_ms": 7583,
+      "p95_ms": 7583,
+      "total_s": 7.6
+    },
+    {
+      "phase": "group claims (LLM)",
+      "attempts": 7,
+      "failed": 3,
+      "prompt_tokens": 187329,
+      "completion_tokens": 10508,
+      "thinking_tokens": 0,
+      "avg_context_tokens": 46832,
+      "max_context_tokens": 59231,
+      "avg_ms": 13977,
+      "p95_ms": 21575,
+      "total_s": 78.3
+    },
+    {
+      "phase": "link rules to records (LLM)",
+      "attempts": 1,
+      "failed": 0,
+      "prompt_tokens": 83626,
+      "completion_tokens": 1111,
+      "thinking_tokens": 0,
+      "avg_context_tokens": 83626,
+      "max_context_tokens": 83626,
+      "avg_ms": 5696,
+      "p95_ms": 5696,
+      "total_s": 5.7
+    },
+    {
+      "phase": "judge claim groups",
+      "attempts": 6,
+      "failed": 0,
+      "prompt_tokens": 146770,
+      "completion_tokens": 18977,
+      "thinking_tokens": 0,
+      "avg_context_tokens": 24462,
+      "max_context_tokens": 42542,
+      "avg_ms": 12394,
+      "p95_ms": 22980,
+      "total_s": 74.4
+    },
+    {
+      "phase": "checks inside each document",
+      "attempts": 16,
+      "failed": 0,
+      "prompt_tokens": 87469,
+      "completion_tokens": 1347,
+      "thinking_tokens": 0,
+      "avg_context_tokens": 5467,
+      "max_context_tokens": 14662,
+      "avg_ms": 6286,
+      "p95_ms": 21533,
+      "total_s": 100.6
+    },
+    {
+      "phase": "cross-document relations",
+      "attempts": 1,
+      "failed": 0,
+      "prompt_tokens": 24124,
+      "completion_tokens": 323,
+      "thinking_tokens": 0,
+      "avg_context_tokens": 24124,
+      "max_context_tokens": 24124,
+      "avg_ms": 7856,
+      "p95_ms": 7856,
+      "total_s": 7.9
+    }
+  ],
+  "stages": [
+    {
+      "stage": "0. scan files, process new or changed ones",
+      "seconds": 0.2,
+      "percent": 0.1
+    },
+    {
+      "stage": "1. read every chunk, extract claims",
+      "seconds": 6.0,
+      "percent": 1.9
+    },
+    {
+      "stage": "1b. describe the documents (profiles)",
+      "seconds": 0.2,
+      "percent": 0.1
+    },
+    {
+      "stage": "1c. entity gate (which documents are about the same subject)",
+      "seconds": 7.6,
+      "percent": 2.4
+    },
+    {
+      "stage": "2. match claims (LLM grouping of sorted claims)",
+      "seconds": 213.0,
+      "percent": 68.2
+    },
+    {
+      "stage": "3. judge claim groups, verify quotes, save findings",
+      "seconds": 40.2,
+      "percent": 12.9
+    },
+    {
+      "stage": "3a. checks inside each document (arithmetic, part of whole, relative dates)",
+      "seconds": 33.2,
+      "percent": 10.7
+    },
+    {
+      "stage": "3d. relations across documents (arithmetic and the order of dates)",
+      "seconds": 8.7,
+      "percent": 2.8
+    },
+    {
+      "stage": "3b. referenced items absent from the data room",
+      "seconds": 1.8,
+      "percent": 0.6
+    },
+    {
+      "stage": "3c. identifier reconciliation across documents",
+      "seconds": 0.2,
+      "percent": 0.1
+    },
+    {
+      "stage": "4. per-document verdicts",
+      "seconds": 0.0,
+      "percent": 0.0
+    }
+  ]
+}
