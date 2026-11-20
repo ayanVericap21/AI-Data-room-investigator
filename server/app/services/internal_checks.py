@@ -34,6 +34,19 @@ logger = logging.getLogger(__name__)
 CURRENCIES = frozenset({"gbp", "eur", "usd", "inr", "aud", "cad", "chf", "jpy", "cny", "sgd", "aed", "zar", "nzd", "sek", "nok", "dkk"})
 TOLERANCE = 0.005  # a stated total may differ from the computed one by half a percent (rounding)
 
+
+def explained_without_a_term(parts: list[tuple], target_low, target_high) -> int | None:
+    """For a sum that does not equal its stated total: the position of the one term whose removal makes it equal (no tolerance: the figures' own rounding only), else
+    None. A total that is met exactly once one listed figure is set aside is how a memo or interim row looks next to its parts: the sum is not broken, one row
+    is not a part. At least three terms, so that two are left to add up."""
+    if len(parts) < 3:
+        return None
+    low, high = sum(lo for lo, _hi in parts), sum(hi for _lo, hi in parts)
+    for i, (lo, hi) in enumerate(parts):
+        if high - hi >= target_low and low - lo <= target_high:
+            return i
+    return None
+
 SYSTEM = """You find arithmetic and part-of-whole relations between claims of ONE document, which the document's own figures should satisfy.
 
 Relations to look for:
@@ -75,6 +88,7 @@ class InternalStats:
     checked: int = 0  # relations code could check (every value a plain number)
     unlike: int = 0  # relations that mix a rate, price or percentage with an amount: not checked
     held: int = 0
+    explained: int = 0  # of those held, sums met exactly once one listed figure is set aside (a memo or interim row)
     broken: int = 0
     patterns: int = 0  # relations found by patterns in one sentence (part of a whole, average and total, a stated change) that the figures do not satisfy
     anchors_checked: int = 0  # relative dates ("30 days of handover")
@@ -275,6 +289,13 @@ class InternalChecker:
         if not broken:
             stats.held += 1
             return
+        if check.relation == "equals":
+            odd = explained_without_a_term([(n.low * type(n.low)(str(t)), n.high * type(n.high)(str(t))) for n, t in nums], target.low, target.high)
+            if odd is not None:
+                stats.held += 1
+                stats.explained += 1
+                stats.log.append(f"{check.label}: holds exactly once '{terms[odd][0][0].claim_text or terms[odd][0][0].value}' is set aside, not reported")
+                return
         stats.broken += 1
         if key in self._seen:
             return

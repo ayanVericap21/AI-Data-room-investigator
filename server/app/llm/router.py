@@ -40,13 +40,13 @@ class RoutedLLMClient(LLMClient):
     def _raw_generate(self, prompt: str, system: str | None, json_mode: bool) -> RawResponse:  # pragma: no cover - the chain's clients make the calls
         raise NotImplementedError("a routed client calls the models of its chain")
 
-    def generate_structured_output(self, prompt: str, schema: type[T], system: str | None = None) -> T:
+    def generate_structured_output(self, prompt: str, schema: type[T], system: str | None = None, max_output_tokens: int | None = None) -> T:
         last: LLMError | None = None
         for position, client in enumerate(self.clients):
             if position in self.unavailable:
                 continue
             try:
-                answer = client.generate_structured_output(prompt, schema, system=system)
+                answer = client.generate_structured_output(prompt, schema, system=system, max_output_tokens=max_output_tokens)
             except LLMQuotaError as exc:
                 self.unavailable[position] = str(exc)[:200]
                 logger.warning("Model %s has used up its quota; routing to the next model", self.models[position])

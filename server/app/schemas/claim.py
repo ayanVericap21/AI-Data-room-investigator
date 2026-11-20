@@ -1,7 +1,8 @@
 """Pydantic schemas for claims: LLM output, API output, and claim matching."""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
+from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -83,6 +84,27 @@ class ChunkOut(BaseModel):
 # ---- claim matching -----------------------------------------------------------
 
 
+NormalKind = Literal["amount", "count", "percent", "measure", "date", "text", "unknown"]
+
+
+class NormalizedValue(BaseModel):
+    """A claim's value as a typed, comparable value, made once after extraction (kept in memory; the raw value stays on the claim).
+
+    ``low`` and ``high`` are the interval the value covers in whole base units (rounding and "approximately" widen it; an exact "$5,120,000" is
+    [5,119,999.5, 5,120,000.5]); a bound has one end open. ``unit`` is the currency for an amount, "%" for a percent, the dimension for a measure
+    (area, mass...), else None. A date covers ``start`` to ``end``. ``text_key`` is the identifying words of a text value. ``unknown`` is a real answer:
+    the value could not be read with confidence, and nothing downstream may guess it."""
+
+    kind: NormalKind = "unknown"
+    low: Decimal | None = None
+    high: Decimal | None = None
+    unit: str | None = None
+    start: date | None = None
+    end: date | None = None
+    text_key: str | None = None
+    scale_applied: Decimal = Decimal(1)  # the factor taken from a scale word or from the claim's sentence ("$ in thousands" is 1000)
+
+
 class ClaimView(BaseModel):
     """The subset of a claim used for matching (decoupled from the ORM row)."""
 
@@ -99,9 +121,10 @@ class ClaimView(BaseModel):
     claim_text: str | None = None
     value_type: str | None = None  # quantity, date, identifier, name, state or statement (the claim's claim_category); None when unknown
     table_key: str | None = None  # set when the claim was read from a table; claims with the same key are rows of one table
+    norm: NormalizedValue | None = None  # the value as a typed value (see ``claim_values``); None until a stage that needs it has made it
 
 
-ROUTES = Literal["lexical", "label", "embedding", "llm", "identifier", "rule"]
+ROUTES = Literal["lexical", "label", "embedding", "llm", "identifier", "rule", "key"]
 
 
 class Cluster(BaseModel):

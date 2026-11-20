@@ -8,12 +8,16 @@ separate: unsure documents stay together, a document without a profile is compar
 
 List-member guard: name or statement claims on one page of one document are items of a list or sibling entries (themes, initiatives, stages, team members),
 not rival values of one attribute, so they are not kept together in one cluster.
+
+Fragment guard: a claim whose text value is only a piece of another claim's value in the same cluster ("not" next to "have not been sold, assigned or
+pledged to any other person") is an extraction cut, not a rival value: it is left out of the cluster, since the judge would call the pair a contradiction.
 """
 from __future__ import annotations
 
 import logging
 from collections import Counter
 from dataclasses import dataclass, field
+import re
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -25,6 +29,8 @@ from app.models import Claim, DocumentChunk
 from app.schemas.claim import Cluster
 from app.services.clusters import connected_clusters
 from app.services.doc_profiles import DocProfile, card
+from app.services.numbers import parse_number
+from app.services.value_rules import parse_date, parse_numeric
 
 logger = logging.getLogger(__name__)
 
@@ -123,6 +129,7 @@ def list_members(a: Claim, b: Claim, chunk_a: DocumentChunk, chunk_b: DocumentCh
 class GateResult:
     clusters: list[Cluster]
     entity_dropped: int = 0  # claims taken out of a cluster because their document is about an unrelated entity
+    fragment_dropped: int = 0  # claims left out of a cluster because their value is only a piece of another claim's value
     list_dropped: int = 0  # claims left out of a cluster because they are list members of the cluster's other claims
     clusters_dropped: int = 0  # clusters that fell below two claims
     log: list[str] = field(default_factory=list)
@@ -138,6 +145,26 @@ def _anchor_document(cluster: Cluster, claims: dict[str, Claim], gate: EntityGat
         return None
     main = Counter(gate.doc_group[d] for d in docs).most_common(1)[0][0]
     return next(d for d in docs if gate.doc_group[d] == main)
+
+
+MAX_FRAGMENT_WORDS = 3  # a fragment is at most this many words
+FRAGMENT_EXTRA_WORDS = 2  # and the value it is a piece of has at least this many more
+
+
+def _words(value: object) -> list[str]:
+    return re.findall(r"[^\W_]+", str(value).lower())
+
+
+def is_fragment_of(a: Claim, b: Claim) -> bool:
+    """``a``'s value is a few words that appear, in order and side by side, inside the longer text value of ``b``. A value with a digit in it, a number or a date is never a fragment."""
+    if a.value is None or b.value is None or isinstance(a.value, (int, float)) or isinstance(b.value, (int, float)):
+        return False
+    if re.search(r"\d", str(a.value)) or parse_number(a.value) is not None or parse_numeric(a.value) is not None or parse_date(a.value) is not None:
+        return False  # a figure or a date, written in any form ("March 28"), is a value of its own
+    wa, wb = _words(a.value), _words(b.value)
+    if not wa or len(wa) > MAX_FRAGMENT_WORDS or len(wb) < len(wa) + FRAGMENT_EXTRA_WORDS:
+        return False
+    return any(wb[i:i + len(wa)] == wa for i in range(len(wb) - len(wa) + 1))
 
 
 def apply_gates(session: Session, clusters: list[Cluster], gate: EntityGate | None, list_guard: bool = True, log_limit: int = 40) -> GateResult:
@@ -166,6 +193,15 @@ def apply_gates(session: Session, clusters: list[Cluster], gate: EntityGate | No
         if len(members) < 2:
             result.clusters_dropped += 1
             continue
+        fragments = [i for i in members if i in claims and any(j != i and j in claims and is_fragment_of(claims[i], claims[j]) for j in members)]
+        if fragments:
+            for i in fragments:
+                result.fragment_dropped += 1
+                note(f"fragment: {claims[i].value!r} ({claims[i].metric!r}) is only a piece of another claim's value in its cluster, left out")
+            members = [i for i in members if i not in fragments]
+            if len(members) < 2:
+                result.clusters_dropped += 1
+                continue
         pieces = [members]
         if list_guard and cluster.rule_id is None:
             # claims that are list members of each other do not go together: the cluster is what the other claims still join

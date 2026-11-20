@@ -80,9 +80,11 @@ class LLMClient(ABC):
     def generate_text(self, prompt: str, system: str | None = None) -> str:
         return self._call(prompt, system, json_mode=False).text
 
-    def generate_structured_output(self, prompt: str, schema: type[T], system: str | None = None) -> T:
+    def generate_structured_output(self, prompt: str, schema: type[T], system: str | None = None, max_output_tokens: int | None = None) -> T:
         """Return a validated ``schema`` instance. The schema is shown to the model in
-        the prompt (provider-neutral); validation is always done by Pydantic here."""
+        the prompt (provider-neutral); validation is always done by Pydantic here.
+        ``max_output_tokens`` caps the reply of every attempt of this call, for providers that can (Google): a reply that runs on is cut off and fails
+        validation, so it is retried a bounded number of times instead of running to the provider's limit. Other providers ignore it."""
         json_schema = schema.model_json_schema()
         native = self.native_schema(json_schema)
         if native is None:  # the provider cannot take the schema as a request parameter: the model reads it in the prompt
@@ -93,6 +95,7 @@ class LLMClient(ABC):
         else:  # the provider enforces the schema itself, so the prompt does not carry it
             full_prompt = prompt
         self._tls.response_schema = native
+        self._tls.max_output_tokens = max_output_tokens
         last_error: Exception | None = None
         try:
             for attempt in range(1, self.max_attempts + 1):
@@ -103,10 +106,12 @@ class LLMClient(ABC):
                     last_error = exc
                     with self._lock:
                         self.retry_count += 1
-                    logger.warning("Invalid structured output", extra={"attempt": attempt, "schema": schema.__name__})
+                    logger.warning(f"Invalid structured output ({schema.__name__}, attempt {attempt} of {self.max_attempts}): {' '.join(str(exc).split())[:300]}",
+                                   extra={"attempt": attempt, "schema": schema.__name__})
                     full_prompt += f"\n\nYour previous reply was invalid ({str(exc)[:300]}). Return valid JSON only."
         finally:
             self._tls.response_schema = None  # a later plain-text call on this thread must not carry it
+            self._tls.max_output_tokens = None
         raise LLMInvalidOutputError(
             f"Model output did not match {schema.__name__} after {self.max_attempts} attempts: {last_error}"
         )

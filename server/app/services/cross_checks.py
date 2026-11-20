@@ -23,7 +23,7 @@ from app.llm.base import LLMClient
 from app.llm.errors import LLMError
 from app.models import DocumentChunk, Evidence, Finding
 from app.services.claim_grouping import _line, load_claim_rows
-from app.services.internal_checks import TOLERANCE, _number, _scale, clause_quote
+from app.services.internal_checks import TOLERANCE, _number, _scale, clause_quote, explained_without_a_term
 from app.services.value_rules import Num, parse_date
 from app.tools.registry import ToolRegistry
 
@@ -77,6 +77,7 @@ class CrossStats:
     proposed: int = 0  # relations the model proposed
     checked: int = 0  # relations code could check (numbers or dates it could read)
     held: int = 0
+    explained: int = 0  # of those held, sums met exactly once one listed figure is set aside (a memo or interim row)
     broken: int = 0
     unusable: int = 0  # a ref that is not a claim, a claim twice, a value that is not a plain number or a date
     already_reported: int = 0  # broken, but the same passages are already in a finding of this run
@@ -204,6 +205,7 @@ class CrossChecker:
             stats.unusable += 1  # a claim twice, or a count that is not positive
             return
         low = high = point = Decimal(0)  # the interval decides; the point (each figure as written) is what is shown
+        parts: list[tuple[Decimal, Decimal]] = []  # each term's own interval, to find a row that is not a part of the total
         for r, t, rate in terms:
             amount = _amount(r[0])
             factor = _rate(rate[0]) if rate is not None else Num("exact", Decimal(1), Decimal(1))
@@ -213,6 +215,7 @@ class CrossChecker:
             lo, hi = _product((amount.low, amount.high), (factor.low, factor.high))
             count = Decimal(str(t.times))
             low, high = low + min(lo * count, hi * count), high + max(lo * count, hi * count)
+            parts.append((min(lo * count, hi * count), max(lo * count, hi * count)))
             point += (amount.low + amount.high) / 2 * ((factor.low + factor.high) / 2) * count
         target = _amount(against[0])
         if target is None or target.kind == "range":
@@ -225,6 +228,13 @@ class CrossChecker:
         if not broken:
             stats.held += 1
             return
+        if check.relation == "equals":
+            odd = explained_without_a_term(parts, target.low, target.high)
+            if odd is not None:
+                stats.held += 1
+                stats.explained += 1
+                stats.log.append(f"{check.label}: holds exactly once '{terms[odd][0][0].claim_text or terms[odd][0][0].value}' is set aside, not reported")
+                return
         stats.broken += 1
         computed = point
         stated = (target.low + target.high) / 2

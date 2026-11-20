@@ -43,7 +43,7 @@ for _dim, _units in {
              "lb": _D("453.59237")},
     "length": {"nm": _D("1e-9"), "mm": _D("0.001"), "cm": _D("0.01"), "m": _D(1), "metre": _D(1), "metres": _D(1), "meter": _D(1),
                "meters": _D(1), "km": _D(1000), "kilometre": _D(1000), "kilometer": _D(1000)},
-    "area": {"m2": _D(1), "sqm": _D(1), "km2": _D(10) ** 6, "ha": _D(10) ** 4, "hectare": _D(10) ** 4, "hectares": _D(10) ** 4},
+    "area": {"m2": _D(1), "sqm": _D(1), "sf": _D("0.09290304"), "sqft": _D("0.09290304"), "ft2": _D("0.09290304"), "km2": _D(10) ** 6, "ha": _D(10) ** 4, "hectare": _D(10) ** 4, "hectares": _D(10) ** 4},
     "volume": {"ml": _D("0.001"), "l": _D(1), "litre": _D(1), "litres": _D(1), "liter": _D(1), "liters": _D(1), "kl": _D(1000), "m3": _D(1000)},
     "power": {"w": _D(1), "kw": _D(1000), "mw": _D(10) ** 6, "gw": _D(10) ** 9},
     "energy": {"wh": _D(1), "kwh": _D(1000), "mwh": _D(10) ** 6, "gwh": _D(10) ** 9},
@@ -102,6 +102,9 @@ def units_match(a: UnitInfo, b: UnitInfo) -> bool | None:
 
 
 # ---- numbers ------------------------------------------------------------------
+MINOR_UNITS = {"cent": Decimal("0.01"), "cents": Decimal("0.01"), "pence": Decimal("0.01"), "paise": Decimal("0.01")}  # "85 cents" is 0.85 of the currency
+
+
 @dataclass(frozen=True)
 class Num:
     kind: str  # exact | approx | bound | range
@@ -136,7 +139,7 @@ def parse_numeric(value: object, ignore: frozenset[str] = frozenset(), leftovers
     wrapped = re.fullmatch(r"\(\s*([^()]*\d[^()]*?)\s*\)", text)  # a bracketed table amount is negative
     if wrapped:
         negative, text = True, wrapped.group(1)
-    lower = text.lower()
+    lower = text.lower().replace("¢", " cents ")
     is_lower, is_upper, is_approx = bool(_LOWER_BOUND.search(lower)), bool(_UPPER_BOUND.search(lower)), bool(_APPROX.search(lower))
     kind = "bound" if (is_lower or is_upper) else "approx" if is_approx else "exact"
     upper = is_upper and not is_lower
@@ -152,6 +155,8 @@ def parse_numeric(value: object, ignore: frozenset[str] = frozenset(), leftovers
             continue
         if word in SCALE_WORDS:
             scale = SCALE_WORDS[word]
+        elif word in MINOR_UNITS:
+            scale = MINOR_UNITS[word]
         elif unicodedata.normalize("NFKC", word) in DIMENSIONS and unit is None:
             unit = unicodedata.normalize("NFKC", word)
         elif word in ignore:

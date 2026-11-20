@@ -47,10 +47,10 @@ class LlamaExtractLLMClient(LLMClient):
         self.credits = 0.0  # LlamaExtract credits used by this client
         self._local = threading.local()  # the schema of the call this thread is making
 
-    def generate_structured_output(self, prompt: str, schema: type[T], system: str | None = None) -> T:
+    def generate_structured_output(self, prompt: str, schema: type[T], system: str | None = None, max_output_tokens: int | None = None) -> T:
         self._local.schema = inline_refs(schema.model_json_schema())
         try:
-            return super().generate_structured_output(prompt, schema, system)
+            return super().generate_structured_output(prompt, schema, system, max_output_tokens)
         finally:
             self._local.schema = None
 

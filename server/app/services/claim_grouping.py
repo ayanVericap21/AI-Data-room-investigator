@@ -120,6 +120,12 @@ class GroupingStats(BaseModel):
     unknown_refs: int = 0
     batches_failed: int = 0
     batches_split: int = 0  # batches whose call failed and were asked again as two halves (the claims are not lost with the call)
+    labelled_cached: int = 0  # key grouping: distinct claims whose label came from the cache
+    labelled_asked: int = 0  # key grouping: distinct claims sent to the labelling model
+    labelled_fallback: int = 0  # key grouping: claims the model did not label (labelled from the extracted metric)
+    attributes: int = 0  # key grouping: distinct attribute names before the vocabulary merge
+    attributes_merged: int = 0  # key grouping: after it
+    key_groups: int = 0  # key grouping: keys (attribute, value type) that two or more claims share
     errors: list[str] = Field(default_factory=list)
 
 
@@ -301,7 +307,16 @@ class ClaimGrouper:
         stats.claims_by_rule = sum(len(c.claim_ids) for c in found if c.rule_id is not None)
 
         # the code's own matching: only the claims no model cluster took
-        views_all = [row[0] for row in everything]
+        self.code_matching([row[0] for row in everything], taken, add, stats)
+        stats.rule_clusters = sum(c.rule_id is not None for c in found)
+        stats.claims_by_code = sum(len(c.claim_ids) for c in found if c.rule_id is None and set(c.via.values()) != {"llm"})
+        stats.clusters = len(found)
+        return found, stats
+
+    def code_matching(self, views_all: list[ClaimView], taken: set[str], add: Callable[[Cluster, str | None], bool], stats: GroupingStats) -> None:
+        """The code's own matching (windows, negations, record ids, shared words, rare label words, nearest neighbours) of the claims in no cluster yet
+        (``taken`` holds the claims that are in one): each cluster it finds goes to ``add``, which keeps it and adds its claims to ``taken``. The key grouping
+        calls this too, for the claims no key cluster took."""
         left = [v for v in views_all if v.id not in taken]
         stats.claims_left = len(left)
         for cluster in windows_and_records(left):  # a restriction between two dates and the claims dated inside it
@@ -309,7 +324,6 @@ class ClaimGrouper:
         left = [v for v in left if v.id not in taken]
         for cluster in negation_clusters(left):  # "No X" and the claims that mention X
             stats.negation_clusters += add(cluster, "negation")
-        stats.rule_clusters = sum(c.rule_id is not None for c in found)
         left = [v for v in left if v.id not in taken]
         names = defined_names(c.content for c in self.session.scalars(select(DocumentChunk))) if self.session is not None else {}
         resolved = [v.model_copy(update={"subject": resolve(v.subject, names), "metric": resolve(v.metric, names)}) for v in left]  # for matching only
@@ -340,9 +354,6 @@ class ClaimGrouper:
         for ids in merge_overlapping([cluster.claim_ids for _how, cluster in routes]):  # code clusters that share a claim are one cluster
             code = Cluster(claim_ids=ids, topic=topics.get(ids[0], ""), matched_by=via[ids[0]], topic_score=max(scores[i] for i in ids), via={i: via[i] for i in ids})
             stats.code_clusters += add(code)
-        stats.claims_by_code = sum(len(c.claim_ids) for c in found if c.rule_id is None and set(c.via.values()) != {"llm"})
-        stats.clusters = len(found)
-        return found, stats
 
     @staticmethod
     def _together(a: ClaimView, b: ClaimView) -> bool:

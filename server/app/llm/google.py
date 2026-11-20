@@ -214,6 +214,9 @@ class GoogleLLMClient(LLMClient):
             response_schema = getattr(self._tls, "response_schema", None)
             if response_schema:
                 generation_config["responseSchema"] = response_schema
+            max_output = getattr(self._tls, "max_output_tokens", None)
+            if max_output:
+                generation_config["maxOutputTokens"] = int(max_output)
         body["generationConfig"] = generation_config
         data = self._post_with_keys(body)
         try:

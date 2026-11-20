@@ -29,10 +29,10 @@ class OllamaLLMClient(LLMClient):
         self._client = client or ollama.Client(host=base_url, timeout=timeout)
         self._schema: dict[str, Any] | None = None
 
-    def generate_structured_output(self, prompt: str, schema: type[T], system: str | None = None) -> T:
+    def generate_structured_output(self, prompt: str, schema: type[T], system: str | None = None, max_output_tokens: int | None = None) -> T:
         self._schema = schema.model_json_schema()  # constrains the reply to this schema (see _raw_generate)
         try:
-            return super().generate_structured_output(prompt, schema, system)
+            return super().generate_structured_output(prompt, schema, system, max_output_tokens)
         finally:
             self._schema = None
 

@@ -46,6 +46,7 @@ from app.schemas.run_metrics import LLMTotals, PhaseMetrics, RunCounts, RunMetri
 from app.services.run_metrics import write_metrics  # noqa: E402
 from app.models.base import InvestigationStatus, ProcessingStatus, utcnow  # noqa: E402
 from app.services.claim_grouping import ClaimGrouper  # noqa: E402
+from app.services.key_grouping import KeyGrouper  # noqa: E402
 from app.services.extraction_cache import ExtractionCache  # noqa: E402
 from app.services.llama_claims import SCHEMA as LLAMA_SCHEMA, SYSTEM_PROMPT as LLAMA_PROMPT, LlamaClaimExtractor  # noqa: E402
 from app.services.missing_items import MissingItemChecker  # noqa: E402
@@ -249,7 +250,7 @@ def gate_lines(R) -> list[str]:
         out += [f"  related groups: {a} and {b}" for a, b in g.related]
     gates = R.gates
     if gates is not None:
-        out += ["", f"claims left out of clusters by the entity gate: {gates.entity_dropped}; left out as list members (name or statement claims on one page of one document): {gates.list_dropped}; "
+        out += ["", f"claims left out of clusters by the entity gate: {gates.entity_dropped}; left out as list members (name or statement claims on one page of one document): {gates.list_dropped}; left out as fragments of another claim's value (a cut such as 'not' next to the full sentence): {gates.fragment_dropped};"
                     f"clusters that fell below two claims and were dropped: {gates.clusters_dropped}"]
         out += [f"  - {x}" for x in gates.log]
     return out
@@ -297,7 +298,13 @@ def group_sources(js) -> str:
 def sec_groups(R):
     js = R.judge
     out = []
-    if R.grouping_stats:
+    if R.grouping_stats and R.args.grouping == "key":
+        gs = R.grouping_stats
+        out += [f"grouping: by key. Each of {gs.claims} claims was labelled on its own ({gs.labelled_cached} distinct labels from the cache, {gs.labelled_asked} asked in {gs.batches} call(s), {gs.labelled_fallback} claims labelled from their extracted metric because the model gave no label); "
+                f"{gs.attributes} attribute names merged into {gs.attributes_merged}; {gs.key_groups} keys (attribute, value type) shared by two or more claims",
+                f"  clusters of the stage: {gs.clusters} ({gs.rule_clusters} with exactly one rule covering {gs.claims_by_rule} claims); {gs.claims_grouped} claims in a cluster, {gs.claims_left} in none; largest {gs.largest_group}; clusters may overlap (a claim with two attributes is in both); then the code's own matching of the claims no key cluster took added {gs.code_clusters} clusters covering {gs.claims_by_code} claims (record id {gs.identifier_clusters}, shared words {gs.lexical_clusters}, rare label word {gs.label_clusters}, meaning {gs.neighbor_clusters}, window {gs.window_clusters}, negation {gs.negation_clusters})"]
+        out += [f"  grouping problem: {e}" for e in gs.errors]
+    elif R.grouping_stats:
         gs = R.grouping_stats
         out += [f"grouping: LLM grouping of sorted claims, with the claims flagged as rules shown to every call: {gs.claims} claims in {gs.batches} batch(es), {gs.llm_calls} call(s) ({gs.batches_failed} failed; {gs.batches_split} failed batch(es) were asked again as two halves), "
                 f"{gs.claims_filtered} claims not sent (no other claim shares their subject or metric words); {gs.rules_shown} claims flagged as rules by the extraction were shown to every call; "
@@ -393,7 +400,7 @@ def sec_internal(R):
     st = getattr(R, "internal", None)
     if st is None:
         return ["not run (--no-internal-checks)"]
-    return [f"claims read: {st.claims}; LLM calls: {st.calls} ({st.failed} failed); relations proposed by the model: {st.proposed}; checked in code (every value a plain number): {st.checked}; held: {st.held}; broken: {st.broken}",
+    return [f"claims read: {st.claims}; LLM calls: {st.calls} ({st.failed} failed); relations proposed by the model: {st.proposed}; checked in code (every value a plain number): {st.checked}; held: {st.held} ({st.explained} of them met exactly once one listed figure is set aside); broken: {st.broken}",
             f"relations found by sentence patterns in code (part of a whole, average and total, a stated change): {st.patterns}; relative dates checked: {st.anchors_checked}; their event dated nowhere: {st.anchors_missing}; findings saved: {st.saved}; rejected: {st.rejected}",
             *[f"  - {x}" for x in st.log[:30]], *[f"  problem: {e}" for e in st.errors]]
 
@@ -402,7 +409,7 @@ def sec_cross(R):
     st = getattr(R, "cross", None)
     if st is None:
         return ["not run (--no-cross-checks)"]
-    return [f"figures and dates read: {st.claims}; LLM calls: {st.calls} ({st.failed} failed); relations proposed by the model: {st.proposed}; checked in code: {st.checked}; held: {st.held}; broken: {st.broken}",
+    return [f"figures and dates read: {st.claims}; LLM calls: {st.calls} ({st.failed} failed); relations proposed by the model: {st.proposed}; checked in code: {st.checked}; held: {st.held} ({st.explained} of them met exactly once one listed figure is set aside); broken: {st.broken}",
             f"not checkable (a ref that is not a claim, a claim twice, a value that is not a plain number or a date): {st.unusable}; broken but already in a finding of this run: {st.already_reported}; "
             f"findings saved: {st.saved}; rejected: {st.rejected}",
             *[f"  - {x}" for x in st.log[:30]], *[f"  problem: {e}" for e in st.errors]]
@@ -572,8 +579,11 @@ def main():
     ap.add_argument("--no-cross-checks", action="store_true",
                     help="do not look for relations between figures and dates of different documents (a credit that is a rate times a base, a payment due after the loan it repays)")
     ap.add_argument("--no-internal-checks", action="store_true", help="do not check arithmetic and part-of-whole relations inside each document, nor relative dates with no anchor")
-    ap.add_argument("--grouping", choices=["code", "llm"], default="llm",
-                    help="llm = the LLM groups the sorted claims (default); code = clusters from word overlap and embeddings")
+    ap.add_argument("--grouping", choices=["code", "llm", "key"], default="llm",
+                    help="llm = the LLM groups the sorted claims (default); code = clusters from word overlap and embeddings; key = the LLM labels each claim on its own "
+                         "(subject, attribute, value type), the attribute names are merged in one call, and the code groups the claims that share a key")
+    ap.add_argument("--label-batch", type=int, default=40, help="claims per labelling call (--grouping key): each claim is labelled on its own, so the batch only sets the call size")
+    ap.add_argument("--refresh-labels", action="store_true", help="--grouping key: ignore the stored labels and vocabulary merge and ask the model again (the answers are stored again)")
     ap.add_argument("--grouping-batch-chars", type=int, default=None, help="characters of claims per grouping call (--grouping llm; default: by provider)")
     ap.add_argument("--extractor", choices=["llm", "llamaextract"], default="llamaextract",
                     help="llamaextract = each selected document is uploaded to LlamaExtract (LlamaIndex Cloud; default); llm = the LLM reads the chunks")
@@ -783,7 +793,11 @@ def main():
         # ---- stage 2: match claims
         t = time.perf_counter()
         print("[match] matching claims across documents", flush=True)
-        if args.grouping == "llm":
+        if args.grouping == "key":
+            R.clusters, R.grouping_stats = KeyGrouper(session, llm, sessionmaker(bind=engine, expire_on_commit=False), max_group_claims=MAX_GROUP_CLAIMS, batch_size=args.label_batch,
+                                                      workers=max(args.judge_workers, 4), refresh=args.refresh_labels, should_stop=stopped, embedder=embedder,
+                                                      on_progress=lambda m: print(f"[match] {m}", flush=True)).run()
+        elif args.grouping == "llm":
             R.clusters, R.grouping_stats = ClaimGrouper(session, llm, max_chars_per_call=min(args.grouping_call_chars, args.grouping_batch_chars), should_stop=stopped, embedder=embedder, prefilter=args.claim_filter,
                                                 workers=max(args.judge_workers, 4), on_progress=lambda m: print(f"[match] {m}", flush=True),
                                                 cards=render_cards(R.profiles) if R.profiles else "").run()
@@ -792,9 +806,9 @@ def main():
         R.llm_bounds[3] = R.llm_bounds[4] = len(llm.call_metrics)
         R.gates = apply_gates(session, R.clusters, R.gate, list_guard=not args.no_list_guard)
         R.clusters = R.gates.clusters
-        print(f"[gate] {R.gates.entity_dropped} claims left out of clusters by the entity gate, {R.gates.list_dropped} as list members, {R.gates.clusters_dropped} clusters below two claims dropped; {len(R.clusters)} clusters remain", flush=True)
+        print(f"[gate] {R.gates.entity_dropped} claims left out of clusters by the entity gate, {R.gates.list_dropped} as list members, {R.gates.fragment_dropped} as fragments of another claim's value, {R.gates.clusters_dropped} clusters below two claims dropped; {len(R.clusters)} clusters remain", flush=True)
         claim_doc = dict(session.execute(select(Claim.id, Claim.document_id)).all())
-        R.stage["2. match claims (" + ("LLM grouping of sorted claims" if args.grouping == "llm" else "code + local embeddings") + ")"] = round((time.perf_counter() - t) * 1000)
+        R.stage["2. match claims (" + ({"llm": "LLM grouping of sorted claims", "key": "labels per claim + grouping by key"}.get(args.grouping, "code + local embeddings")) + ")"] = round((time.perf_counter() - t) * 1000)
         print(f"[match] {len(ClaimGroupJudge._form_groups(R.clusters))} claim groups from {len(R.clusters)} clusters (all the claims of a group are judged together)", flush=True)
 
         check_stop()

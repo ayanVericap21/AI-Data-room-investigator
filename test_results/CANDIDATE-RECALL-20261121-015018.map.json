@@ -1,0 +1,974 @@
+{
+ "HTC01-001": [
+  {
+   "doc": "DOC-05",
+   "page": 2,
+   "quote": "$5,120,000",
+   "claims": [
+    "cee835b9d9dac96c96d087b6f18f156ee353bf282c3b44655890559b82c0d624"
+   ]
+  },
+  {
+   "doc": "DOC-05",
+   "page": 2,
+   "quote": "24,600 ($ in thousands)",
+   "claims": [
+    "771756bdc378c6f8e81cf935c6507316147fdd055dcdb206a0e670d5f2ac1267"
+   ]
+  },
+  {
+   "doc": "DOC-06",
+   "page": 3,
+   "quote": "$24,600,000",
+   "claims": [
+    "21eccbcf9e8036cda290e634011f7d6a28d82eba3f4c2c45c580075559fe0a9b"
+   ]
+  },
+  {
+   "doc": "DOC-06",
+   "page": 3,
+   "quote": "$4,920,000",
+   "claims": [
+    "b0af00a79539f4148b77be005470f01518a4a960b482846132626dfe58be8a2f"
+   ]
+  }
+ ],
+ "HTC01-002": [
+  {
+   "doc": "DOC-04",
+   "page": 2,
+   "quote": "Total qualified costs $25,310,000",
+   "claims": [
+    "2f22cda6057eaec433d2b2d0961c0c8813cf1c11d96a913cb35c13aa4915fa22",
+    "62098c291818f7d77478bf5eb4fc717c611aec5401cb219da92f027b71751f41"
+   ]
+  },
+  {
+   "doc": "DOC-04",
+   "page": 2,
+   "quote": "$420,000",
+   "claims": [
+    "ed69daa0cfed366b49641ebd1d368b197910863df4b5849b28ca3f57c80d8588",
+    "e812d7d8a79caa6c5336d1b65b1b31c628c149622a5b81de6cd722e06ad2acc9"
+   ]
+  },
+  {
+   "doc": "DOC-04",
+   "page": 2,
+   "quote": "$290,000",
+   "claims": [
+    "19ed7a5bf6b6d8c4a2d5dd492392c42622be58143b9be6409011d7404bab49c6",
+    "f3a938c06ab1f643c2ada8510a1d6dd869b0d9a320785fa682056ca3c269761c"
+   ]
+  },
+  {
+   "doc": "DOC-06",
+   "page": 3,
+   "quote": "$24,600,000",
+   "claims": [
+    "21eccbcf9e8036cda290e634011f7d6a28d82eba3f4c2c45c580075559fe0a9b"
+   ]
+  }
+ ],
+ "HTC01-003": [
+  {
+   "doc": "DOC-08",
+   "page": 9,
+   "quote": "CO-1 $315,000; CO-2 $60,000; CO-3 $265,000",
+   "claims": [
+    "005b625d781599afda509e19842d9dc539202f7c52ca3122c42aec19c234f211",
+    "b73ca770d327e811b0ff77d0d3e0f26272b8160a1c3cd8cb30c2d3dbc7a49036",
+    "80bfff416d6912265a359e8a3e77953a6c5788c3095ff7678d18fd770f94f3cb",
+    "926dad97f68f02c0f6e57fdbeed0cd33ff13926de0c0d55fe999dae2ee7bd602"
+   ]
+  },
+  {
+   "doc": "DOC-08",
+   "page": 9,
+   "quote": "$22,540,000",
+   "claims": [
+    "038d58830ad8c710f95f215c3e59031439bbe1046bb5d1f004534c21b7519ba4"
+   ]
+  },
+  {
+   "doc": "DOC-06",
+   "page": 2,
+   "quote": "Construction contract $21,900,000",
+   "claims": [
+    "60bfd3f79814f578a35791fb86075febffecd226dd26238265b3dd7b73b4717d"
+   ]
+  }
+ ],
+ "HTC01-004": [
+  {
+   "doc": "DOC-12",
+   "page": 3,
+   "quote": "$0.82 per $1.00 of credit",
+   "claims": [
+    "507411afb346a520fa79a4a34ee93c3aae9fbd249f684da3a654c7995ca0cda4",
+    "c7de6135eaa83e4c8e884813015c46ac380273d8b5875f0829972409c32b776b"
+   ]
+  },
+  {
+   "doc": "DOC-05",
+   "page": 2,
+   "quote": "0.85",
+   "claims": [
+    "2846789398d726b1ff90da3598b791ad7e95915ec72f636fc1429eaf8651c92a"
+   ]
+  },
+  {
+   "doc": "DOC-05",
+   "page": 2,
+   "quote": "5,227.5 ($ in thousands)",
+   "claims": [
+    "d0633d06dcb4afc0a5bc11a3334639af840165175575acb01787e660990500e0"
+   ]
+  },
+  {
+   "doc": "DOC-15",
+   "page": 6,
+   "quote": "pricing came in at 85 cents",
+   "claims": [
+    "d138593394fb2114269dbab88ebb72491f7815c51a065e68402ceb366d1bee4d"
+   ]
+  },
+  {
+   "doc": "DOC-16",
+   "page": 1,
+   "quote": "$0.85 per credit",
+   "claims": [
+    "c096c60ec81529b64e5ec82a340db531f66395c7203f55ebbbc55c06041d42cb",
+    "cef1996dd86e79a6b31022b663a1c14faff8c7494b104f4a74c7f724f7fa45c1",
+    "5c19ca769e0fbbab807a79368f82f6fa5f9c8c963aebde3ed0c5ba6a7d36d5aa"
+   ]
+  }
+ ],
+ "HTC01-005": [
+  {
+   "doc": "DOC-12",
+   "page": 3,
+   "quote": "$0.82 per $1.00 of credit",
+   "claims": [
+    "507411afb346a520fa79a4a34ee93c3aae9fbd249f684da3a654c7995ca0cda4",
+    "c7de6135eaa83e4c8e884813015c46ac380273d8b5875f0829972409c32b776b"
+   ]
+  },
+  {
+   "doc": "DOC-13",
+   "page": 3,
+   "quote": "$0.85 per $1.00 of credit",
+   "claims": [
+    "c51c4dcc565c089879772d089bc8862563ee26e577a5dc2c594c965b0a058998",
+    "fa82712d5cf3613b1e67351922f2119820bb1875a406b92cae1f3c7a5fd39051"
+   ]
+  }
+ ],
+ "HTC01-006": [
+  {
+   "doc": "DOC-16",
+   "page": 1,
+   "quote": "The project is fully funded",
+   "claims": [
+    "b01c4789ae1a34475d789c888bda386d7785fd29b1239c18a1ecc82e1b9a17f0"
+   ]
+  },
+  {
+   "doc": "DOC-04",
+   "page": 1,
+   "quote": "$31,150,000",
+   "claims": [
+    "cf7c9ad1132184eb7804118b4701321a05bfeb788d78c02f3d4e4fb67495c24d",
+    "79246f01802f9635dacd93fd37a2e895dcb71f095f8a09e6256b993a719ccfbe"
+   ]
+  },
+  {
+   "doc": "DOC-04",
+   "page": 1,
+   "quote": "Total uses $31,750,000",
+   "claims": [
+    "118ecfd401245ce53d9dafc84203f327ece3c55343e7d5d7cb976e5c65bd683b"
+   ]
+  },
+  {
+   "doc": "DOC-04",
+   "page": 1,
+   "quote": "Gap ($600,000)",
+   "claims": [
+    "c3a56f4bbf303d16acd2151452be1007ef2861f4bf674e055aa01687e952710c",
+    "e93ff2e80428ecedb3207f895284f5216d3c82390ed1df91eed2adee3831c8e1"
+   ]
+  }
+ ],
+ "HTC01-007": [
+  {
+   "doc": "DOC-16",
+   "page": 2,
+   "quote": "Federal credits will be claimed on the 2024 return",
+   "claims": [
+    "c7700af5a08062482cede9aa9ec0d845d46bb7dc3fc8641b2eecf3064dfbe320"
+   ]
+  },
+  {
+   "doc": "DOC-06",
+   "page": 1,
+   "quote": "July 15, 2025",
+   "claims": [
+    "1fa51d03e00fbb99cf2a5db71dfa2a658fd6b0bdd3088ef03853e4785bb14058",
+    "aaf40d4570a55f3d7d7e09c8abecccc7382c1ea3dc5639921620a2c8863a8d91",
+    "8ad01c90be5f04ea2e7124747f8fc8b6f86f5251d201ef944f362f99d00ceda7",
+    "cdd7c1589b75081d1df8c2ef92b10303b6d84cb254cf910a39675047292d3c91",
+    "211f2602204fe31bb9dc9d0f6c1ead8a1c9ee49a5616701b52ebef27a80d6515"
+   ]
+  }
+ ],
+ "HTC01-008": [
+  {
+   "doc": "DOC-08",
+   "page": 1,
+   "quote": "Notice to Proceed dated June 5, 2023",
+   "claims": [
+    "077d465e3ea9352448265279470eb9c7805a71921eb6dc9f2fd6f6e685d79a2a",
+    "8d01a2cc6249d414ef26f0914af246a09ba21776acdc31e63faaaee942cff1c0"
+   ]
+  },
+  {
+   "doc": "DOC-09",
+   "page": 1,
+   "quote": "10/2/2023",
+   "claims": [
+    "6bcb1b084ced4f8165627aded372f413c4e5f10b1db6c48a1061ea53e3d650c0"
+   ]
+  },
+  {
+   "doc": "DOC-02",
+   "page": 1,
+   "quote": "August 22, 2023",
+   "claims": [
+    "24c22e72c95ff46797c972165e1ff3459c07eaed56b4a94b20817c570d1446e8",
+    "6b3d8828e2c3b67b04184feae9a1aa5d0f9fbb1cc3795ca82f78c9dc250f60c1"
+   ]
+  }
+ ],
+ "HTC01-009": [
+  {
+   "doc": "DOC-15",
+   "page": 11,
+   "quote": "NPS approved Part 3 in October",
+   "claims": [
+    "5782adbe371fb56b69fd76bcea488925925596f6a1871e397106502d3cab4dc1",
+    "c58e2303df6bf37c7c251dce7fd7c4a19695748f1cf1678e6bf4b9ce5c8dc6ea",
+    "991d286ca4c98f17af769121f1f5e42ccd74c6281be3a9de3a5cc4b19bd529cc",
+    "fe5bd294e3a782dcb504adfa6afce95dc0c8054248144765e12baaaaefe477ec"
+   ]
+  },
+  {
+   "doc": "DOC-11",
+   "page": 14,
+   "quote": "40% upon receipt of Part 3 approval",
+   "claims": [
+    "658e7d65aa036e1be84bfb56db25e65ea7151f487444c87a75e40c287dfb8a44",
+    "9519a31a402540c4aaaa87ffc69b7cc1c7c3fb64e53bea56667a7ce2a4b90f97"
+   ]
+  }
+ ],
+ "HTC01-010": [
+  {
+   "doc": "DOC-02",
+   "page": 3,
+   "quote": "Shop drawings for replacement windows must be submitted to and approved by NPS before installation",
+   "claims": [
+    "87817f7094a0734cf20c4d32daec91e7c3ca0d41591f6734d3e2fc275474ed50"
+   ]
+  },
+  {
+   "doc": "DOC-15",
+   "page": 4,
+   "quote": "Windows installed on floors 1 to 3",
+   "claims": [
+    "a31b7d3c687a3067dadf93f347d7951ff81a05c0e2c8897d17f9dfc344e991a2"
+   ]
+  }
+ ],
+ "HTC01-011": [
+  {
+   "doc": "DOC-02",
+   "page": 3,
+   "quote": "Shop drawings for replacement windows must be submitted to and approved by NPS before installation",
+   "claims": [
+    "87817f7094a0734cf20c4d32daec91e7c3ca0d41591f6734d3e2fc275474ed50"
+   ]
+  },
+  {
+   "doc": "DOC-07",
+   "page": 6,
+   "quote": "Wood windows replicating original profiles",
+   "claims": [
+    "efa8d74b97d1e653d93262bc925a2deb13cf3b5e5825ee61573ad87973ee3f31"
+   ]
+  },
+  {
+   "doc": "DOC-14",
+   "page": 1,
+   "quote": "Vinyl double-hung, standard profile",
+   "claims": [
+    "bbd1aa2bc19c5b1b7e7e0e2da96c6b9599f90c9d16ef7fcac0d49a03a22ba64f"
+   ]
+  }
+ ],
+ "HTC01-012": [
+  {
+   "doc": "DOC-07",
+   "page": 1,
+   "quote": "84 apartments",
+   "claims": [
+    "66157a70439d48a59c44dd54f6d5d7d2cc06defc60ce17a98aad351154357c04",
+    "587a5910a57d41feb8e18aaf6162cd8c34664535430bdc44bc3437ef94fbe5b7",
+    "6f674090d23bb3a23462822647e68b5789c453df1d9d1d67bb48f79b11b0e6e6",
+    "761995096d6942ea53bf89633a63d00262eee63171f6593016c7a4bb5d07c13f"
+   ]
+  },
+  {
+   "doc": "DOC-10",
+   "page": 2,
+   "quote": "86 units",
+   "claims": [
+    "2f8e17e4e036972566a41a2dbc30d1765e9a287f6e66ae6e5860540a8284048f",
+    "05412a9a402c5f89bfaa97da4a41875354fc5fb7cacae2b2453aae978d5ea572",
+    "f5a65fc096d546c29e4cdea1b90e43d4643e5d36f9c812eba3e173dba72d8900"
+   ]
+  }
+ ],
+ "HTC01-013": [
+  {
+   "doc": "DOC-10",
+   "page": 2,
+   "quote": "112,400 SF gross building area",
+   "claims": [
+    "ca955da1a7444ae6c41f5171a9efdd84d945b67d489b93c987ed198400fa376f"
+   ]
+  },
+  {
+   "doc": "DOC-07",
+   "page": 1,
+   "quote": "78,650 rentable SF",
+   "claims": [
+    "39e17ef07ac72538982e26846375635ab0096b3918f8ba15f683b8f07a44ef10",
+    "c8b39f8682023941cf05f2f11c781d628e4e84e3d6039e19c40bd7763d0e12e8"
+   ]
+  }
+ ],
+ "HTC01-014": [
+  {
+   "doc": "DOC-11",
+   "page": 13,
+   "quote": "$4,329,600",
+   "claims": [
+    "08e23ad16a9a259b783b70ed2b3675e9bc31748ea43be85b47e471a6e8036030"
+   ]
+  },
+  {
+   "doc": "DOC-11",
+   "page": 14,
+   "quote": "$865,920",
+   "claims": [
+    "fbf456eb7af46f8e6af92a117fc6fa5124f897bdeedd07616cede1e7b87aa3c9",
+    "29881068c68bcd82c086261797e9e870eb3ada80e903d1d0686745c801b8cc33"
+   ]
+  },
+  {
+   "doc": "DOC-11",
+   "page": 14,
+   "quote": "$1,298,880",
+   "claims": [
+    "fd0edfd3a5cea283896f1bb766f9d748cc12b501fa065281677c2766daf3107f",
+    "1d51e6273163c63ed631db3a9b0ef8636e4db22e6080c6a845439d213f98dced",
+    "6e5647abec13f37d6b5bc876c385748e8ccd59e81022163ff92c6513098c8a26"
+   ]
+  },
+  {
+   "doc": "DOC-11",
+   "page": 14,
+   "quote": "$1,831,840",
+   "claims": [
+    "658e7d65aa036e1be84bfb56db25e65ea7151f487444c87a75e40c287dfb8a44",
+    "9519a31a402540c4aaaa87ffc69b7cc1c7c3fb64e53bea56667a7ce2a4b90f97"
+   ]
+  },
+  {
+   "doc": "DOC-11",
+   "page": 14,
+   "quote": "$432,960",
+   "claims": [
+    "05a57dd0a017791642086151e01ba2795bc3bee156eee79bc664b787419b46f0",
+    "49dad756e2ca6f4c0c1730a34f63ef5cace5493f2094e9f3d664bbaff15131c0",
+    "c33ca24d5b9082b80cc360ad42891aa0981943953e568f418b7ffaa3cd707196",
+    "33f94c4251b95c2c91b006aa697bbf7f3ee34ab3b36e1f01f49805c69a37e7ef"
+   ]
+  }
+ ],
+ "HTC01-015": [
+  {
+   "doc": "DOC-04",
+   "page": 2,
+   "quote": "$2,750,000",
+   "claims": [
+    "a2edbd2accb91652dfea99bb2415b422f8831b578f055ad80377975271557d5f"
+   ]
+  },
+  {
+   "doc": "DOC-11",
+   "page": 18,
+   "quote": "shall not exceed $2,500,000",
+   "claims": [
+    "ffb7f42cbf6f7cec718f87607b53e412f2b144928cc0c7376cc97ff6b914879c"
+   ]
+  }
+ ],
+ "HTC01-016": [
+  {
+   "doc": "DOC-11",
+   "page": 21,
+   "quote": "$1,500,000",
+   "claims": [
+    "0c63460cd7a18d69bafadf45adc4d7eaac2e40c73ad403f67814051e9b732cda"
+   ]
+  },
+  {
+   "doc": "DOC-11",
+   "page": 42,
+   "quote": "$1,000,000",
+   "claims": [
+    "bc4cb4a414f1be42435230fea5f9030f91e1cc72449c05e06505774a87a92227"
+   ]
+  }
+ ],
+ "HTC01-017": [
+  {
+   "doc": "DOC-06",
+   "page": 1,
+   "quote": "Taxpayer: Riverside Heritage Development LLC",
+   "claims": [
+    "d3322946865f8cf8fe0dc7c4713d5928fed2358c57c4ba41542c4ad8e5dd2d09"
+   ]
+  },
+  {
+   "doc": "DOC-10",
+   "page": 1,
+   "quote": "Ashby Mill Owner LLC, fee simple owner",
+   "claims": [
+    "aef57e50cf56c29bf31ff213f2f23f098aa901fe3110f9aed91f3b8da5f7f806",
+    "89534d3093d47217659800aeed1bab0975a9579df423fdd3c24e99da872183da"
+   ]
+  }
+ ],
+ "HTC01-018": [
+  {
+   "doc": "DOC-07",
+   "page": 1,
+   "quote": "Ashbey Mill Owner LLC",
+   "claims": [
+    "c8b44333df02df4cb51d4eefef4d0fbf3e5c00e0d7bb618a5709dd8dcdf4dcb8",
+    "c2286f03d818be4aab64641f7258297a837536a8b7c4879445b173af2e3e9bd5",
+    "0e0ad933bb41d9c4184ccf55c21be585fe294ffc69db00140df453242a3e611b"
+   ]
+  },
+  {
+   "doc": "DOC-11",
+   "page": 1,
+   "quote": "Ashby Mill Owner LLC",
+   "claims": [
+    "f71957ceb2bc88c0c7050666c00a230294b515b988fb4300e84bf99302ce92a2",
+    "9c8dfc3635dd4457c6ca7704418556f0fc8f9a3c21c60e48a275578e0a35f9bd",
+    "0b2d43c1ce57c530e85e20eeefe27e77fcf750582049fdd07c101b0ec96bde71"
+   ]
+  }
+ ],
+ "HTC01-019": [
+  {
+   "doc": "DOC-12",
+   "page": 1,
+   "quote": "Ashby Mill Owner, L.L.C.",
+   "claims": [
+    "d9111c4034f5782517f2d2b2b5b0ad79e8664856420d013fbaa19949fda0e428",
+    "8cc45c99a999962749907a056c5331e697dee83db69744bb0d3f12748aa5781b"
+   ]
+  },
+  {
+   "doc": "DOC-11",
+   "page": 1,
+   "quote": "Ashby Mill Owner LLC",
+   "claims": [
+    "f71957ceb2bc88c0c7050666c00a230294b515b988fb4300e84bf99302ce92a2",
+    "9c8dfc3635dd4457c6ca7704418556f0fc8f9a3c21c60e48a275578e0a35f9bd",
+    "0b2d43c1ce57c530e85e20eeefe27e77fcf750582049fdd07c101b0ec96bde71"
+   ]
+  }
+ ],
+ "HTC01-020": [
+  {
+   "doc": "DOC-16",
+   "page": 1,
+   "quote": "approximately $24.6 million of qualified rehabilitation expenses",
+   "claims": [
+    "7b0d91c280061f12429d6b537977f094297a49627a9f53709d9df7f9ae3c2182",
+    "a59e0c8b6210d1401d371a3cfdc66ae59ab5e043e9aaeb9954c5d8e96f33004e"
+   ]
+  },
+  {
+   "doc": "DOC-16",
+   "page": 1,
+   "quote": "$4.9M in federal credits",
+   "claims": [
+    "7b0d91c280061f12429d6b537977f094297a49627a9f53709d9df7f9ae3c2182",
+    "a59e0c8b6210d1401d371a3cfdc66ae59ab5e043e9aaeb9954c5d8e96f33004e"
+   ]
+  },
+  {
+   "doc": "DOC-06",
+   "page": 3,
+   "quote": "$24,600,000",
+   "claims": [
+    "21eccbcf9e8036cda290e634011f7d6a28d82eba3f4c2c45c580075559fe0a9b"
+   ]
+  },
+  {
+   "doc": "DOC-06",
+   "page": 3,
+   "quote": "$4,920,000",
+   "claims": [
+    "b0af00a79539f4148b77be005470f01518a4a960b482846132626dfe58be8a2f"
+   ]
+  }
+ ],
+ "HTC01-021": [
+  {
+   "doc": "DOC-02",
+   "page": 1,
+   "quote": "August 22, 2023",
+   "claims": [
+    "24c22e72c95ff46797c972165e1ff3459c07eaed56b4a94b20817c570d1446e8",
+    "6b3d8828e2c3b67b04184feae9a1aa5d0f9fbb1cc3795ca82f78c9dc250f60c1"
+   ]
+  },
+  {
+   "doc": "DOC-15",
+   "page": 1,
+   "quote": "8/22/2023",
+   "claims": [
+    "4318e88f9ee931f5fd5ecd8bbb403bc630b865c19ec18686cd5fa06cbd7e265a",
+    "af26f7a50c1511cdc5427d5af7dc7b5b0de11f8d57a3a57fd89ff084fe57fa4f"
+   ]
+  },
+  {
+   "doc": "DOC-16",
+   "page": 2,
+   "quote": "8/22/23",
+   "claims": [
+    "f53b8ccb48dd165e75a79747393f34e5a57fcb37a8a5953181565933bc7ad1d7"
+   ]
+  }
+ ],
+ "HTC01-022": [
+  {
+   "doc": "DOC-14",
+   "page": 2,
+   "quote": "$1,180,000, supply only",
+   "claims": [
+    "cd0c663eeca7a38a22db7315e58a81d9304e6e7dac990e20c228f574d6f7e062"
+   ]
+  },
+  {
+   "doc": "DOC-04",
+   "page": 2,
+   "quote": "Windows, furnish and install $1,240,000",
+   "claims": [
+    "5aa418bb29780e055e6744dff5c9b235a375489b83354900a0ca4fda4b4f9cb1",
+    "be6afa6d24d902a87c7fa8351c87817da735155b3e728f85cce4a7595d200a6f"
+   ]
+  },
+  {
+   "doc": "DOC-08",
+   "page": 9,
+   "quote": "CO-2 window installation $60,000",
+   "claims": [
+    "b73ca770d327e811b0ff77d0d3e0f26272b8160a1c3cd8cb30c2d3dbc7a49036",
+    "926dad97f68f02c0f6e57fdbeed0cd33ff13926de0c0d55fe999dae2ee7bd602",
+    "25cfbd5a8491d697ba6480fea94270e4676c0560ab8efb731210b67653ad097b"
+   ]
+  }
+ ],
+ "HTC01-023": [
+  {
+   "doc": "DOC-15",
+   "page": 9,
+   "quote": "48 units complete and leasing",
+   "claims": [
+    "df8aa3f8925c9437d8b307e19463865ed38d225839a1cf4acc73ed4abbe632aa"
+   ]
+  },
+  {
+   "doc": "DOC-07",
+   "page": 1,
+   "quote": "84 apartments",
+   "claims": [
+    "66157a70439d48a59c44dd54f6d5d7d2cc06defc60ce17a98aad351154357c04",
+    "587a5910a57d41feb8e18aaf6162cd8c34664535430bdc44bc3437ef94fbe5b7",
+    "6f674090d23bb3a23462822647e68b5789c453df1d9d1d67bb48f79b11b0e6e6",
+    "761995096d6942ea53bf89633a63d00262eee63171f6593016c7a4bb5d07c13f"
+   ]
+  }
+ ],
+ "HTC01-024": [
+  {
+   "doc": "DOC-05",
+   "page": 2,
+   "quote": "24,600 ($ in thousands)",
+   "claims": [
+    "771756bdc378c6f8e81cf935c6507316147fdd055dcdb206a0e670d5f2ac1267"
+   ]
+  },
+  {
+   "doc": "DOC-06",
+   "page": 3,
+   "quote": "$24,600,000",
+   "claims": [
+    "21eccbcf9e8036cda290e634011f7d6a28d82eba3f4c2c45c580075559fe0a9b"
+   ]
+  }
+ ],
+ "HTC01-025": [
+  {
+   "doc": "DOC-04",
+   "page": 2,
+   "quote": "Hard cost subtotal $22,540,000",
+   "claims": [
+    "7ff89a8d97bbcdcce799de385424e0a26e20b3a3a197986d61b8a401d05e7e12",
+    "14d189beefa0bbcc1f39f10d9ebd4f050c30f236922130875390828ec08792c8",
+    "d8c6bf4357dd4a1ec34ab373116252d3a251ad531d445c6cad0c9bfed6c955c3"
+   ]
+  }
+ ],
+ "HTC01-026": [
+  {
+   "doc": "DOC-12",
+   "page": 4,
+   "quote": "10% deposit due within 10 business days of signing",
+   "claims": [
+    "772bc5add2bb120126e0a15fbd5c853dfe15e11ca2256260ca26dd88754d5a16",
+    "6b909488a1028536d0c0ca92e46b4bccac7f2016584db38b835d75e181dd64eb",
+    "8a0062a687255cbb4e1b0d922cea6d8953fd988d013609c1adb584f6f8b57d74",
+    "3160604756cafbfcea53fd68d955c6e27c8b0a8c631b427f4d0bc1595ef2de39"
+   ]
+  },
+  {
+   "doc": "DOC-15",
+   "page": 5,
+   "quote": "Buyer wired the deposit last week",
+   "claims": [
+    "6681103217086e2b6a53c6a142c77328beabfb7c5d798e3fdc80f8b3645af6eb",
+    "e535383433bd0323e20de0803d7951634595b695b1928c03de86f6d5a5192657",
+    "3da608d0b7fd1fdec922d25441c9c294e57a517c11ca656febb7b08ca0365ce7"
+   ]
+  }
+ ],
+ "HTC01-027": [
+  {
+   "doc": "DOC-06",
+   "page": 4,
+   "quote": "Adjusted basis $1,540,000",
+   "claims": [
+    "371ec7efe6d009729c8d97a8782cc2dd466863586810f3fea8ec6e4fb51bb3ba"
+   ]
+  }
+ ],
+ "HTC01-028": [
+  {
+   "doc": "DOC-05",
+   "page": 3,
+   "quote": "12 units per month",
+   "claims": [
+    "0a140fb9efafdb9a8aef39bfbde0974d6e233dfb71fc4dd738e578fab4dc8424"
+   ]
+  },
+  {
+   "doc": "DOC-03",
+   "page": 8,
+   "quote": "7 units per month; stabilization in about 12 months",
+   "claims": [
+    "88f40dcac5ee6f12d939df39b98bbfdba8560824563c53f052356d251a1c8c75",
+    "c94f1e0df9c3320098f92b127b151f84330129a8933872d984b68f88049e65d6",
+    "72b954932d3abb647cb2272361648ce2689e50de73fe7ec6e4dd3c11c0e7dee2"
+   ]
+  }
+ ],
+ "HTC01-029": [
+  {
+   "doc": "DOC-06",
+   "page": 1,
+   "quote": "July 15, 2025",
+   "claims": [
+    "1fa51d03e00fbb99cf2a5db71dfa2a658fd6b0bdd3088ef03853e4785bb14058",
+    "aaf40d4570a55f3d7d7e09c8abecccc7382c1ea3dc5639921620a2c8863a8d91",
+    "8ad01c90be5f04ea2e7124747f8fc8b6f86f5251d201ef944f362f99d00ceda7",
+    "cdd7c1589b75081d1df8c2ef92b10303b6d84cb254cf910a39675047292d3c91",
+    "211f2602204fe31bb9dc9d0f6c1ead8a1c9ee49a5616701b52ebef27a80d6515"
+   ]
+  },
+  {
+   "doc": "DOC-09",
+   "page": 2,
+   "quote": "7/15/2025",
+   "claims": [
+    "bb274bb7c113c80c49c48276681b6b519048dfed2fb77b275412a20b8f147462"
+   ]
+  },
+  {
+   "doc": "DOC-11",
+   "page": 14,
+   "quote": "the Building was placed in service on July 15, 2025",
+   "claims": [
+    "fd0edfd3a5cea283896f1bb766f9d748cc12b501fa065281677c2766daf3107f",
+    "1d51e6273163c63ed631db3a9b0ef8636e4db22e6080c6a845439d213f98dced",
+    "6e5647abec13f37d6b5bc876c385748e8ccd59e81022163ff92c6513098c8a26"
+   ]
+  }
+ ],
+ "HTC01-030": [
+  {
+   "doc": "DOC-04",
+   "page": 1,
+   "quote": "$18,500,000",
+   "claims": [
+    "c2f2fdb43e75f88b021c779157690234ce7e9fa20b974c1864bffa05be66f94f",
+    "ad7399858bde93daad38ab77dc31bda31478b76a3c888559bced7302aeaea876"
+   ]
+  },
+  {
+   "doc": "DOC-05",
+   "page": 2,
+   "quote": "18,500 ($ in thousands)",
+   "claims": [
+    "dcfe023180fa28a22cbc015ed68ed5d0294df91a3d6584a6c5d84badbee4050d"
+   ]
+  },
+  {
+   "doc": "DOC-16",
+   "page": 1,
+   "quote": "$18.5M construction loan",
+   "claims": [
+    "c096c60ec81529b64e5ec82a340db531f66395c7203f55ebbbc55c06041d42cb",
+    "cef1996dd86e79a6b31022b663a1c14faff8c7494b104f4a74c7f724f7fa45c1",
+    "5c19ca769e0fbbab807a79368f82f6fa5f9c8c963aebde3ed0c5ba6a7d36d5aa"
+   ]
+  }
+ ],
+ "HTC01-031": [
+  {
+   "doc": "DOC-16",
+   "page": 1,
+   "quote": "a vibrant mixed-use community at the heart of Danville's River District",
+   "claims": [
+    "7457efec43e778ff0bf1c0dcf1eb0a8bc6fc7cc127d5bb6e66c91c1392c8a05b",
+    "f446ee0fb56d5876ab0906c3211be37ab3e8282e3748e5f87e24c9688a69530d",
+    "929d440fa1a40f8bd41a5a1a3dd37fc0d241f90cec9bb7f484374d32c2cefbc4"
+   ]
+  },
+  {
+   "doc": "DOC-07",
+   "page": 1,
+   "quote": "2 ground-floor commercial suites",
+   "claims": [
+    "66157a70439d48a59c44dd54f6d5d7d2cc06defc60ce17a98aad351154357c04",
+    "587a5910a57d41feb8e18aaf6162cd8c34664535430bdc44bc3437ef94fbe5b7",
+    "6f674090d23bb3a23462822647e68b5789c453df1d9d1d67bb48f79b11b0e6e6",
+    "761995096d6942ea53bf89633a63d00262eee63171f6593016c7a4bb5d07c13f"
+   ]
+  }
+ ],
+ "HTC01-032": [
+  {
+   "doc": "DOC-16",
+   "page": 2,
+   "quote": "Virginia DHR has issued final certification for the state credits",
+   "claims": [
+    "dfc33f39ca113fa5d2314205b2afef9d8dbac204464c64db617c82f100dfcdf9",
+    "0914cec5f6b4512777ac3679a0f01abb64f7d9285708fa08a1810fffe80ef1ba"
+   ]
+  }
+ ],
+ "HTC01-033": [
+  {
+   "doc": "DOC-15",
+   "page": 8,
+   "quote": "Building placed in service March 28 with the Phase 1 TCO",
+   "claims": [
+    "277791de50a661c78a3f790cac26176425e9b6831442479b255196770c59e235",
+    "f081fc396aed48de392824dbf131e128908033b1dae68104a96e69d5f3e1b7a5"
+   ]
+  },
+  {
+   "doc": "DOC-06",
+   "page": 1,
+   "quote": "July 15, 2025",
+   "claims": [
+    "1fa51d03e00fbb99cf2a5db71dfa2a658fd6b0bdd3088ef03853e4785bb14058",
+    "aaf40d4570a55f3d7d7e09c8abecccc7382c1ea3dc5639921620a2c8863a8d91",
+    "8ad01c90be5f04ea2e7124747f8fc8b6f86f5251d201ef944f362f99d00ceda7",
+    "cdd7c1589b75081d1df8c2ef92b10303b6d84cb254cf910a39675047292d3c91",
+    "211f2602204fe31bb9dc9d0f6c1ead8a1c9ee49a5616701b52ebef27a80d6515"
+   ]
+  },
+  {
+   "doc": "DOC-09",
+   "page": 2,
+   "quote": "7/15/2025",
+   "claims": [
+    "bb274bb7c113c80c49c48276681b6b519048dfed2fb77b275412a20b8f147462"
+   ]
+  }
+ ],
+ "HTC01-034": [
+  {
+   "doc": "DOC-09",
+   "page": 2,
+   "quote": "6/13/2025",
+   "claims": [
+    "6bff68be5213ffb977fa0649968f1cccddddb4c9e1d23cbf9a6dd333b06b3530"
+   ]
+  },
+  {
+   "doc": "DOC-15",
+   "page": 10,
+   "quote": "Architect issued the certificate of substantial completion on June 13",
+   "claims": [
+    "55b2d247d1cf4bbe8d5ee6feac6e52bfdb5f4eb822047e3232661ea24ab0e55b",
+    "dbc8893b7763930e386769e3f420df794fd0f6409a35401f29cd148d54a41c63"
+   ]
+  }
+ ],
+ "HTC01-035": [
+  {
+   "doc": "DOC-05",
+   "page": 4,
+   "quote": "Federal credits delivered: 2025 5,120; 2026 to 2029 0 ($ in thousands)",
+   "claims": [
+    "f5262370c35bad974f68a7ebbbcfd58cd53382434c7363f35e662a41cbbcbbbc",
+    "581c8f749c3a29ee08725d9e0c1f4b85423cc7415d89ffc827f1cc9995c5de4d"
+   ]
+  },
+  {
+   "doc": "DOC-06",
+   "page": 1,
+   "quote": "July 15, 2025",
+   "claims": [
+    "1fa51d03e00fbb99cf2a5db71dfa2a658fd6b0bdd3088ef03853e4785bb14058",
+    "aaf40d4570a55f3d7d7e09c8abecccc7382c1ea3dc5639921620a2c8863a8d91",
+    "8ad01c90be5f04ea2e7124747f8fc8b6f86f5251d201ef944f362f99d00ceda7",
+    "cdd7c1589b75081d1df8c2ef92b10303b6d84cb254cf910a39675047292d3c91",
+    "211f2602204fe31bb9dc9d0f6c1ead8a1c9ee49a5616701b52ebef27a80d6515"
+   ]
+  }
+ ],
+ "HTC01-036": [
+  {
+   "doc": "DOC-15",
+   "page": 12,
+   "quote": "We plan to sell commercial unit C-1 to Danville Arts Collective, targeting June 30, 2026",
+   "claims": [
+    "70d00c7250b20d4c9c99b119b9fbcf93ad3c854f62e38f100b74b1cd6644ab44",
+    "48b75ddccc94f966d6debae382e9486e27fde9f1d35618a1338f37fdf52b0ae1"
+   ]
+  },
+  {
+   "doc": "DOC-16",
+   "page": 2,
+   "quote": "No sale or transfer of any part of the property is planned during the credit period",
+   "claims": [
+    "7f1cf4bc69ffc6f2940b4a2c5025f04498bcaee63d264e20d3aac455905fa197"
+   ]
+  },
+  {
+   "doc": "DOC-11",
+   "page": 24,
+   "quote": "No sale or transfer of the Building or any unit during the Compliance Period without Investor Member consent",
+   "claims": [
+    "93b555c58e434111a65e7155d270d21a1d73d45ce8fa7370649408c1d18b151d",
+    "3612e108c37a91c441a6ee73c4be3d872d0b9f9e83f7027a381d6923c0368803",
+    "d98f9c5443038284c3a398358509d6b6976627bf7c32c682ab6ba6655b77bed5",
+    "87fe1f059b97eeb914a930b69b7ef130f7860b59f3ec8849b589cd5231ad8e5b"
+   ]
+  }
+ ],
+ "HTC01-037": [
+  {
+   "doc": "DOC-04",
+   "page": 1,
+   "quote": "Equity bridge loan $1,700,000, matures 3/31/2026",
+   "claims": [
+    "00d2e37a14d7e6b86034722990843797e86c4c719917e53b7c93875db479a348",
+    "e223af3489292a3b6587322b5c1a827b57a8376f746205f798b56801dd9d330f",
+    "0f3656500f3b34a500dc8abdb607844f72decc00bd94f82040a3f2cd63e178a5",
+    "7aaab60b07c649da8523c03ebb8d0fca345123a437a9a39bd634aadf78b0c1fb"
+   ]
+  },
+  {
+   "doc": "DOC-05",
+   "page": 4,
+   "quote": "Installment 3 received June 30, 2026",
+   "claims": [
+    "ca8694be5c257846aa745a06a2d5ea13db1bf92af0e6f378e1ef63d9ea44e114"
+   ]
+  },
+  {
+   "doc": "DOC-11",
+   "page": 14,
+   "quote": "40% upon receipt of Part 3 approval",
+   "claims": [
+    "658e7d65aa036e1be84bfb56db25e65ea7151f487444c87a75e40c287dfb8a44",
+    "9519a31a402540c4aaaa87ffc69b7cc1c7c3fb64e53bea56667a7ce2a4b90f97"
+   ]
+  }
+ ],
+ "HTC01-038": [
+  {
+   "doc": "DOC-12",
+   "page": 6,
+   "quote": "If the DHR certification is not delivered by April 30, 2026, Buyer may terminate this Agreement",
+   "claims": [
+    "c011276f639bf87d1de3266bacbd128a06b2a2830e7e90b705fc1839e7dc64dd",
+    "b3a4c4a4cd530e51c20f43322b95795072dc688dd2436d5daf3c20923a41393d"
+   ]
+  },
+  {
+   "doc": "DOC-05",
+   "page": 4,
+   "quote": "Virginia credit proceeds received July 31, 2026",
+   "claims": [
+    "169d8ad0de7c0f5f0471739fdeefce28b673f1db07992cefa93b99b1587b0efd"
+   ]
+  }
+ ],
+ "HTC01-039": [
+  {
+   "doc": "DOC-11",
+   "page": 24,
+   "quote": "Compliance Period: five years beginning on the placed-in-service date",
+   "claims": [
+    "93b555c58e434111a65e7155d270d21a1d73d45ce8fa7370649408c1d18b151d",
+    "65e8c8bba82c7869c6cdf46ed8081183d0a35c0404d99ed989661669e212a1ac",
+    "94f4c3d64da108097eadea86e965cc7623229aeb9d1aa258cf722db639bd2d11",
+    "d47837a3df46da0ea06a4fe7d149021b00c44bea525d66dc671e2f4088424cb6"
+   ]
+  },
+  {
+   "doc": "DOC-16",
+   "page": 2,
+   "quote": "credits remain subject to recapture through July 2030",
+   "claims": [
+    "9ecb509400bc441fb5631d20ba9c148633bd840444d035eaa346cdd036d21ca5",
+    "dae157f2807ac95dc7f0c44ec72e47c2d46dce7403fd0ea5362f248a1901354e"
+   ]
+  }
+ ]
+}

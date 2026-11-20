@@ -1,0 +1,334 @@
+CANDIDATE RECALL  20261121-015018  (key set HTC01; 1184 stored claims; 164 clusters; model calls made: 0; labels from cache 1168, asked 0, fallback 0)
+
+====================================================================================================
+PART 1. CASE-TO-CLAIM MAP (each citation of the key and the stored claims that hold it; confirm by eye)
+====================================================================================================
+
+HTC01-001 [Contradiction/Critical] Federal credit in the financial model does not match the QRE
+   DOC-05 p.2 "$5,120,000"  ->  934d7e p.2 | Federal historic tax credit | amount | $5,120,000
+   DOC-05 p.2 "24,600 ($ in thousands)"  ->  3148b6 p.2 | Qualified rehabilitation expen | amount | 24,600
+   DOC-06 p.3 "$24,600,000"  ->  cf483f p.3 | total qualified rehabilitation | total amount | $24,600,000
+   DOC-06 p.3 "$4,920,000"  ->  b14aa1 p.3 | Federal rehabilitation credit | credit amount | $4,920,000
+   => PARTLY connected  (routes: key)
+
+HTC01-002 [Contradiction/Critical] Budget counts non-qualifying costs as QRE
+   DOC-04 p.2 "Total qualified costs $25,310,000"  ->  8747bd p.2 | Legal and accounting (qualifie | qualified cost amount | $310,000
+   DOC-04 p.2 "Total qualified costs $25,310,000"  ->  494f05 p.2 | Total qualified costs | total qualified costs | $25,310,000
+   DOC-04 p.2 "$420,000"  ->  09447f p.2 | Parking lot | qualified status | Yes
+   DOC-04 p.2 "$420,000"  ->  a947dd p.2 | Parking lot | qualified cost amount | $420,000
+   DOC-04 p.2 "$290,000"  ->  804218 p.2 | Furniture, fixtures and equipm | qualified status | Yes
+   DOC-04 p.2 "$290,000"  ->  1d471d p.2 | Furniture, fixtures and equipm | qualified cost amount | $290,000
+   DOC-06 p.3 "$24,600,000"  ->  cf483f p.3 | total qualified rehabilitation | total amount | $24,600,000
+   => NOT connected
+
+HTC01-003 [Contradiction/High] Cost certification leaves out the change orders
+   DOC-08 p.9 "CO-1 $315,000; CO-2 $60,000; CO-3 $265,000"  ->  e246c5 p.9 | CO-1 Structural repairs, floor | Amount | $315,000
+   DOC-08 p.9 "CO-1 $315,000; CO-2 $60,000; CO-3 $265,000"  ->  d849e7 p.9 | CO-2 window installation | Amount | $60,000
+   DOC-08 p.9 "CO-1 $315,000; CO-2 $60,000; CO-3 $265,000"  ->  284674 p.9 | CO-3 Masonry repairs at river  | Amount | $265,000
+   DOC-08 p.9 "CO-1 $315,000; CO-2 $60,000; CO-3 $265,000"  ->  794cb6 p.9 | Summary: CO-1 $315,000; CO-2 $ | Amount | $640,000
+   DOC-08 p.9 "$22,540,000"  ->  e04bd0 p.9 | Adjusted contract sum after ch | contract sum after change or | $22,540,000
+   DOC-06 p.2 "Construction contract $21,900,000"  ->  d3428f p.2 | construction contract | cost | $21,900,000
+   => NOT connected
+
+HTC01-004 [Contradiction/High] Financial model and summaries use the draft credit price, not the signed one
+   DOC-12 p.3 "$0.82 per $1.00 of credit"  ->  3942e5 p.3 | Buyer | payment price per credit | $0.82 per $1.00 of credit
+   DOC-12 p.3 "$0.82 per $1.00 of credit"  ->  294263 p.3 | Credits transferred at Closing | credits covered by payment p | all
+   DOC-05 p.2 "0.85"  ->  814eb4 p.2 | Virginia credit | price per credit dollar | 0.85
+   DOC-05 p.2 "5,227.5 ($ in thousands)"  ->  524bfb p.2 | Virginia credit proceeds | amount | 5,227.5
+   DOC-15 p.6 "pricing came in at 85 cents"  ->  904e53 p.6 | Virginia credit pricing | pricing | 85 cents
+   DOC-16 p.1 "$0.85 per credit"  ->  774fad p.1 | Financing | construction loan amount | $18.5M
+   DOC-16 p.1 "$0.85 per credit"  ->  b44ce1 p.1 | Financing | financing sources | an $18.5M construction loan, federal his
+   DOC-16 p.1 "$0.85 per credit"  ->  b740c7 p.1 | Virginia credits | sale price per credit | $0.85
+   => PARTLY connected  (routes: key, label)
+
+HTC01-005 [Contextual difference/Medium] Signed and draft purchase agreements give different prices
+   DOC-12 p.3 "$0.82 per $1.00 of credit"  ->  3942e5 p.3 | Buyer | payment price per credit | $0.82 per $1.00 of credit
+   DOC-12 p.3 "$0.82 per $1.00 of credit"  ->  294263 p.3 | Credits transferred at Closing | credits covered by payment p | all
+   DOC-13 p.3 "$0.85 per $1.00 of credit"  ->  5c4b29 p.3 | Buyer | payment per credit | $0.85 per $1.00 of credit
+   DOC-13 p.3 "$0.85 per $1.00 of credit"  ->  f24e23 p.3 | Credits transferred at Closing | credits transferred | all
+   => CONNECTED  (routes: key, label)
+
+HTC01-006 [Contradiction/High] Memo says the project is fully funded, but the budget shows a gap
+   DOC-16 p.1 "The project is fully funded"  ->  3b4bbc p.1 | The project | funding status | fully funded
+   DOC-04 p.1 "$31,150,000"  ->  ec41e3 p.1 | Ashby Mill Lofts | total sources | $31,150,000
+   DOC-04 p.1 "$31,150,000"  ->  95417d p.1 | Ashby Mill Lofts | architecture and engineering | $1,150,000
+   DOC-04 p.1 "Total uses $31,750,000"  ->  2d406c p.1 | Ashby Mill Lofts | total uses | $31,750,000
+   DOC-04 p.1 "Gap ($600,000)"  ->  7f45eb p.1 | Ashby Mill Lofts | deferred developer fee | $600,000
+   DOC-04 p.1 "Gap ($600,000)"  ->  37479d p.1 | Ashby Mill Lofts | gap | ($600,000)
+   => PARTLY connected  (routes: embedding)
+
+HTC01-007 [Contradiction/Critical] Memo puts the federal credits in the wrong tax year
+   DOC-16 p.2 "Federal credits will be claimed on the 2024 return"  ->  cf47e1 p.2 | Federal credits | claim year | 2024
+   DOC-06 p.1 "July 15, 2025"  ->  2040ed p.1 | Report on Cost Certification | document date | September 15, 2025
+   DOC-06 p.1 "July 15, 2025"  ->  dd4148 p.1 | Report on Cost Certification | issuer | Carter & Lowe CPAs
+   DOC-06 p.1 "July 15, 2025"  ->  e44403 p.1 | Report on Cost Certification | main entity | Ashby Mill Lofts
+   DOC-06 p.1 "July 15, 2025"  ->  fb4d0c p.1 | building | placed-in-service date | July 15, 2025
+   DOC-06 p.1 "July 15, 2025"  ->  b344a5 p.1 | completed rehabilitation | readiness and availability f | ready and available for its intended use
+   => NOT connected
+
+HTC01-008 [Contradiction/High] Two different construction start dates, one before Part 2 approval
+   DOC-08 p.1 "Notice to Proceed dated June 5, 2023"  ->  7641be p.1 | Notice to Proceed | date | June 5, 2023
+   DOC-08 p.1 "Notice to Proceed dated June 5, 2023"  ->  e549ea p.1 | This Agreement | date entered into | June 5, 2023
+   DOC-09 p.1 "10/2/2023"  ->  524728 p.1 | Construction start | milestone date | 10/2/2023
+   DOC-02 p.1 "August 22, 2023"  ->  124a4b p.1 | Approval letter | document date | August 22, 2023
+   DOC-02 p.1 "August 22, 2023"  ->  844d8c p.1 | NPS approval | approval date | August 22, 2023
+   => NOT connected
+
+HTC01-009 [Insufficient evidence/Critical] Part 3 approval is claimed but not in the data room
+   DOC-15 p.11 "NPS approved Part 3 in October"  ->  5d481d p.11 | Email, Nov 3, 2025 | subject | Part 3
+   DOC-15 p.11 "NPS approved Part 3 in October"  ->  4647aa p.11 | NPS | approval status of Part 3 | approved
+   DOC-15 p.11 "NPS approved Part 3 in October"  ->  2d4e66 p.11 | NPS | approval date of Part 3 | October
+   DOC-15 p.11 "NPS approved Part 3 in October"  ->  5642dc p.11 | Part 3 | part identifier | Part 3
+   DOC-11 p.14 "40% upon receipt of Part 3 approval"  ->  d14dbf p.14 | Section 4.2(c) | installment amount | $1,831,840
+   DOC-11 p.14 "40% upon receipt of Part 3 approval"  ->  0a4bef p.14 | Section 4.2(c) | percentage of capital contri | 40%
+   => NOT connected
+
+HTC01-010 [Insufficient evidence/High] No evidence NPS approved the window shop drawings before installation
+   DOC-02 p.3 "Shop drawings for replacement windows must be submitted to a"  ->  354c75 p.3 | shop drawings for replacement  | submission and approval requ | must be submitted to and approved by NPS
+   DOC-15 p.4 "Windows installed on floors 1 to 3"  ->  7c4311 p.4 | Windows on floors 1 to 3 | installation status | installed
+   => NOT connected
+
+HTC01-011 [Contradiction/Critical] Window quote is for vinyl, but the approval requires wood
+   DOC-02 p.3 "Shop drawings for replacement windows must be submitted to a"  ->  354c75 p.3 | shop drawings for replacement  | submission and approval requ | must be submitted to and approved by NPS
+   DOC-07 p.6 "Wood windows replicating original profiles"  ->  0c461b p.6 | Wood windows | window profile and muntin pa | replicating original profiles, with true
+   DOC-14 p.1 "Vinyl double-hung, standard profile"  ->  f044b4 p.1 | Item 1 - Vinyl double-hung, st | Qty | 412
+   => PARTLY connected  (routes: label)
+
+HTC01-012 [Contradiction/Medium] Appraisal and architect disagree on the unit count
+   DOC-07 p.1 "84 apartments"  ->  8f4028 p.1 | The project | apartments | 84
+   DOC-07 p.1 "84 apartments"  ->  774221 p.1 | The project | ground-floor commercial suit | 2
+   DOC-07 p.1 "84 apartments"  ->  df4762 p.1 | The project | leasing office | a leasing office
+   DOC-07 p.1 "84 apartments"  ->  7643d5 p.1 | The project | resident amenities | resident amenities
+   DOC-10 p.2 "86 units"  ->  d04e09 p.2 | Ashby Mill | proposed rental housing unit | 86
+   DOC-10 p.2 "86 units"  ->  ce47d5 p.2 | Ashby Mill | mill stories | five-story
+   DOC-10 p.2 "86 units"  ->  57421f p.2 | Ashby Mill | proposed improvements | 86 units of rental housing in a converte
+   => CONNECTED  (routes: embedding, key, label)
+
+HTC01-013 [Contextual difference/Medium] Gross area and rentable area differ
+   DOC-10 p.2 "112,400 SF gross building area"  ->  334859 p.2 | Ashby Mill | gross building area | 112,400 SF
+   DOC-07 p.1 "78,650 rentable SF"  ->  ff4fc2 p.1 | Apartment area | rentable area | 78,650
+   DOC-07 p.1 "78,650 rentable SF"  ->  1f4b7e p.1 | Apartment area | floors covered | 1 to 5
+   => CONNECTED  (routes: label)
+
+HTC01-014 [Contradiction/High] Equity installments do not add up to the equity amount
+   DOC-11 p.13 "$4,329,600"  ->  954eb0 p.13 | Investor Member | capital contribution | $4,329,600
+   DOC-11 p.14 "$865,920"  ->  1b482b p.14 | Section 4.2(a) | installment amount | $865,920
+   DOC-11 p.14 "$865,920"  ->  764aaf p.14 | Section 4.2(a) | percentage of capital contri | 20%
+   DOC-11 p.14 "$1,298,880"  ->  da43a4 p.14 | Section 4.2(b) | installment amount | $1,298,880
+   DOC-11 p.14 "$1,298,880"  ->  454a90 p.14 | Section 4.2(b) | percentage of capital contri | 30%
+   DOC-11 p.14 "$1,298,880"  ->  f3424c p.14 | Building | date placed in service | July 15, 2025
+   DOC-11 p.14 "$1,831,840"  ->  d14dbf p.14 | Section 4.2(c) | installment amount | $1,831,840
+   DOC-11 p.14 "$1,831,840"  ->  0a4bef p.14 | Section 4.2(c) | percentage of capital contri | 40%
+   DOC-11 p.14 "$432,960"  ->  534aa3 p.14 | Section 4.2(d) | installment amount | $432,960
+   DOC-11 p.14 "$432,960"  ->  dd4c6e p.14 | Section 4.2(d) | percentage of capital contri | 10%
+   DOC-11 p.14 "$432,960"  ->  194444 p.14 | Section 4.2(d) | occupancy required for stabi | 93%
+   DOC-11 p.14 "$432,960"  ->  1a49da p.14 | Section 4.2(d) | duration at required occupan | three consecutive months
+   => PARTLY connected  (routes: key, label)
+
+HTC01-015 [Contradiction/High] Developer fee in the budget is above the operating agreement cap
+   DOC-04 p.2 "$2,750,000"  ->  354997 p.2 | Developer fee (not included ab | amount | $2,750,000
+   DOC-11 p.18 "shall not exceed $2,500,000"  ->  7048f9 p.18 | The total development fee | maximum amount | $2,500,000
+   => NOT connected
+
+HTC01-016 [Contradiction/High] Operating agreement gives two different guaranty caps
+   DOC-11 p.21 "$1,500,000"  ->  214702 p.21 | the Guarantor | maximum indemnity for recapt | $1,500,000
+   DOC-11 p.42 "$1,000,000"  ->  f5453b p.42 | Exhibit C - Form of Guaranty | total liability for recaptur | $1,000,000
+   => CONNECTED  (routes: label)
+
+HTC01-017 [Contradiction/Critical] Cost certification names the developer as taxpayer, not the building owner
+   DOC-06 p.1 "Taxpayer: Riverside Heritage Development LLC"  ->  1c4e9a p.1 | Taxpayer | taxpayer name | Riverside Heritage Development LLC
+   DOC-10 p.1 "Ashby Mill Owner LLC, fee simple owner"  ->  324698 p.1 | Ashby Mill | owner | Ashby Mill Owner LLC
+   DOC-10 p.1 "Ashby Mill Owner LLC, fee simple owner"  ->  c54529 p.1 | Ashby Mill Owner LLC | ownership interest | fee simple owner
+   => NOT connected
+
+HTC01-018 [Contradiction/Low] Owner name is misspelled on the architect's documents
+   DOC-07 p.1 "Ashbey Mill Owner LLC"  ->  eb466d p.1 | Ashby Mill Lofts | owner | Ashbey Mill Owner LLC
+   DOC-07 p.1 "Ashbey Mill Owner LLC"  ->  c64152 p.1 | Ashby Mill Lofts | architect | HOLLINS AND READE ARCHITECTS
+   DOC-07 p.1 "Ashbey Mill Owner LLC"  ->  fe40d0 p.1 | Ashby Mill Lofts | project name | ASHBY MILL LOFTS
+   DOC-11 p.1 "Ashby Mill Owner LLC"  ->  3a47b0 p.1 | Ashby Mill Owner LLC | entity type | limited liability company
+   DOC-11 p.1 "Ashby Mill Owner LLC"  ->  994fdb p.1 | Riverside Heritage Managing Me | member role | Managing Member
+   DOC-11 p.1 "Ashby Mill Owner LLC"  ->  44452f p.1 | Northfield Historic Fund LLC | member role | Investor Member
+   => NOT connected
+
+HTC01-019 [Consistent/Low] Owner name written two ways
+   DOC-12 p.1 "Ashby Mill Owner, L.L.C."  ->  264e15 p.1 | Virginia Historic Rehabilitati | agreement parties | Ashby Mill Owner, L.L.C., a Virginia lim
+   DOC-12 p.1 "Ashby Mill Owner, L.L.C."  ->  2d4792 p.1 | Ashby Mill Owner, L.L.C. | entity type | a Virginia limited liability company
+   DOC-11 p.1 "Ashby Mill Owner LLC"  ->  3a47b0 p.1 | Ashby Mill Owner LLC | entity type | limited liability company
+   DOC-11 p.1 "Ashby Mill Owner LLC"  ->  994fdb p.1 | Riverside Heritage Managing Me | member role | Managing Member
+   DOC-11 p.1 "Ashby Mill Owner LLC"  ->  44452f p.1 | Northfield Historic Fund LLC | member role | Investor Member
+   => CONNECTED  (routes: key)
+
+HTC01-020 [Consistent/Critical] Memo's rounded QRE and credit figures match the cost certification
+   DOC-16 p.1 "approximately $24.6 million of qualified rehabilitation expe"  ->  ea4c78 p.1 | The cost certification | qualified rehabilitation exp | approximately $24.6 million
+   DOC-16 p.1 "approximately $24.6 million of qualified rehabilitation expe"  ->  2a40c1 p.1 | Federal credits | credits generated | $4.9M
+   DOC-16 p.1 "$4.9M in federal credits"  ->  ea4c78 p.1 | The cost certification | qualified rehabilitation exp | approximately $24.6 million
+   DOC-16 p.1 "$4.9M in federal credits"  ->  2a40c1 p.1 | Federal credits | credits generated | $4.9M
+   DOC-06 p.3 "$24,600,000"  ->  cf483f p.3 | total qualified rehabilitation | total amount | $24,600,000
+   DOC-06 p.3 "$4,920,000"  ->  b14aa1 p.3 | Federal rehabilitation credit | credit amount | $4,920,000
+   => PARTLY connected  (routes: key)
+
+HTC01-021 [Consistent/Medium] Part 2 approval date written in different formats
+   DOC-02 p.1 "August 22, 2023"  ->  124a4b p.1 | Approval letter | document date | August 22, 2023
+   DOC-02 p.1 "August 22, 2023"  ->  844d8c p.1 | NPS approval | approval date | August 22, 2023
+   DOC-15 p.1 "8/22/2023"  ->  3445ed p.1 | Part 2 approval | approval date | 8/22/2023
+   DOC-15 p.1 "8/22/2023"  ->  e84ade p.1 | Part 2 approval | approval conditions | three
+   DOC-16 p.2 "8/22/23"  ->  004bdb p.2 | NPS | Part 2 application approval  | 8/22/23
+   => CONNECTED  (routes: key)
+
+HTC01-022 [Contextual difference/Medium] Window quote differs from the budget line
+   DOC-14 p.2 "$1,180,000, supply only"  ->  7f4566 p.2 | Total | price | $1,180,000
+   DOC-04 p.2 "Windows, furnish and install $1,240,000"  ->  fd4038 p.2 | Windows, furnish and install | qualified status | Yes
+   DOC-04 p.2 "Windows, furnish and install $1,240,000"  ->  13410f p.2 | Windows, furnish and install | qualified cost amount | $1,240,000
+   DOC-08 p.9 "CO-2 window installation $60,000"  ->  d849e7 p.9 | CO-2 window installation | Amount | $60,000
+   DOC-08 p.9 "CO-2 window installation $60,000"  ->  794cb6 p.9 | Summary: CO-1 $315,000; CO-2 $ | Amount | $640,000
+   DOC-08 p.9 "CO-2 window installation $60,000"  ->  35464e p.9 | All change orders | signed by the Owner, the Con | All
+   => NOT connected
+
+HTC01-023 [Contextual difference/Medium] Update reports 48 units complete against 84 planned
+   DOC-15 p.9 "48 units complete and leasing"  ->  d14b5b p.9 | Leasing | units complete and leasing | 48
+   DOC-07 p.1 "84 apartments"  ->  8f4028 p.1 | The project | apartments | 84
+   DOC-07 p.1 "84 apartments"  ->  774221 p.1 | The project | ground-floor commercial suit | 2
+   DOC-07 p.1 "84 apartments"  ->  df4762 p.1 | The project | leasing office | a leasing office
+   DOC-07 p.1 "84 apartments"  ->  7643d5 p.1 | The project | resident amenities | resident amenities
+   => NOT connected
+
+HTC01-024 [Consistent/Critical] QRE shown in thousands in the model
+   DOC-05 p.2 "24,600 ($ in thousands)"  ->  3148b6 p.2 | Qualified rehabilitation expen | amount | 24,600
+   DOC-06 p.3 "$24,600,000"  ->  cf483f p.3 | total qualified rehabilitation | total amount | $24,600,000
+   => NOT connected
+
+HTC01-025 [Contradiction/High] Hard cost line items do not add up to the subtotal
+   DOC-04 p.2 "Hard cost subtotal $22,540,000"  ->  aa46fd p.2 | Painting | qualified cost amount | $540,000
+   DOC-04 p.2 "Hard cost subtotal $22,540,000"  ->  8f492a p.2 | Hard cost subtotal | qualified status | Yes
+   DOC-04 p.2 "Hard cost subtotal $22,540,000"  ->  754dcf p.2 | Hard cost subtotal | hard cost subtotal | $22,540,000
+   => n/a (fewer than two citations)
+
+HTC01-026 [Insufficient evidence/Medium] Deposit payment is backed only by an email
+   DOC-12 p.4 "10% deposit due within 10 business days of signing"  ->  ab4bf4 p.4 | Deposit | deposit amount | 10%
+   DOC-12 p.4 "10% deposit due within 10 business days of signing"  ->  c64fd7 p.4 | Deposit | deposit due date | within 10 business days of signing
+   DOC-12 p.4 "10% deposit due within 10 business days of signing"  ->  7a4c81 p.4 | Deposit | escrow status | to be held in escrow
+   DOC-12 p.4 "10% deposit due within 10 business days of signing"  ->  7b4669 p.4 | Deposit | credit against Purchase Pric | credited against the Purchase Price
+   DOC-15 p.5 "Buyer wired the deposit last week"  ->  de495c p.5 | Buyer | deposit wired status | wired
+   DOC-15 p.5 "Buyer wired the deposit last week"  ->  bf41d4 p.5 | deposit | wiring date | last week
+   DOC-15 p.5 "Buyer wired the deposit last week"  ->  e34319 p.5 | deposit | completion status | done
+   => NOT connected
+
+HTC01-027 [Insufficient evidence/Medium] Adjusted basis in the substantial rehabilitation test has no readable source
+   DOC-06 p.4 "Adjusted basis $1,540,000"  ->  a049d6 p.4 | building | adjusted basis | $1,540,000
+   => n/a (fewer than two citations)
+
+HTC01-028 [Contradiction/Medium] Model assumes faster lease-up than the market study supports
+   DOC-05 p.3 "12 units per month"  ->  e44969 p.3 | Lease-up | units per month | 12 units per month
+   DOC-03 p.8 "7 units per month; stabilization in about 12 months"  ->  5b4a35 p.8 | Absorption | projected pace | 7
+   DOC-03 p.8 "7 units per month; stabilization in about 12 months"  ->  4a4f9f p.8 | Absorption | stabilization timing | about 12 months
+   DOC-03 p.8 "7 units per month; stabilization in about 12 months"  ->  4e4a1b p.8 | Absorption | stabilization physical occup | 93%
+   => NOT connected
+
+HTC01-029 [Consistent/Critical] Placed-in-service date agrees across documents
+   DOC-06 p.1 "July 15, 2025"  ->  2040ed p.1 | Report on Cost Certification | document date | September 15, 2025
+   DOC-06 p.1 "July 15, 2025"  ->  dd4148 p.1 | Report on Cost Certification | issuer | Carter & Lowe CPAs
+   DOC-06 p.1 "July 15, 2025"  ->  e44403 p.1 | Report on Cost Certification | main entity | Ashby Mill Lofts
+   DOC-06 p.1 "July 15, 2025"  ->  fb4d0c p.1 | building | placed-in-service date | July 15, 2025
+   DOC-06 p.1 "July 15, 2025"  ->  b344a5 p.1 | completed rehabilitation | readiness and availability f | ready and available for its intended use
+   DOC-09 p.2 "7/15/2025"  ->  6f478b p.2 | Placed in service | milestone date | 7/15/2025
+   DOC-11 p.14 "the Building was placed in service on July 15, 2025"  ->  da43a4 p.14 | Section 4.2(b) | installment amount | $1,298,880
+   DOC-11 p.14 "the Building was placed in service on July 15, 2025"  ->  454a90 p.14 | Section 4.2(b) | percentage of capital contri | 30%
+   DOC-11 p.14 "the Building was placed in service on July 15, 2025"  ->  f3424c p.14 | Building | date placed in service | July 15, 2025
+   => PARTLY connected  (routes: lexical)
+
+HTC01-030 [Consistent/High] Construction loan amount agrees across documents
+   DOC-04 p.1 "$18,500,000"  ->  a94e85 p.1 | Ashby Mill Lofts | construction loan amount | $18,500,000
+   DOC-04 p.1 "$18,500,000"  ->  5d4221 p.1 | Piedmont Community Bank | construction loan lender | Piedmont Community Bank
+   DOC-05 p.2 "18,500 ($ in thousands)"  ->  f44e62 p.2 | Construction loan | amount | 18,500
+   DOC-16 p.1 "$18.5M construction loan"  ->  774fad p.1 | Financing | construction loan amount | $18.5M
+   DOC-16 p.1 "$18.5M construction loan"  ->  b44ce1 p.1 | Financing | financing sources | an $18.5M construction loan, federal his
+   DOC-16 p.1 "$18.5M construction loan"  ->  b740c7 p.1 | Virginia credits | sale price per credit | $0.85
+   => CONNECTED  (routes: key)
+
+HTC01-031 [Contextual difference/Low] Memo describes a mixed-use community; plans show two commercial suites
+   DOC-16 p.1 "a vibrant mixed-use community at the heart of Danville's Riv"  ->  574d95 p.1 | Ashby Mill Lofts | mill construction year | 1912
+   DOC-16 p.1 "a vibrant mixed-use community at the heart of Danville's Riv"  ->  a4405c p.1 | Ashby Mill Lofts | project description | a vibrant mixed-use community at the hea
+   DOC-16 p.1 "a vibrant mixed-use community at the heart of Danville's Riv"  ->  be4056 p.1 | Danville's River District | place name | Danville's River District
+   DOC-07 p.1 "2 ground-floor commercial suites"  ->  8f4028 p.1 | The project | apartments | 84
+   DOC-07 p.1 "2 ground-floor commercial suites"  ->  774221 p.1 | The project | ground-floor commercial suit | 2
+   DOC-07 p.1 "2 ground-floor commercial suites"  ->  df4762 p.1 | The project | leasing office | a leasing office
+   DOC-07 p.1 "2 ground-floor commercial suites"  ->  7643d5 p.1 | The project | resident amenities | resident amenities
+   => CONNECTED  (routes: label)
+
+HTC01-032 [Insufficient evidence/High] Memo claims the state credit certification has been issued
+   DOC-16 p.2 "Virginia DHR has issued final certification for the state cr"  ->  9e4dab p.2 | Virginia DHR | final certification issued | final certification for the state credit
+   DOC-16 p.2 "Virginia DHR has issued final certification for the state cr"  ->  0744fd p.2 | Virginia DHR | organization name | Virginia DHR
+   => n/a (fewer than two citations)
+
+HTC01-033 [Contradiction/Medium] Update treats the Phase 1 temporary occupancy date as the placed-in-service date
+   DOC-15 p.8 "Building placed in service March 28 with the Phase 1 TCO"  ->  704225 p.8 | Building | date placed in service | March 28
+   DOC-15 p.8 "Building placed in service March 28 with the Phase 1 TCO"  ->  b44c0f p.8 | Building | TCO phase | Phase 1
+   DOC-06 p.1 "July 15, 2025"  ->  2040ed p.1 | Report on Cost Certification | document date | September 15, 2025
+   DOC-06 p.1 "July 15, 2025"  ->  dd4148 p.1 | Report on Cost Certification | issuer | Carter & Lowe CPAs
+   DOC-06 p.1 "July 15, 2025"  ->  e44403 p.1 | Report on Cost Certification | main entity | Ashby Mill Lofts
+   DOC-06 p.1 "July 15, 2025"  ->  fb4d0c p.1 | building | placed-in-service date | July 15, 2025
+   DOC-06 p.1 "July 15, 2025"  ->  b344a5 p.1 | completed rehabilitation | readiness and availability f | ready and available for its intended use
+   DOC-09 p.2 "7/15/2025"  ->  6f478b p.2 | Placed in service | milestone date | 7/15/2025
+   => PARTLY connected  (routes: key)
+
+HTC01-034 [Consistent/Medium] Substantial completion date agrees between the schedule and the update
+   DOC-09 p.2 "6/13/2025"  ->  754297 p.2 | Substantial completion | milestone date | 6/13/2025
+   DOC-15 p.10 "Architect issued the certificate of substantial completion o"  ->  9849e1 p.10 | Architect | certificate issuance | issued the certificate of substantial co
+   DOC-15 p.10 "Architect issued the certificate of substantial completion o"  ->  37441e p.10 | certificate of substantial com | issuance date | June 13
+   => NOT connected
+
+HTC01-035 [Contradiction/High] Financial model puts the whole federal credit in 2025
+   DOC-05 p.4 "Federal credits delivered: 2025 5,120; 2026 to 2029 0 ($ in "  ->  8f45f8 p.4 | Federal credits | credits delivered in 2025 | 5,120
+   DOC-05 p.4 "Federal credits delivered: 2025 5,120; 2026 to 2029 0 ($ in "  ->  d941bc p.4 | Federal credits | credits delivered in 2026 to | 0
+   DOC-06 p.1 "July 15, 2025"  ->  2040ed p.1 | Report on Cost Certification | document date | September 15, 2025
+   DOC-06 p.1 "July 15, 2025"  ->  dd4148 p.1 | Report on Cost Certification | issuer | Carter & Lowe CPAs
+   DOC-06 p.1 "July 15, 2025"  ->  e44403 p.1 | Report on Cost Certification | main entity | Ashby Mill Lofts
+   DOC-06 p.1 "July 15, 2025"  ->  fb4d0c p.1 | building | placed-in-service date | July 15, 2025
+   DOC-06 p.1 "July 15, 2025"  ->  b344a5 p.1 | completed rehabilitation | readiness and availability f | ready and available for its intended use
+   => NOT connected
+
+HTC01-036 [Contradiction/Critical] Planned sale of a commercial unit falls inside the recapture period, but the memo says no transfers are planned
+   DOC-15 p.12 "We plan to sell commercial unit C-1 to Danville Arts Collect"  ->  f44b95 p.12 | commercial unit C-1 | planned sale date | June 30, 2026
+   DOC-15 p.12 "We plan to sell commercial unit C-1 to Danville Arts Collect"  ->  2d45e0 p.12 | commercial unit C-1 | planned buyer | Danville Arts Collective
+   DOC-16 p.2 "No sale or transfer of any part of the property is planned d"  ->  5246dd p.2 | The property | planned sale or transfer | No
+   DOC-11 p.24 "No sale or transfer of the Building or any unit during the C"  ->  b64f38 p.24 | Article 8 - Compliance | title | Compliance
+   DOC-11 p.24 "No sale or transfer of the Building or any unit during the C"  ->  de4f45 p.24 | Section 8.2 | section number | 8.2
+   DOC-11 p.24 "No sale or transfer of the Building or any unit during the C"  ->  f6419a p.24 | Building or any unit | sale or transfer permitted w | No
+   DOC-11 p.24 "No sale or transfer of the Building or any unit during the C"  ->  49461b p.24 | Building | recapture of the federal cre | any
+   => NOT connected
+
+HTC01-037 [Contradiction/High] Equity bridge loan matures before the installment meant to repay it
+   DOC-04 p.1 "Equity bridge loan $1,700,000, matures 3/31/2026"  ->  6b46df p.1 | Equity bridge loan | loan amount | $1,700,000
+   DOC-04 p.1 "Equity bridge loan $1,700,000, matures 3/31/2026"  ->  644e93 p.1 | Equity bridge loan | maturity date | 3/31/2026
+   DOC-04 p.1 "Equity bridge loan $1,700,000, matures 3/31/2026"  ->  b8418b p.1 | Equity bridge loan | amount classification | (memo)
+   DOC-04 p.1 "Equity bridge loan $1,700,000, matures 3/31/2026"  ->  2e466b p.1 | Ashby Mill Lofts | financing costs and reserves | $700,000
+   DOC-05 p.4 "Installment 3 received June 30, 2026"  ->  294968 p.4 | Installment 3 | receipt date | June 30, 2026
+   DOC-11 p.14 "40% upon receipt of Part 3 approval"  ->  d14dbf p.14 | Section 4.2(c) | installment amount | $1,831,840
+   DOC-11 p.14 "40% upon receipt of Part 3 approval"  ->  0a4bef p.14 | Section 4.2(c) | percentage of capital contri | 40%
+   => PARTLY connected  (routes: key)
+
+HTC01-038 [Contradiction/High] Model expects state credit proceeds after the buyer can walk away
+   DOC-12 p.6 "If the DHR certification is not delivered by April 30, 2026,"  ->  d54021 p.6 | DHR certification | delivery deadline | April 30, 2026
+   DOC-12 p.6 "If the DHR certification is not delivered by April 30, 2026,"  ->  aa4381 p.6 | Buyer | right to terminate this Agre | may terminate this Agreement and receive
+   DOC-05 p.4 "Virginia credit proceeds received July 31, 2026"  ->  3f487e p.4 | Virginia credit proceeds | receipt date | July 31, 2026
+   => NOT connected
+
+HTC01-039 [Consistent/High] Recapture period is described the same way in the operating agreement and the memo
+   DOC-11 p.24 "Compliance Period: five years beginning on the placed-in-ser"  ->  b64f38 p.24 | Article 8 - Compliance | title | Compliance
+   DOC-11 p.24 "Compliance Period: five years beginning on the placed-in-ser"  ->  87411d p.24 | Section 8.1 | section number | 8.1
+   DOC-11 p.24 "Compliance Period: five years beginning on the placed-in-ser"  ->  324f53 p.24 | Compliance Period | duration | five years
+   DOC-11 p.24 "Compliance Period: five years beginning on the placed-in-ser"  ->  8440e5 p.24 | Compliance Period | beginning date | beginning on the placed-in-service date 
+   DOC-16 p.2 "credits remain subject to recapture through July 2030"  ->  444dd6 p.2 | Credits | recapture status | subject to recapture
+   DOC-16 p.2 "credits remain subject to recapture through July 2030"  ->  d04ed8 p.2 | Credits | recapture end date | July 2030
+   => NOT connected
+
+====================================================================================================
+PART 2. CANDIDATE RECALL of the key grouping (28 non-consistent cases with two or more citations)
+====================================================================================================
+connected        5  005, 012, 013, 016, 031
+partly           7  001, 004, 006, 011, 014, 033, 037
+not connected   16  002, 003, 007, 008, 009, 010, 015, 017, 018, 022, 023, 026, 028, 035, 036, 038
+extraction       0  
+candidate recall (connected / cases) = 5/28 = 18%
+cases linked by route (a case can use several): {'key': 7, 'label': 8, 'embedding': 2}
+clusters over 15 claims (the judge splits these): 1; largest 279

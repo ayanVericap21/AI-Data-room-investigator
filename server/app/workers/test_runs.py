@@ -45,7 +45,7 @@ CommandFactory = Callable[[list[str], Path], list[str]]
 
 
 def default_command(documents: list[str], stop_file: Path) -> list[str]:
-    command = [sys.executable, "-u", str(SCRIPT), "--config", "ui-run", "--stop-file", str(stop_file)]
+    command = [sys.executable, "-u", str(SCRIPT), "--config", "ui-run", "--grouping", "key", "--stop-file", str(stop_file)]
     for document in documents:
         command += ["--only", document]
     return command
